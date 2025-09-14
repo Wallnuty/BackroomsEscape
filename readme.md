@@ -1,3 +1,15 @@
-1. npm install to install the dependancies
+## Setup Instructions
 
-2. npx vite (or npm run dev) to run the game in the browser
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Run the game in your browser:
+   ```bash
+   npx vite
+   ```
+   or
+   ```bash
+   npm run dev
+   ```
