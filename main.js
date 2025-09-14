@@ -1,22 +1,64 @@
 import * as THREE from 'three';
+import { createRoom } from './rooms/room.js';
+import { createFirstPersonControls } from './controls.js';
 
+/*
+Note:
+The ground is usually the XZ plane.
+Y increases as you go up.
+*/
+
+// Scene & camera
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(
+    75, // FOV
+    window.innerWidth / window.innerHeight,
+    0.005, // Near clipping plane (closest visible distance)
+    1000 // Far clipping plane (farthest visible distance)
+);
 
-const renderer = new THREE.WebGLRenderer();
+// Renderer
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000, 1);
 document.body.appendChild(renderer.domElement);
 
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
+// Create a room
+const roomWidth = 10, roomHeight = 5, roomDepth = 10;
+const room = createRoom(roomWidth, roomHeight, roomDepth);
+scene.add(room);
 
-camera.position.z = 5;
+// Camera initial position
+camera.position.set(0, 0.6, 0);
+camera.lookAt(3, 0, 0.0);
 
+// First-person controls with bounds
+const bounds = {
+    minX: -roomWidth / 2 + 0.1,
+    maxX: roomWidth / 2 - 0.1,
+    minZ: -roomDepth / 2 + 0.1,
+    maxZ: roomDepth / 2 - 0.1,
+    eyeY: 0.6
+};
+
+const { controls, update } = createFirstPersonControls(camera, renderer.domElement, bounds);
+scene.add(camera); // Camera is automatically moved by controls
+
+// Clock for delta time
+const clock = new THREE.Clock();
+
+// Animation loop
 function animate() {
+    const delta = clock.getDelta();
+    update(delta);
     renderer.render(scene, camera);
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
 }
 renderer.setAnimationLoop(animate);
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
