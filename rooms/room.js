@@ -11,18 +11,30 @@ export function createRoom(width = 10, height = 5, depth = 10, options = {}) {
     wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
     wallTexture.repeat.set(width / 4, height / 6);
 
+    // --- FIX: Load ceiling texture ---
+    const ceilingTexture = textureLoader.load('/textures/ceiling/backroomsTiles.webp'); // Placeholder path
+    ceilingTexture.wrapS = ceilingTexture.wrapT = THREE.RepeatWrapping;
+    ceilingTexture.repeat.set(width / 2, depth / 2);
+
+
     // Create two separate materials
     const wallMaterial = new THREE.MeshStandardMaterial({
+        color: 0xFFFFCC,
         map: wallTexture,
         roughness: 0.9,
-        metalness: 0,
         side: THREE.BackSide
     });
 
-    const floorCeilingMaterial = new THREE.MeshStandardMaterial({
+    const floorMaterial = new THREE.MeshStandardMaterial({
         color: 0xFDF38D,
         roughness: 1,
-        metalness: 0,
+        side: THREE.BackSide
+    });
+
+    const ceilingMaterial = new THREE.MeshStandardMaterial({
+        color: 0xFFFFCC,
+        map: ceilingTexture,
+        roughness: 0.8,
         side: THREE.BackSide
     });
 
@@ -31,8 +43,8 @@ export function createRoom(width = 10, height = 5, depth = 10, options = {}) {
     const materials = [
         wallMaterial,         // right side (+x)
         wallMaterial,         // left side (-x)
-        floorCeilingMaterial, // top side (+y)
-        floorCeilingMaterial, // bottom side (-y)
+        ceilingMaterial,      // top side (+y)
+        floorMaterial,        // bottom side (-y)
         wallMaterial,         // front side (+z)
         wallMaterial          // back side (-z)
     ];
@@ -40,7 +52,35 @@ export function createRoom(width = 10, height = 5, depth = 10, options = {}) {
     // Room geometry (walls, floor, ceiling)
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const roomMesh = new THREE.Mesh(geometry, materials); // Use the array of materials
+    roomMesh.receiveShadow = true; // The room interior should receive shadows
     roomGroup.add(roomMesh);
+
+    // --- ADD: Emissive ceiling lights ---
+    const lightPanelGeometry = new THREE.PlaneGeometry(2, 2); // 2x2 meter light panels
+    const lightPanelMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff, // Make it glow
+        emissiveIntensity: 1.5,
+        side: THREE.DoubleSide
+    });
+
+    // Function to create a light panel and add it to the group
+    function addLightPanel(x, z) {
+        const lightPanel = new THREE.Mesh(lightPanelGeometry, lightPanelMaterial);
+        lightPanel.position.set(x, height / 2 - 0.05, z); // Position just below the ceiling
+        lightPanel.rotation.x = Math.PI / 2; // Rotate to be flat on the ceiling
+        roomGroup.add(lightPanel);
+    }
+
+    // Add light panels in a pattern
+    addLightPanel(0, 0);
+    addLightPanel(10, 0);
+    addLightPanel(0, 10);
+    addLightPanel(-10, 0);
+    addLightPanel(0, -10);
+    addLightPanel(10, 10);
+    addLightPanel(-10, -10);
+
 
     // Optional: lights
     if (options.showLights !== false) { // eg createRoom(10, 5, 10, { showLights: false });
