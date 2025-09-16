@@ -1,15 +1,12 @@
 import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 
-export function createFirstPersonControls(camera, domElement, bounds) {
+export function createFirstPersonControls(playerBody, camera, domElement) {
     const controls = new PointerLockControls(camera, domElement);
-
     const move = { forward: false, backward: false, left: false, right: false };
-    const velocity = new THREE.Vector3();
-    const damping = 10.0;
-    const speed = 3.5;
+    const speed = 5; // movement speed (m/s)
 
-    // Key input handlers
     function onKeyDown(e) {
         switch (e.code) {
             case 'KeyW': case 'ArrowUp': move.forward = true; break;
@@ -30,41 +27,34 @@ export function createFirstPersonControls(camera, domElement, bounds) {
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
 
-    // Pointer lock on click
     domElement.addEventListener('click', () => controls.lock());
 
-    // Set initial camera height
-    camera.position.y = bounds?.eyeY ?? 1.5;
-
-    // Update function to be called every frame
     function update(delta) {
-        // Apply damping
-        velocity.x -= velocity.x * damping * delta;
-        velocity.z -= velocity.z * damping * delta;
-
-        // Compute movement direction
         const forward = Number(move.forward) - Number(move.backward);
         const strafe = Number(move.right) - Number(move.left);
 
-        if (forward || strafe) {
-            const accel = speed * 10.0;
-            velocity.z -= forward * accel * delta;
-            velocity.x -= strafe * accel * delta;
-        }
+        // Get camera forward vector (ignore Y)
+        const forwardVector = new THREE.Vector3();
+        controls.getDirection(forwardVector);
+        forwardVector.y = 0;
+        forwardVector.normalize();
 
-        if (controls.isLocked) {
-            // Move camera via PointerLockControls
-            controls.moveRight(-velocity.x * delta);
-            controls.moveForward(-velocity.z * delta);
+        // Get right vector
+        const rightVector = new THREE.Vector3();
+        rightVector.crossVectors(forwardVector, new THREE.Vector3(0, 1, 0)).normalize();
 
-            // Clamp position if bounds are provided
-            if (bounds) {
-                camera.position.x = THREE.MathUtils.clamp(camera.position.x, bounds.minX, bounds.maxX);
-                camera.position.z = THREE.MathUtils.clamp(camera.position.z, bounds.minZ, bounds.maxZ);
-                camera.position.y = bounds.eyeY ?? camera.position.y;
-            }
-        }
+        // Build movement vector in THREE
+        const moveDir = new THREE.Vector3();
+        if (forward) moveDir.add(forwardVector.multiplyScalar(forward));
+        if (strafe) moveDir.add(rightVector.multiplyScalar(strafe));
+        moveDir.normalize();
+
+        // Convert to Cannon Vec3
+        const desiredVel = new CANNON.Vec3(moveDir.x * speed, playerBody.velocity.y, moveDir.z * speed);
+
+        // Apply (preserve Y velocity for gravity/jumps)
+        playerBody.velocity.copy(desiredVel);
     }
 
-    return { controls, update };
+    return { update, controls };
 }
