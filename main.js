@@ -22,7 +22,7 @@ const { body: playerBody, syncCamera } = createPlayer(world, camera);
 const { update: updateControls } = createFirstPersonControls(playerBody, camera, renderer.domElement);
 
 // Room
-const room = createRoom(10, 5, 10, { world: world });
+const room = createRoom(30, 5, 30, { world: world });
 scene.add(room);
 
 // Animation loop
