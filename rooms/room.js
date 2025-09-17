@@ -105,15 +105,6 @@ export function createRoom(width = 10, height = 5, depth = 10, options = {}) {
         // roomGroup.add(dirLight);
     }
 
-    // Optional: edges for corners
-    if (options.showEdges !== false) {
-        const edges = new THREE.LineSegments(
-            new THREE.EdgesGeometry(geometry),
-            new THREE.LineBasicMaterial({ color: options.edgeColor || 0x333333, depthTest: false })
-        );
-        roomGroup.add(edges);
-    }
-
     // Add physics colliders if world is provided
     if (options.world) {
         addRoomColliders(options.world, width, height, depth);
