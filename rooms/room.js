@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
+import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 
 export function createRoom(width = 10, height = 5, depth = 10, options = {}) {
     const roomGroup = new THREE.Group();
+    RectAreaLightUniformsLib.init();
 
     // Load texture for the walls
     const textureLoader = new THREE.TextureLoader();
@@ -16,23 +18,29 @@ export function createRoom(width = 10, height = 5, depth = 10, options = {}) {
     ceilingTexture.wrapS = ceilingTexture.wrapT = THREE.RepeatWrapping;
     ceilingTexture.repeat.set(width / 2, depth / 2);
 
+    // --- ADD: Load floor texture ---
+    const floorTexture = textureLoader.load('/textures/floor/carpet.jpeg');
+    floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+    floorTexture.repeat.set(width / 4, depth / 4); // Adjust tiling as needed
+
 
     // Create two separate materials
     const wallMaterial = new THREE.MeshStandardMaterial({
-        color: 0xFFFFCC,
+        color: 0xFFFFB3,
         map: wallTexture,
         roughness: 0.9,
         side: THREE.BackSide
     });
 
     const floorMaterial = new THREE.MeshStandardMaterial({
-        color: 0xFDF38D,
+        color: 0xe8daae,
+        map: floorTexture,
         roughness: 1,
         side: THREE.BackSide
     });
 
     const ceilingMaterial = new THREE.MeshStandardMaterial({
-        color: 0xFFFFCC,
+        color: 0xfcfcd4,
         map: ceilingTexture,
         roughness: 0.8,
         side: THREE.BackSide
@@ -58,9 +66,8 @@ export function createRoom(width = 10, height = 5, depth = 10, options = {}) {
     // --- ADD: Emissive ceiling lights ---
     const lightPanelGeometry = new THREE.PlaneGeometry(2, 2); // 2x2 meter light panels
     const lightPanelMaterial = new THREE.MeshStandardMaterial({
+        emissive: 0xffffff,
         color: 0xffffff,
-        emissive: 0xffffff, // Make it glow
-        emissiveIntensity: 1.5,
         side: THREE.DoubleSide
     });
 
@@ -70,6 +77,11 @@ export function createRoom(width = 10, height = 5, depth = 10, options = {}) {
         lightPanel.position.set(x, height / 2 - 0.05, z); // Position just below the ceiling
         lightPanel.rotation.x = Math.PI / 2; // Rotate to be flat on the ceiling
         roomGroup.add(lightPanel);
+
+        const rectLight = new THREE.RectAreaLight(0xffffff, 13, 2, 2); // color, intensity, width, height
+        rectLight.position.set(x, height / 2 - 0.1, z);
+        rectLight.lookAt(x, 0, z); // Point the light downwards
+        roomGroup.add(rectLight);
     }
 
     // Add light panels in a pattern
@@ -85,11 +97,12 @@ export function createRoom(width = 10, height = 5, depth = 10, options = {}) {
     // Optional: lights
     if (options.showLights !== false) { // eg createRoom(10, 5, 10, { showLights: false });
         // --- FIX: Increase Light Intensity ---
-        const ambient = new THREE.AmbientLight(0xffffff, 0.6); // Increased from 0.3
+        const ambient = new THREE.AmbientLight(0xded18a, 0.4); // Reduced ambient light
         roomGroup.add(ambient);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0); // Increased from 0.8
-        dirLight.position.set(5, 10, 5);
-        roomGroup.add(dirLight);
+        // The directional light is no longer needed as RectAreaLights will light the scene
+        // const dirLight = new THREE.DirectionalLight(0xffffff, 1.0); // Increased from 0.8
+        // dirLight.position.set(5, 10, 5);
+        // roomGroup.add(dirLight);
     }
 
     // Optional: edges for corners
@@ -99,13 +112,6 @@ export function createRoom(width = 10, height = 5, depth = 10, options = {}) {
             new THREE.LineBasicMaterial({ color: options.edgeColor || 0x333333, depthTest: false })
         );
         roomGroup.add(edges);
-    }
-
-    // Optional: floor grid for scale/orientation
-    if (options.showGrid !== false) {
-        const grid = new THREE.GridHelper(width, 10, 0x444444, 0x222222);
-        grid.position.y = -height / 2;
-        roomGroup.add(grid);
     }
 
     // Add physics colliders if world is provided
