@@ -14,6 +14,27 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x000000, 1);
 document.body.appendChild(renderer.domElement);
 
+// Audio
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+const sound = new THREE.Audio(listener);
+const audioLoader = new THREE.AudioLoader();
+audioLoader.load('/music/backroomsMusic.mp3', function (buffer) {
+    sound.setBuffer(buffer);
+    sound.setLoop(true);
+    sound.setVolume(0.1);
+});
+
+// Start music on first click to comply with browser autoplay policies
+const startAudio = () => {
+    if (!sound.isPlaying) {
+        sound.play();
+    }
+    renderer.domElement.removeEventListener('click', startAudio);
+};
+renderer.domElement.addEventListener('click', startAudio);
+
 // Physics world
 const world = createPhysicsWorld();
 
