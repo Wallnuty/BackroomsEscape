@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { createRoom } from './rooms/room.js';
+// import { createRoom } from './rooms/room.js';
+import { BackroomsRoom } from './rooms/BackroomsRoom.js';
 import { createPhysicsWorld } from './physics/world.js';
 import { createPlayer } from './physics/player.js';
 import { createFirstPersonControls } from './controls.js';
@@ -11,7 +12,6 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 
 // --- OPTIMIZATION: Add physically correct lighting settings ---
-renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1;
 renderer.shadowMap.enabled = true; // Enable shadow map support
@@ -50,8 +50,53 @@ const { body: playerBody, syncCamera } = createPlayer(world, camera);
 const { update: updateControls } = createFirstPersonControls(playerBody, camera, renderer.domElement);
 
 // Room
-const room = createRoom(30, 5, 30, { world: world });
-scene.add(room);
+const room = new BackroomsRoom(scene, world, 30, 5, 30);
+
+// Add a horizontal wall from (-5, 0, -5) to (5, 0, -5)
+room.addWall(
+    new THREE.Vector3(-5, 0, -5), //from
+    new THREE.Vector3(5, 0, -5), //to
+    0.4 //thickness
+);
+
+room.addWall(
+    new THREE.Vector3(-10, 0, -5), //from
+    new THREE.Vector3(-15, 0, -5), //to
+    0.4 //thickness
+);
+
+room.addWall(
+    new THREE.Vector3(-7, 0, 7), //from
+    new THREE.Vector3(-15, 0, 7), //to
+    0.4 //thickness
+);
+
+room.addWall(
+    new THREE.Vector3(-2, 0, 7), //from
+    new THREE.Vector3(5, 0, 7), //to
+    0.4 //thickness
+);
+
+//pillar
+room.addWall(
+    new THREE.Vector3(5, 0, 11), //from
+    new THREE.Vector3(4, 0, 11), //to
+    1 //thickness
+);
+
+//pillar
+room.addWall(
+    new THREE.Vector3(11, 0, -7), //from
+    new THREE.Vector3(10, 0, -7), //to
+    1 //thickness
+);
+
+room.addWall(
+    new THREE.Vector3(5, 0, -15), //from
+    new THREE.Vector3(5, 0, 7), //to
+    0.2 //thickness
+);
+
 
 // Animation loop
 const clock = new THREE.Clock();
