@@ -14,12 +14,12 @@ export function createRoom(width = 10, height = 5, depth = 10, options = {}) {
     wallTexture.repeat.set(width / 4, height / 6);
 
     // --- FIX: Load ceiling texture ---
-    const ceilingTexture = textureLoader.load('/textures/ceiling/backroomsTiles.webp'); // Placeholder path
+    const ceilingTexture = textureLoader.load('/textures/ceiling/backroomsTiles.jpg'); // Placeholder path
     ceilingTexture.wrapS = ceilingTexture.wrapT = THREE.RepeatWrapping;
     ceilingTexture.repeat.set(width / 2, depth / 2);
 
     // --- ADD: Load floor texture ---
-    const floorTexture = textureLoader.load('/textures/floor/carpet.jpeg');
+    const floorTexture = textureLoader.load('/textures/floor/carpet.jpg');
     floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
     floorTexture.repeat.set(width / 4, depth / 4); // Adjust tiling as needed
 
