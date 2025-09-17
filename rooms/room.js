@@ -97,7 +97,7 @@ export function createRoom(width = 10, height = 5, depth = 10, options = {}) {
     // Optional: lights
     if (options.showLights !== false) { // eg createRoom(10, 5, 10, { showLights: false });
         // --- FIX: Increase Light Intensity ---
-        const ambient = new THREE.AmbientLight(0xded18a, 0.4); // Reduced ambient light
+        const ambient = new THREE.AmbientLight(0xded18a, 0.5); // Reduced ambient light
         roomGroup.add(ambient);
         // The directional light is no longer needed as RectAreaLights will light the scene
         // const dirLight = new THREE.DirectionalLight(0xffffff, 1.0); // Increased from 0.8
