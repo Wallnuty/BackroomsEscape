@@ -12,7 +12,6 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
 
     // Event listeners
     function onKeyDown(e) {
-        // Only process movement keys if controls are locked
         if (!controls.isLocked) return;
 
         switch (e.code) {
@@ -34,7 +33,6 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
         }
     }
 
-    // Reset all movement when controls are unlocked
     function resetMovement() {
         move.forward = false;
         move.backward = false;
@@ -42,21 +40,39 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
         move.right = false;
         move.sprint = false;
 
-        // Stop the player's momentum immediately
         playerBody.velocity.x = 0;
         playerBody.velocity.z = 0;
     }
 
-    // Add event listeners for pointer lock changes
     document.addEventListener('pointerlockchange', () => {
-        if (!controls.isLocked) {
-            resetMovement();
-        }
+        if (!controls.isLocked) resetMovement();
     });
 
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
-    domElement.addEventListener('click', () => controls.lock());
+
+    // Request pointer lock with unadjustedMovement if supported
+    domElement.addEventListener('click', () => {
+        const lockOptions = {};
+        // Feature detection: only Chrome/Edge support unadjustedMovement
+        if ('requestPointerLock' in domElement) {
+            try {
+                // @ts-ignore
+                domElement.requestPointerLock({ unadjustedMovement: true });
+            } catch (e) {
+                // Fallback: just lock normally
+                domElement.requestPointerLock();
+            }
+        }
+    });
+
+    // Filter large movement spikes
+    const maxDelta = 100; // pixels/frame, adjust as needed
+    domElement.addEventListener('mousemove', (event) => {
+        if (Math.abs(event.movementX) > maxDelta || Math.abs(event.movementY) > maxDelta) {
+            event.stopPropagation();
+        }
+    }, { capture: true });
 
     // Reusable vectors
     const forwardVec = new THREE.Vector3();
@@ -64,22 +80,18 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
     const moveDir = new THREE.Vector3();
 
     function update(delta) {
-        // Only update if controls are locked
         if (!controls.isLocked) {
-            // Apply stronger damping when controls are unlocked
             playerBody.velocity.x *= 0.5;
             playerBody.velocity.z *= 0.5;
             return;
         }
 
-        // Build direction vectors
         controls.getDirection(forwardVec);
-        forwardVec.y = 0; // prevent vertical influence
+        forwardVec.y = 0;
         forwardVec.normalize();
 
         rightVec.crossVectors(forwardVec, new THREE.Vector3(0, 1, 0)).normalize();
 
-        // Reset moveDir and add input directions
         moveDir.set(0, 0, 0);
         if (move.forward) moveDir.add(forwardVec);
         if (move.backward) moveDir.sub(forwardVec);
@@ -92,11 +104,9 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
             playerBody.velocity.x = moveDir.x * currentSpeed;
             playerBody.velocity.z = moveDir.z * currentSpeed;
         } else {
-            // Smooth damping when no keys pressed
             playerBody.velocity.x *= 0.9;
             playerBody.velocity.z *= 0.9;
         }
-        // Y velocity is untouched (gravity, jumps)
     }
 
     return { update, controls };
