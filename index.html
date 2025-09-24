@@ -6,18 +6,16 @@
     <title>A Familiar Place</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
         /* Self-hosted font: Coraline's Cat */
         @font-face {
             font-family: 'CoralineCat';
-            src:
-                local("Coraline's Cat"),
-                url('/fonts/Coraline%27s%20Cat.ttf') format('truetype'),
-                url('./public/fonts/Coraline%27s%20Cat.ttf') format('truetype');
+            src: url('/fonts/SpecialElite-Regular.woff2') format('woff2');
             font-weight: normal;
             font-style: normal;
             font-display: swap;
         }
-        
+
         body {
             margin: 0;
             overflow: hidden;
@@ -39,18 +37,15 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: 
-                repeating-linear-gradient(
-                    0deg,
+            background:
+                repeating-linear-gradient(0deg,
                     transparent,
                     transparent 2px,
                     rgba(0, 0, 0, 0.1) 2px,
-                    rgba(0, 0, 0, 0.1) 4px
-                ),
-                radial-gradient(ellipse at center, 
-                    rgba(0, 0, 0, 0.3) 0%, 
-                    rgba(0, 0, 0, 0.7) 100%
-                );
+                    rgba(0, 0, 0, 0.1) 4px),
+                radial-gradient(ellipse at center,
+                    rgba(0, 0, 0, 0.3) 0%,
+                    rgba(0, 0, 0, 0.7) 100%);
             pointer-events: none;
             animation: scanlines 0.1s linear infinite;
         }
@@ -75,10 +70,10 @@
 
         .content h1 {
             margin: -50px 0 60px;
-            font-size: clamp(2rem, 6vw, 2.8rem);
+            font-size: clamp(3rem, 8vw, 4rem);
             font-weight: normal;
             letter-spacing: 0.1em;
-            animation: glitch 2s infinite;
+            /*animation: glitch 2s infinite;*/
             text-transform: uppercase;
             color: #F5E6D3;
             font-family: 'CoralineCat', 'VT323', monospace;
@@ -94,7 +89,7 @@
             right: 20px;
             font-size: 1.2rem;
             color: #c6fff7;
-            animation: blink 1s infinite;
+            animation: blink 1.5s infinite;
         }
 
         .rec-indicator {
@@ -113,7 +108,7 @@
             height: 12px;
             background: #ff92b1;
             border-radius: 50%;
-            animation: blink 1s infinite;
+            animation: blink 1.5s infinite;
         }
 
         #playButton {
@@ -143,44 +138,77 @@
         }
 
         @keyframes scanlines {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(4px); }
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(4px);
+            }
         }
 
         @keyframes static {
-            0% { opacity: 0.03; }
-            50% { opacity: 0.08; }
-            100% { opacity: 0.03; }
+            0% {
+                opacity: 0.03;
+            }
+
+            50% {
+                opacity: 0.08;
+            }
+
+            100% {
+                opacity: 0.03;
+            }
         }
 
         @keyframes glitch {
-            0%, 100% { 
+
+            0%,
+            100% {
                 transform: translateX(0);
                 filter: hue-rotate(0deg);
             }
-            10% { 
+
+            10% {
                 transform: translateX(-2px) skew(-0.1deg);
                 filter: hue-rotate(90deg);
             }
-            20% { 
+
+            20% {
                 transform: translateX(2px);
                 filter: hue-rotate(180deg);
             }
-            30% { 
+
+            30% {
                 transform: translateX(-1px) skew(0.1deg);
                 filter: hue-rotate(270deg);
             }
-            40% { transform: translateX(1px); }
-            50% { 
+
+            40% {
+                transform: translateX(1px);
+            }
+
+            50% {
                 transform: translateX(-1px) skew(-0.05deg);
                 filter: hue-rotate(45deg);
             }
-            60% { transform: translateX(0); }
+
+            60% {
+                transform: translateX(0);
+            }
         }
 
         @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
+
+            0%,
+            50% {
+                opacity: 1;
+            }
+
+            51%,
+            100% {
+                opacity: 0;
+            }
         }
 
         /* GitHub icon link */
@@ -196,22 +224,25 @@
             text-decoration: none;
             opacity: 0.95;
             transition: transform 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
         }
+
         .github-link img {
             width: 28px;
             height: 28px;
             display: block;
             image-rendering: -webkit-optimize-contrast;
         }
+
         .github-link span {
             font-size: 1.1rem;
             letter-spacing: 0.06em;
         }
+
         .github-link:hover {
             transform: translateY(-2px) scale(1.03);
             opacity: 1;
-            filter: drop-shadow(0 4px 14px rgba(0,0,0,0.7));
+            filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.7));
         }
 
         /* Title grain overlay */
@@ -219,6 +250,7 @@
             display: inline-block;
             white-space: pre-line;
         }
+
         .content h1 .grain {
             position: absolute;
             inset: 0;
@@ -233,14 +265,28 @@
             animation: grainShift 0.8s steps(2) infinite;
             white-space: pre-line;
         }
-        @keyframes grainShift {
-            0% { background-position: 0 0; }
-            25% { background-position: 40px -30px; }
-            50% { background-position: -20px 50px; }
-            75% { background-position: 60px 20px; }
-            100% { background-position: 0 0; }
-        }
 
+        @keyframes grainShift {
+            0% {
+                background-position: 0 0;
+            }
+
+            25% {
+                background-position: 40px -30px;
+            }
+
+            50% {
+                background-position: -20px 50px;
+            }
+
+            75% {
+                background-position: 60px 20px;
+            }
+
+            100% {
+                background-position: 0 0;
+            }
+        }
     </style>
 </head>
 
@@ -251,7 +297,8 @@
             <div class="rec-dot"></div>
             <span>REC</span>
         </div>
-        <a class="github-link" href="https://github.com/Wallnuty/BackroomsEscape" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub">
+        <a class="github-link" href="https://github.com/Wallnuty/BackroomsEscape" target="_blank"
+            rel="noopener noreferrer" aria-label="View source on GitHub">
             <img src="/pictures/github.png" alt="GitHub" />
             <span>GitHub</span>
         </a>
@@ -269,7 +316,7 @@
         // Update timestamp every second for authenticity
         function updateTimestamp() {
             const now = new Date();
-            const timestamp = now.toLocaleTimeString('en-US', { 
+            const timestamp = now.toLocaleTimeString('en-US', {
                 hour12: true,
                 hour: '2-digit',
                 minute: '2-digit',
