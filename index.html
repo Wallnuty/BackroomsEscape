@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>A Familiar Place</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -291,6 +292,12 @@
 </head>
 
 <body>
+    <!-- Add audio element for background music -->
+    <audio id="backgroundMusic" loop muted autoplay>
+        <source src="/audio/music/THIFMdesolation.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
     <div id="startScreen">
         <div class="timestamp" id="timestamp">12:03:47 AM</div>
         <div class="rec-indicator">
@@ -313,6 +320,62 @@
 
     <script type="module" src="/main.js"></script>
     <script>
+        // Background music setup
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const playButton = document.getElementById('playButton');
+        let musicStarted = false;
+
+        // Function to start music
+        function startMusic() {
+            if (!musicStarted) {
+                try {
+                    backgroundMusic.muted = false;
+                    backgroundMusic.volume = 1; // Set volume to 30%
+                    backgroundMusic.play();
+                    musicStarted = true;
+                    console.log('Start screen music started');
+                } catch (error) {
+                    console.log('Music autoplay failed:', error);
+                }
+            }
+        }
+
+        // Function to fade out start screen music
+        function stopStartScreenMusic() {
+            if (backgroundMusic && !backgroundMusic.paused) {
+                const fadeOutDuration = 1000; // 1 second fade
+                const fadeStep = 0.05; // Volume reduction per step
+                const fadeInterval = fadeOutDuration / (backgroundMusic.volume / fadeStep);
+
+                const fade = setInterval(() => {
+                    if (backgroundMusic.volume > fadeStep) {
+                        backgroundMusic.volume -= fadeStep;
+                    } else {
+                        backgroundMusic.volume = 0;
+                        backgroundMusic.pause();
+                        backgroundMusic.currentTime = 0; // Reset to beginning
+                        clearInterval(fade);
+                        console.log('Start screen music faded out');
+                    }
+                }, fadeInterval);
+            }
+        }
+
+        // Make stopStartScreenMusic globally accessible
+        window.stopStartScreenMusic = stopStartScreenMusic;
+
+        // Try multiple trigger events to start music
+        document.addEventListener('click', startMusic, { once: true });
+        document.addEventListener('keydown', startMusic, { once: true });
+        document.addEventListener('mouseover', startMusic, { once: true });
+
+        // Also try when page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                startMusic();
+            }, 500);
+        });
+
         // Update timestamp every second for authenticity
         function updateTimestamp() {
             const now = new Date();
