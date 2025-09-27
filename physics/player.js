@@ -16,7 +16,7 @@ export function createPlayer(world, camera, options = {}) {
     const body = new CANNON.Body({ mass });
     body.addShape(shape);
     // Start the player at a reasonable height to avoid falling far
-    body.position.set(0, -2.1, 0);
+    body.position.set(-15, -2.1, 7);
 
     world.addBody(body);
 

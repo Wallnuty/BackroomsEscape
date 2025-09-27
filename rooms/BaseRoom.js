@@ -1,24 +1,31 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
+import { RenderingZone } from './RenderingZone.js';
 
 /**
  * Creates a basic rectangular room with visuals and physics.
  * Intended to be extended by more specific room types.
  */
 export class BaseRoom {
-    constructor(scene, world, width = 10, height = 5, depth = 10) {
+    constructor(scene, world, width = 10, height = 5, depth = 10, position = new THREE.Vector3(0, 0, 0)) {
         this.scene = scene;
         this.world = world;
         this.width = width;
         this.height = height;
         this.depth = depth;
+        this.position = position; // Store room position
 
         this.group = new THREE.Group();
         this.bodies = [];
         this.wallMaterial = null; // Will be set by _createMaterials
 
+        // Add rendering zones array
+        this.renderingZones = [];
+
+        // Set the room position
+        this.group.position.copy(position);
+
         this._createVisuals();
-        this._createPhysics();
 
         this.scene.add(this.group);
         this.bodies.forEach(body => this.world.addBody(body));
@@ -30,46 +37,24 @@ export class BaseRoom {
      */
     _createVisuals() {
         const materials = this._createMaterials();
-        const geometry = new THREE.BoxGeometry(this.width, this.height, this.depth);
-        const roomMesh = new THREE.Mesh(geometry, materials);
-        roomMesh.receiveShadow = true;
-        this.group.add(roomMesh);
+
+        // Create floor
+        const floorGeometry = new THREE.PlaneGeometry(this.width, this.depth);
+        const floorMesh = new THREE.Mesh(floorGeometry, materials.floor); // Floor material
+        floorMesh.rotation.x = -Math.PI / 2;
+        floorMesh.position.y = -this.height / 2;
+        floorMesh.receiveShadow = false;
+        this.group.add(floorMesh);
+
+        // Create ceiling
+        const ceilingGeometry = new THREE.PlaneGeometry(this.width, this.depth);
+        const ceilingMesh = new THREE.Mesh(ceilingGeometry, materials.ceiling); // Ceiling material
+        ceilingMesh.rotation.x = Math.PI / 2;
+        ceilingMesh.position.y = this.height / 2;
+        ceilingMesh.receiveShadow = false;
+        this.group.add(ceilingMesh);
 
         this._createLights();
-    }
-
-    /**
-     * Creates the physics bodies for the room boundaries.
-     */
-    _createPhysics() {
-        const { width, height, depth } = this;
-
-        // Floor
-        const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
-        groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
-        groundBody.position.y = -height / 2;
-        this.bodies.push(groundBody);
-
-        // Ceiling
-        const ceilingBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
-        ceilingBody.quaternion.setFromEuler(Math.PI / 2, 0, 0);
-        ceilingBody.position.y = height / 2;
-        this.bodies.push(ceilingBody);
-
-        // Walls
-        const wallPositions = [
-            { pos: [0, 0, depth / 2], rot: [0, Math.PI, 0] },   // Back
-            { pos: [0, 0, -depth / 2], rot: [0, 0, 0] },         // Front
-            { pos: [width / 2, 0, 0], rot: [0, -Math.PI / 2, 0] },// Right
-            { pos: [-width / 2, 0, 0], rot: [0, Math.PI / 2, 0] } // Left
-        ];
-
-        wallPositions.forEach(data => {
-            const wallBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
-            wallBody.quaternion.setFromEuler(...data.rot);
-            wallBody.position.set(...data.pos);
-            this.bodies.push(wallBody);
-        });
     }
 
     /**
@@ -80,39 +65,40 @@ export class BaseRoom {
      */
     addWall(from, to, thickness) {
         const diff = to.clone().sub(from);
-        const width = diff.length(); // Calculate the length of the wall
+        const width = diff.length();
 
-        // Calculate the center position of the wall
-        const position = new THREE.Vector3().addVectors(from, to).multiplyScalar(0.5);
+        // Calculate the center position of the wall (relative to room)
+        const relativePosition = new THREE.Vector3().addVectors(from, to).multiplyScalar(0.5);
+
+        // Convert to world coordinates for physics
+        const worldPosition = relativePosition.clone().add(this.position);
 
         // Calculate the rotation of the wall
         const rotationY = Math.atan2(diff.x, diff.z);
 
         // --- Visuals ---
-        // Note: BoxGeometry width is along its local X-axis. We rotate it to align with the from-to vector.
         const wallGeometry = new THREE.BoxGeometry(thickness, this.height, width);
-
-        // Use the wall material defined on the instance.
         const wallMaterial = this.wallMaterial.clone();
 
-        // If the material has a texture, clone it and set its repeat value based on the wall size.
         if (wallMaterial.map) {
             const wallTexture = wallMaterial.map.clone();
-            wallTexture.needsUpdate = true; // Important when cloning textures
+            wallTexture.needsUpdate = true;
             wallTexture.repeat.set(width / 4, this.height / 6);
             wallMaterial.map = wallTexture;
         }
 
         const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
-        wallMesh.position.copy(position);
+        wallMesh.position.copy(relativePosition); // Relative to room group
         wallMesh.rotation.y = rotationY;
+        wallMesh.receiveShadow = false;
+        wallMesh.castShadow = false;
         this.group.add(wallMesh);
 
         // --- Physics ---
         const wallShape = new CANNON.Box(new CANNON.Vec3(thickness / 2, this.height / 2, width / 2));
         const wallBody = new CANNON.Body({ mass: 0 });
         wallBody.addShape(wallShape);
-        wallBody.position.copy(position);
+        wallBody.position.copy(worldPosition); // World coordinates for physics
         wallBody.quaternion.setFromEuler(0, rotationY, 0);
         this.world.addBody(wallBody);
         this.bodies.push(wallBody);
@@ -120,19 +106,28 @@ export class BaseRoom {
 
     /**
      * Creates basic materials. Override in subclass for custom textures.
-     * @returns {THREE.Material[]}
+     * @returns {THREE.Material[]} Array: [wall, wall, ceiling, floor, wall, wall]
      */
     _createMaterials() {
-        const material = new THREE.MeshStandardMaterial({
-            color: 0x808080,
-            side: THREE.BackSide
-        });
-        // Set a default wall material for the base class
-        this.wallMaterial = new THREE.MeshStandardMaterial({
+        const wallMaterial = new THREE.MeshStandardMaterial({
             color: 0x888888,
             side: THREE.DoubleSide
         });
-        return Array(6).fill(material);
+
+        const floorMaterial = new THREE.MeshStandardMaterial({
+            color: 0x666666,
+            side: THREE.FrontSide
+        });
+
+        const ceilingMaterial = new THREE.MeshStandardMaterial({
+            color: 0xaaaaaa,
+            side: THREE.BackSide
+        });
+
+        // Set a default wall material for the base class
+        this.wallMaterial = wallMaterial;
+
+        return [wallMaterial, wallMaterial, ceilingMaterial, floorMaterial, wallMaterial, wallMaterial];
     }
 
     /**
@@ -141,5 +136,69 @@ export class BaseRoom {
     _createLights() {
         const ambient = new THREE.AmbientLight(0xffffff, 0.5);
         this.group.add(ambient);
+    }
+
+    /**
+     * Adds a rendering zone to this room
+     * @param {THREE.Vector3} position - World position of the zone
+     * @param {THREE.Vector3} size - Size of the zone (width, height, depth)
+     * @param {string} openingDirection - Direction the opening faces ('north', 'south', 'east', 'west')
+     * @param {Object} roomToRender - Optional room configuration to render when triggered
+     */
+    addRenderingZone(position, size, openingDirection, roomToRender = null) {
+        const zone = new RenderingZone(position, size, openingDirection, roomToRender);
+        this.renderingZones.push(zone);
+
+        // Add debug visualization to the scene if desired
+        if (zone.debugMesh) {
+            this.group.add(zone.debugMesh);
+        }
+
+        return zone;
+    }
+
+    /**
+     * Checks all rendering zones for player collision
+     * @param {THREE.Vector3} playerPosition - Current player position
+     * @returns {Array} - Array of triggered zones
+     */
+    checkRenderingZones(playerPosition) {
+        const triggeredZones = [];
+
+        this.renderingZones.forEach(zone => {
+            if (!zone.hasTriggered && zone.containsPoint(playerPosition)) {
+                zone.trigger();
+                triggeredZones.push(zone);
+            }
+        });
+
+        return triggeredZones;
+    }
+
+    /**
+     * Gets all rendering zones
+     * @returns {Array} - Array of all rendering zones
+     */
+    getRenderingZones() {
+        return this.renderingZones;
+    }
+
+    /**
+     * Resets all rendering zones in this room
+     */
+    resetRenderingZones() {
+        this.renderingZones.forEach(zone => zone.reset());
+    }
+
+    /**
+     * Shows/hides debug visualization for all zones
+     * @param {boolean} visible - Whether to show debug meshes
+     */
+    setZoneDebugVisibility(visible) {
+        this.renderingZones.forEach(zone => {
+            if (zone.debugMesh) {
+                zone.debugMesh.visible = visible;
+            }
+        });
     }
 }

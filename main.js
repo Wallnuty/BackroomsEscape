@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { BackroomsRoom } from './rooms/BackroomsRoom.js';
+import { RoomManager } from './rooms/RoomManager.js';
 import { createPhysicsWorld } from './physics/world.js';
 import { createPlayer } from './physics/player.js';
 import { createFirstPersonControls } from './controls.js';
@@ -109,17 +109,9 @@ function startGame() {
     const { body: playerBody, syncCamera } = createPlayer(world, camera);
     const { update: updateControls } = createFirstPersonControls(playerBody, camera, renderer.domElement);
 
-    // Room
-    const room = new BackroomsRoom(scene, world, 30, 5, 30);
-
-    // Add walls
-    room.addWall(new THREE.Vector3(-5, 0, -5), new THREE.Vector3(5, 0, -5), 0.4);
-    room.addWall(new THREE.Vector3(-10, 0, -5), new THREE.Vector3(-15, 0, -5), 0.4);
-    room.addWall(new THREE.Vector3(-7, 0, 7), new THREE.Vector3(-15, 0, 7), 0.4);
-    room.addWall(new THREE.Vector3(-2, 0, 7), new THREE.Vector3(5, 0, 7), 0.4);
-    room.addWall(new THREE.Vector3(5, 0, 11), new THREE.Vector3(4, 0, 11), 1);
-    room.addWall(new THREE.Vector3(11, 0, -7), new THREE.Vector3(10, 0, -7), 1);
-    room.addWall(new THREE.Vector3(5, 0, -15), new THREE.Vector3(5, 0, 7), 0.2);
+    // Room management - this replaces all your room creation code
+    const roomManager = new RoomManager(scene, world);
+    const { mainRoom } = roomManager.createLevel();
 
     // Animation loop
     const clock = new THREE.Clock();
@@ -142,5 +134,6 @@ function startGame() {
     // Clean up interval when game ends (optional)
     window.addEventListener('beforeunload', () => {
         clearInterval(footstepInterval);
+        roomManager.dispose();
     });
 }

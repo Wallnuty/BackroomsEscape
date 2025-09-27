@@ -5,11 +5,9 @@ import { BaseRoom } from './BaseRoom.js';
 import { LightPanel } from '../props/LightPanel.js';
 
 export class BackroomsRoom extends BaseRoom {
-    constructor(scene, world, width, height, depth) {
-        // You must call super() before using 'this'.
-        super(scene, world, width, height, depth);
-        // This will hold the material for interior walls.
-        // It's initialized within _createMaterials, which is called by super().
+    constructor(scene, world, width, height, depth, position = new THREE.Vector3(0, 0, 0)) {
+        // Pass position to parent constructor
+        super(scene, world, width, height, depth, position);
     }
 
     /**
@@ -40,44 +38,37 @@ export class BackroomsRoom extends BaseRoom {
             side: THREE.DoubleSide
         });
 
-        // For the outer box, we still want BackSide so we don't see the outside of the box from within.
-        const outerWallMaterial = this.wallMaterial.clone();
-        outerWallMaterial.side = THREE.BackSide;
-        // Set texture repeat for the main room walls
-        outerWallMaterial.map.repeat.set(this.width / 4, this.height / 6);
-
-
         const floorMaterial = new THREE.MeshStandardMaterial({
-            color: 0xe8daae, map: floorTexture, roughness: 1, side: THREE.BackSide
+            color: 0xe8daae, map: floorTexture, roughness: 1, side: THREE.FrontSide
         });
         const ceilingMaterial = new THREE.MeshStandardMaterial({
-            color: 0xfcfcd4, map: ceilingTexture, roughness: 0.8, side: THREE.BackSide
+            color: 0xfcfcd4, map: ceilingTexture, roughness: 0.8, side: THREE.FrontSide
         });
 
-        return [outerWallMaterial, outerWallMaterial, ceilingMaterial, floorMaterial, outerWallMaterial, outerWallMaterial];
+        return {
+            ceiling: ceilingMaterial,
+            floor: floorMaterial
+            // wallMaterial is stored on this.wallMaterial for addWall()
+        };
     }
 
-    // The addWall method is now inherited from BaseRoom, so we can remove it from here.
-
     /**
-     * Overrides the base method to add specific RectAreaLights.
+     * Creates only ambient lighting - specific lights added manually
      */
     _createLights() {
-        RectAreaLightUniformsLib.init();
-
-        const addLightPanel = (x, z) => {
-            const lightPanel = new LightPanel();
-            lightPanel.setPosition(x, this.height / 2, z);
-            this.group.add(lightPanel.group);
-        };
-
-        // Add light panels in a pattern
-        addLightPanel(0, 0);
-        addLightPanel(10, 0);
-        addLightPanel(0, 10);
-        addLightPanel(10, 10);
-
         const ambient = new THREE.AmbientLight(0xded18a, 0.4);
         this.group.add(ambient);
+    }
+
+    /**
+     * Adds a light panel at the specified position
+     * @param {number} x - X coordinate relative to room center
+     * @param {number} z - Z coordinate relative to room center
+     */
+    addLightPanel(x, z) {
+        const lightPanel = new LightPanel();
+        lightPanel.setPosition(x, this.height / 2, z);
+        this.group.add(lightPanel.group);
+        return lightPanel;
     }
 }
