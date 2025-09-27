@@ -139,14 +139,14 @@ export class BaseRoom {
     }
 
     /**
-     * Adds a rendering zone to this room
-     * @param {THREE.Vector3} position - World position of the zone
-     * @param {THREE.Vector3} size - Size of the zone (width, height, depth)
+     * Adds a rendering zone to this room between two points
+     * @param {THREE.Vector3} fromPoint - Starting point of the zone
+     * @param {THREE.Vector3} toPoint - Ending point of the zone
      * @param {string} openingDirection - Direction the opening faces ('north', 'south', 'east', 'west')
-     * @param {Object} roomToRender - Optional room configuration to render when triggered
+     * @param {THREE.Vector3} openingCenter - Center point of the corresponding opening
      */
-    addRenderingZone(position, size, openingDirection, roomToRender = null) {
-        const zone = new RenderingZone(position, size, openingDirection, roomToRender);
+    addRenderingZone(fromPoint, toPoint, openingDirection, openingCenter) {
+        const zone = new RenderingZone(fromPoint, toPoint, openingDirection, openingCenter);
         this.renderingZones.push(zone);
 
         // Add debug visualization to the scene if desired
@@ -158,7 +158,7 @@ export class BaseRoom {
     }
 
     /**
-     * Checks all rendering zones for player collision
+     * Checks all rendering zones for player collision with enter/exit detection
      * @param {THREE.Vector3} playerPosition - Current player position
      * @returns {Array} - Array of triggered zones
      */
@@ -166,9 +166,17 @@ export class BaseRoom {
         const triggeredZones = [];
 
         this.renderingZones.forEach(zone => {
-            if (!zone.hasTriggered && zone.containsPoint(playerPosition)) {
+            const isInZone = zone.containsPoint(playerPosition);
+
+            if (isInZone && !zone.hasTriggered) {
+                // Player entered zone
                 zone.trigger();
                 triggeredZones.push(zone);
+                console.log('Player entered rendering zone');
+            } else if (!isInZone && zone.hasTriggered) {
+                // Player left zone - reset it
+                zone.reset();
+                console.log('Player left rendering zone');
             }
         });
 

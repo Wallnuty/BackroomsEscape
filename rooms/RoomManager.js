@@ -68,30 +68,28 @@ export class RoomManager {
         room.addWall(new THREE.Vector3(15, 0, 2), new THREE.Vector3(5, 0, 2), 0.4);
         room.addWall(new THREE.Vector3(5, 0, 2), new THREE.Vector3(5, 0, -5), 0.4);
         room.addWall(new THREE.Vector3(-1, 0, 15), new THREE.Vector3(-1, 0, 8), 0.4);
-        room.addWall(new THREE.Vector3(15, 0, -10), new THREE.Vector3(10, 0, -10), 0.4);
+        room.addWall(new THREE.Vector3(15, 0, -7), new THREE.Vector3(10, 0, -8), 0.4);
         room.addWall(new THREE.Vector3(15, 0, -1), new THREE.Vector3(15, 0, 11), 0.4);
         room.addWall(new THREE.Vector3(15, 0, -5), new THREE.Vector3(15, 0, -10), 0.4);
 
         // pillar
         room.addWall(new THREE.Vector3(-2, 0, 2), new THREE.Vector3(-2, 0, 0.5), 1.5);
 
-        // Add rendering zones for the two left-side openings (at floor level)
-        // Convert relative positions to world coordinates
-        const worldPos1 = new THREE.Vector3(13, 0, -2).add(position); // First opening zone
-        const worldPos2 = new THREE.Vector3(13, 0, 11).add(position); // Second opening zone
+        // Add rendering zones for openings
+        // You'll need to specify the center point of each opening in your room layout
 
         room.addRenderingZone(
-            worldPos1,
-            new THREE.Vector3(4, 1, 8), // Width=4, Height=1 (ignored), Depth=8
-            'west', // Opening faces west
-            { type: 'backrooms', variant: 'corridor' } // Room config to render
+            new THREE.Vector3(15, 0, 2).add(position),  // Zone from point
+            new THREE.Vector3(5, 0, -8).add(position),   // Zone to point
+            'west',                                      // Opening direction
+            new THREE.Vector3(15, 0, -3).add(position)    // Center of the opening
         );
 
         room.addRenderingZone(
-            worldPos2,
-            new THREE.Vector3(4, 1, 6), // Width=4, Height=1 (ignored), Depth=6
-            'west', // Opening faces west
-            { type: 'backrooms', variant: 'office' } // Different room config
+            new THREE.Vector3(15, 0, 15).add(position),   // Zone from point
+            new THREE.Vector3(10, 0, 2).add(position),  // Zone to point
+            'west',                                     // Opening direction
+            new THREE.Vector3(15, 0, 13).add(position)   // Center of the opening
         );
 
         // Enable debug visualization for all zones
@@ -127,15 +125,16 @@ export class RoomManager {
      */
     handleTriggeredZones(triggeredZones) {
         triggeredZones.forEach(zone => {
-            console.log(`Rendering zone triggered! Direction: ${zone.openingDirection}, Position:`, zone.position);
-            console.log('Room to render:', zone.roomToRender);
+            console.log(`🚪 Rendering zone triggered! Direction: ${zone.openingDirection}`);
+            console.log('📍 Zone position:', zone.position);
+            console.log('🎯 Opening center:', zone.openingCenter);
+
+            const targetPosition = zone.getTargetRoomPosition();
+            console.log('🏠 Target room position:', targetPosition);
+            console.log('---');
 
             // Here you would implement the actual room rendering logic
-            // For now, just log the information
-            const targetPosition = zone.getTargetRoomPosition();
-            console.log('Target room position:', targetPosition);
-
-            // Example: this.createRoomAtPosition(zone.roomToRender, targetPosition);
+            // For example: this.createRoomAtPosition(targetPosition, zone.openingCenter);
         });
     }
 
@@ -162,6 +161,28 @@ export class RoomManager {
      */
     dispose() {
         this.rooms.forEach(room => {
+            // Clean up rendering zone debug meshes
+            room.renderingZones.forEach(zone => {
+                if (zone.debugMesh) {
+                    this.scene.remove(zone.debugMesh);
+                    if (zone.debugMesh.geometry) zone.debugMesh.geometry.dispose();
+                    if (zone.debugMesh.material) zone.debugMesh.material.dispose();
+                }
+            });
+
+            // Dispose of geometries and materials in the room group
+            room.group.traverse(object => {
+                if (object.geometry) object.geometry.dispose();
+                if (object.material) {
+                    // Handle both array and single materials
+                    if (Array.isArray(object.material)) {
+                        object.material.forEach(material => material.dispose());
+                    } else {
+                        object.material.dispose();
+                    }
+                }
+            });
+
             // Remove from scene
             this.scene.remove(room.group);
 
@@ -170,6 +191,7 @@ export class RoomManager {
                 this.world.removeBody(body);
             });
         });
+
         this.rooms = [];
     }
 }
