@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { BackroomsRoom } from './BackroomsRoom.js';
+import { RoomLayouts } from './RoomLayouts.js';
 
 export class RoomManager {
     constructor(scene, world) {
@@ -11,7 +12,12 @@ export class RoomManager {
 
         // Create global floor and ceiling once
         this._createGlobalFloorAndCeiling();
-        this.createLevel();
+
+        // Only create the main room
+        const layout = RoomLayouts.secondary;
+        this.createCustomRoom(layout);
+
+        // this.createAllRooms();
     }
 
     /**
@@ -32,75 +38,55 @@ export class RoomManager {
     }
 
     /**
-     * Creates the complete level - handles all initial room creation
-     * @returns {Object} - Object containing references to created rooms
+     * Create a custom room with specified walls, lights, and rendering zones.
+     * @param {THREE.Vector3} position - World position for the room center
+     * @param {Array} walls - Array of [from, to, thickness] for each wall
+     * @param {Array} lights - Array of [x, z] for each light panel
+     * @param {Array} zones - Array of [from, to, direction, center] for each rendering zone
+     * @returns {BackroomsRoom} - The created room
      */
-    createLevel() {
-        // Create the main backrooms area
-        const mainRoom = this.createMainBackrooms();
+    createCustomRoom(layout) {
+        const {
+            position,
+            width = 30,
+            height = 5,
+            depth = 30,
+            walls = [],
+            lights = [],
+            zones = []
+        } = layout;
 
-        // You can add more rooms here as your level expands
-        // const corridorRoom = this.createCorridorRoom();
-        // const officeRoom = this.createOfficeRoom();
+        const room = new BackroomsRoom(this.scene, this.world, width, height, depth, position);
 
-        return {
-            mainRoom: mainRoom,
-            // Add other rooms here when you create them
-        };
+        walls.forEach(([from, to, thickness]) => {
+            room.addWall(from, to, thickness);
+        });
+
+        lights.forEach(([x, z]) => {
+            room.addLightPanel(x, z);
+        });
+
+        zones.forEach(([from, to, direction, center]) => {
+            room.addRenderingZone(
+                from.clone().add(position),
+                to.clone().add(position),
+                direction,
+                center.clone().add(position)
+            );
+        });
+
+        room.setZoneDebugVisibility(true);
+        this.rooms.push(room);
+        return room;
     }
 
     /**
-     * Creates the main backrooms area with rendering zones
+     * Creates all rooms from layouts
      */
-    createMainBackrooms() {
-        let position = new THREE.Vector3(-15, 0, 15);
-        const room = new BackroomsRoom(this.scene, this.world, 30, 5, 30, position);
-
-        // Add walls to create the backrooms layout
-        room.addWall(new THREE.Vector3(10, 0, -15), new THREE.Vector3(-6, 0, -15), 0.4);
-        room.addWall(new THREE.Vector3(10, 0, -15), new THREE.Vector3(10, 0, -2), 0.4);
-        room.addWall(new THREE.Vector3(10, 0, 5), new THREE.Vector3(10, 0, 15), 0.4);
-        room.addWall(new THREE.Vector3(-6, 0, -15), new THREE.Vector3(-6, 0, -4), 0.4);
-        room.addWall(new THREE.Vector3(-6, 0, -4), new THREE.Vector3(-9, 0, -4), 0.4);
-        room.addWall(new THREE.Vector3(-9, 0, -4), new THREE.Vector3(-9, 0, 8), 0.4);
-        room.addWall(new THREE.Vector3(-9, 0, 8), new THREE.Vector3(-1, 0, 8), 0.4);
-        room.addWall(new THREE.Vector3(15, 0, 15), new THREE.Vector3(-1, 0, 15), 0.4);
-        room.addWall(new THREE.Vector3(15, 0, 2), new THREE.Vector3(5, 0, 2), 0.4);
-        room.addWall(new THREE.Vector3(5, 0, 2), new THREE.Vector3(5, 0, -5), 0.4);
-        room.addWall(new THREE.Vector3(-1, 0, 15), new THREE.Vector3(-1, 0, 8), 0.4);
-        room.addWall(new THREE.Vector3(15, 0, -7), new THREE.Vector3(10, 0, -8), 0.4);
-        room.addWall(new THREE.Vector3(15, 0, -1), new THREE.Vector3(15, 0, 11), 0.4);
-        room.addWall(new THREE.Vector3(15, 0, -5), new THREE.Vector3(15, 0, -10), 0.4);
-
-        // pillar
-        room.addWall(new THREE.Vector3(-2, 0, 2), new THREE.Vector3(-2, 0, 0.5), 1.5);
-
-        // Add rendering zones for openings
-        // You'll need to specify the center point of each opening in your room layout
-
-        room.addRenderingZone(
-            new THREE.Vector3(15, 0, 2).add(position),  // Zone from point
-            new THREE.Vector3(5, 0, -8).add(position),   // Zone to point
-            'west',                                      // Opening direction
-            new THREE.Vector3(15, 0, -3).add(position)    // Center of the opening
-        );
-
-        room.addRenderingZone(
-            new THREE.Vector3(15, 0, 15).add(position),   // Zone from point
-            new THREE.Vector3(10, 0, 2).add(position),  // Zone to point
-            'west',                                     // Opening direction
-            new THREE.Vector3(15, 0, 13).add(position)   // Center of the opening
-        );
-
-        // Enable debug visualization for all zones
-        room.setZoneDebugVisibility(true);
-
-        room.addLightPanel(10, 0);
-        room.addLightPanel(-2, -6);
-        room.addLightPanel(4, 10);
-
-        this.rooms.push(room);
-        return room;
+    createAllRooms() {
+        Object.values(RoomLayouts).forEach(layout => {
+            this.createCustomRoom(layout.position, layout.walls, layout.lights, layout.zones);
+        });
     }
 
     /**
