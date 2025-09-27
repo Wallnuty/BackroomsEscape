@@ -111,7 +111,6 @@ function startGame() {
 
     // Room management - this replaces all your room creation code
     const roomManager = new RoomManager(scene, world);
-    const { mainRoom } = roomManager.createLevel();
 
     // Animation loop
     const clock = new THREE.Clock();
@@ -120,6 +119,10 @@ function startGame() {
         world.step(1 / 60, delta, 3);
         updateControls(delta);
         syncCamera();
+
+        // Add this line to check rendering zones
+        roomManager.update(camera.position);
+
         renderer.render(scene, camera);
     }
     renderer.setAnimationLoop(animate);

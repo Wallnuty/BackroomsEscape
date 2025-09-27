@@ -151,7 +151,7 @@ export class BaseRoom {
 
         // Add debug visualization to the scene if desired
         if (zone.debugMesh) {
-            this.group.add(zone.debugMesh);
+            this.scene.add(zone.debugMesh);
         }
 
         return zone;

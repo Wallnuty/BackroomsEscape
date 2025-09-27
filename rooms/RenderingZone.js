@@ -3,14 +3,14 @@ import * as THREE from 'three';
 export class RenderingZone {
     constructor(position, size, openingDirection, roomToRender = null) {
         this.position = position.clone();
-        this.size = size.clone(); // Vector3 for box dimensions
-        this.openingDirection = openingDirection; // 'north', 'south', 'east', 'west'
-        this.roomToRender = roomToRender; // Reference to room that should be rendered
+        this.position.y = 0; // Force to floor level
+        this.size = size.clone(); // Still Vector3, but we'll only use x and z
+        this.openingDirection = openingDirection;
+        this.roomToRender = roomToRender;
         this.isActive = true;
         this.hasTriggered = false;
 
-        // Create a bounding box for collision detection
-        this.boundingBox = new THREE.Box3();
+        // Create a 2D bounding box for collision detection
         this.updateBoundingBox();
 
         // Optional: Create visual debug representation
@@ -19,30 +19,38 @@ export class RenderingZone {
     }
 
     /**
-     * Updates the bounding box based on position and size
+     * Updates the 2D bounding box based on position and size (only x and z)
      */
     updateBoundingBox() {
-        const halfSize = this.size.clone().multiplyScalar(0.5);
-        this.boundingBox.setFromCenterAndSize(this.position, this.size);
+        const halfSizeX = this.size.x * 0.5;
+        const halfSizeZ = this.size.z * 0.5;
+
+        this.minX = this.position.x - halfSizeX;
+        this.maxX = this.position.x + halfSizeX;
+        this.minZ = this.position.z - halfSizeZ;
+        this.maxZ = this.position.z + halfSizeZ;
     }
 
     /**
-     * Checks if a point (player position) is inside this zone
+     * Checks if a point (player position) is inside this 2D zone
      * @param {THREE.Vector3} point - The point to check
-     * @returns {boolean} - True if point is inside the zone
+     * @returns {boolean} - True if point is inside the zone (ignores Y)
      */
     containsPoint(point) {
-        return this.isActive && this.boundingBox.containsPoint(point);
+        if (!this.isActive) return false;
+
+        return point.x >= this.minX &&
+            point.x <= this.maxX &&
+            point.z >= this.minZ &&
+            point.z <= this.maxZ;
     }
 
     /**
      * Gets the world position where the new room should be rendered
-     * based on the opening direction and zone position
-     * @returns {THREE.Vector3} - World position for new room
      */
     getTargetRoomPosition() {
         const offset = new THREE.Vector3();
-        const roomSize = 30; // Assuming standard room size, this could be parameterized
+        const roomSize = 30;
 
         switch (this.openingDirection) {
             case 'north':
@@ -65,19 +73,22 @@ export class RenderingZone {
     }
 
     /**
-     * Creates a debug visualization of the zone (optional)
+     * Creates a flat plane debug visualization at floor level
      */
     createDebugVisualization(visible = false) {
-        const geometry = new THREE.BoxGeometry(this.size.x, this.size.y, this.size.z);
+        // Create a flat plane geometry instead of a box
+        const geometry = new THREE.PlaneGeometry(this.size.x, this.size.z);
         const material = new THREE.MeshBasicMaterial({
             color: 0x00ff00,
             transparent: true,
-            opacity: 0.3,
-            wireframe: true
+            opacity: 0.5,
+            side: THREE.DoubleSide
         });
 
         this.debugMesh = new THREE.Mesh(geometry, material);
         this.debugMesh.position.copy(this.position);
+        this.debugMesh.position.y = -2; // Slightly above floor to avoid z-fighting
+        this.debugMesh.rotation.x = -Math.PI / 2; // Rotate to lay flat on floor
         this.debugMesh.visible = visible;
     }
 

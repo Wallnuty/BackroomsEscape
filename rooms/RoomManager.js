@@ -11,6 +11,7 @@ export class RoomManager {
 
         // Create global floor and ceiling once
         this._createGlobalFloorAndCeiling();
+        this.createLevel();
     }
 
     /**
@@ -28,6 +29,24 @@ export class RoomManager {
         ceilingBody.quaternion.setFromEuler(Math.PI / 2, 0, 0);
         ceilingBody.position.y = 2.5; // Fixed height for all rooms
         this.world.addBody(ceilingBody);
+    }
+
+    /**
+     * Creates the complete level - handles all initial room creation
+     * @returns {Object} - Object containing references to created rooms
+     */
+    createLevel() {
+        // Create the main backrooms area
+        const mainRoom = this.createMainBackrooms();
+
+        // You can add more rooms here as your level expands
+        // const corridorRoom = this.createCorridorRoom();
+        // const officeRoom = this.createOfficeRoom();
+
+        return {
+            mainRoom: mainRoom,
+            // Add other rooms here when you create them
+        };
     }
 
     /**
@@ -56,24 +75,27 @@ export class RoomManager {
         // pillar
         room.addWall(new THREE.Vector3(-2, 0, 2), new THREE.Vector3(-2, 0, 0.5), 1.5);
 
-        // Add rendering zones for the two left-side openings
+        // Add rendering zones for the two left-side openings (at floor level)
         // Convert relative positions to world coordinates
-        const worldPos1 = new THREE.Vector3(-24, 0, 11).add(position); // First opening zone
-        const worldPos2 = new THREE.Vector3(-24, 0, -11).add(position); // Second opening zone
+        const worldPos1 = new THREE.Vector3(13, 0, -2).add(position); // First opening zone
+        const worldPos2 = new THREE.Vector3(13, 0, 11).add(position); // Second opening zone
 
         room.addRenderingZone(
             worldPos1,
-            new THREE.Vector3(2, 3, 4), // Zone size
+            new THREE.Vector3(4, 1, 8), // Width=4, Height=1 (ignored), Depth=8
             'west', // Opening faces west
             { type: 'backrooms', variant: 'corridor' } // Room config to render
         );
 
         room.addRenderingZone(
             worldPos2,
-            new THREE.Vector3(2, 3, 4), // Zone size
+            new THREE.Vector3(4, 1, 6), // Width=4, Height=1 (ignored), Depth=6
             'west', // Opening faces west
             { type: 'backrooms', variant: 'office' } // Different room config
         );
+
+        // Enable debug visualization for all zones
+        room.setZoneDebugVisibility(true);
 
         room.addLightPanel(10, 0);
         room.addLightPanel(-2, -6);
