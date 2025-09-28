@@ -28,9 +28,9 @@ export class LightPanel {
         this.group.add(lightPanelMesh);
 
         // The actual light source
-        const rectLight = new THREE.RectAreaLight(color, intensity, width, height);
-        rectLight.rotation.x = -Math.PI / 2; // Point down
-        this.group.add(rectLight);
+        // const rectLight = new THREE.RectAreaLight(color, intensity, width, height);
+        // rectLight.rotation.x = -Math.PI / 2; // Point down
+        // this.group.add(rectLight);
     }
 
     /**

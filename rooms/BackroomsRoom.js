@@ -53,14 +53,6 @@ export class BackroomsRoom extends BaseRoom {
     }
 
     /**
-     * Creates only ambient lighting - specific lights added manually
-     */
-    _createLights() {
-        const ambient = new THREE.AmbientLight(0xded18a, 0.4);
-        this.group.add(ambient);
-    }
-
-    /**
      * Adds a light panel at the specified position
      * @param {number} x - X coordinate relative to room center
      * @param {number} z - Z coordinate relative to room center

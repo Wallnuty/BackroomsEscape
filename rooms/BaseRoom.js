@@ -54,7 +54,6 @@ export class BaseRoom {
         ceilingMesh.receiveShadow = false;
         this.group.add(ceilingMesh);
 
-        this._createLights();
     }
 
     /**
@@ -128,14 +127,6 @@ export class BaseRoom {
         this.wallMaterial = wallMaterial;
 
         return [wallMaterial, wallMaterial, ceilingMaterial, floorMaterial, wallMaterial, wallMaterial];
-    }
-
-    /**
-     * Creates basic lighting. Override in subclass for custom lights.
-     */
-    _createLights() {
-        const ambient = new THREE.AmbientLight(0xffffff, 0.5);
-        this.group.add(ambient);
     }
 
     /**
