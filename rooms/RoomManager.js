@@ -314,7 +314,7 @@ export class RoomManager {
                             if (mat.map) {
                                 mat.map.dispose();
                             }
-                            mat.dispose();
+                            //mat.dispose();
                         };
                         if (Array.isArray(obj.material)) {
                             obj.material.forEach(disposeMaterial);
