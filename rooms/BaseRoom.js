@@ -140,6 +140,9 @@ export class BaseRoom {
         const zone = new RenderingZone(fromPoint, toPoint, openingDirection, openingCenter);
         this.renderingZones.push(zone);
 
+        // Attach reference to the room
+        zone.parentRoom = this;
+
         // Add debug visualization to the scene if desired
         if (zone.debugMesh) {
             this.scene.add(zone.debugMesh);

@@ -17,11 +17,11 @@ export class RoomManager {
 
         // Start with the main room (change to RoomLayouts.main if needed)
         this.currentLayoutName = 'main'; // Start in main room
-        this.createCustomRoom(RoomLayouts.main);
+        this.createCustomRoom(RoomLayouts.main, this.currentLayoutName);
 
         this.lastZone = null;            // The last zone the player was in
         this.pendingRoomUpdate = null;   // Timeout handle for delayed update
-        this.nextLayoutName = null;      // The room type we might switch to
+        this.currentRoom = this.rooms[0]; // Track the actual room object
     }
 
     _createGlobalFloorAndCeiling() {
@@ -39,7 +39,7 @@ export class RoomManager {
     /**
      * Creates a custom room from a layout object
      */
-    createCustomRoom(layout) {
+    createCustomRoom(layout, layoutName = null) {
         const {
             position,
             width = 30,
@@ -69,21 +69,60 @@ export class RoomManager {
             );
         });
 
-        room.setZoneDebugVisibility(true);
+        room.setZoneDebugVisibility(false); // true to see render zones
+
+        // Store the layout name on the room object
+        room.layoutName = layoutName;
+
         this.rooms.push(room);
         return room;
     }
 
     /**
      * Checks all rooms for rendering zone triggers
+     * (REMOVED) - replaced by scanAllZones below to avoid double-looping
      */
-    checkAllRenderingZones(playerPosition) {
-        const allTriggeredZones = [];
-        this.rooms.forEach(room => {
-            const triggeredZones = room.checkRenderingZones(playerPosition);
-            allTriggeredZones.push(...triggeredZones);
-        });
-        return allTriggeredZones;
+    // checkAllRenderingZones(playerPosition) {
+    //     const allTriggeredZones = [];
+    //     this.rooms.forEach(room => {
+    //         const triggeredZones = room.checkRenderingZones(playerPosition);
+    //         allTriggeredZones.push(...triggeredZones);
+    //     });
+    //     return allTriggeredZones;
+    // }
+
+    /**
+     * Single-pass scan over all rooms/zones.
+     * Returns the active zone/room (first zone containing the player)
+     * and an array of zones that were newly triggered this frame.
+     */
+    scanAllZones(playerPosition) {
+        let activeZone = null;
+        let activeRoom = null;
+        const triggeredZones = [];
+
+        for (const room of this.rooms) {
+            for (const zone of room.renderingZones) {
+                const isInside = zone.containsPoint(playerPosition);
+
+                // find first active zone/room
+                if (!activeZone && isInside) {
+                    activeZone = zone;
+                    activeRoom = room;
+                }
+
+                // handle trigger-on-enter semantics (mirror previous checkRenderingZones behaviour)
+                if (isInside && !zone.hasTriggered) {
+                    zone.hasTriggered = true;
+                    triggeredZones.push(zone);
+                } else if (!isInside && zone.hasTriggered) {
+                    // reset when leaving so it can trigger again next entry
+                    zone.hasTriggered = false;
+                }
+            }
+        }
+
+        return { activeZone, activeRoom, triggeredZones };
     }
 
     /**
@@ -127,14 +166,8 @@ export class RoomManager {
             // Create the new room at the calculated position
             const rotatedLayout = this.rotateLayout(randomLayout, rotationY);
             const newLayout = { ...rotatedLayout, position: newRoomPosition };
-            const newRoom = this.createCustomRoom(newLayout);
+            this.createCustomRoom(newLayout, randomLayoutName);
 
-            // Log the room type change
-            console.log(`Room type changed: ${this.currentLayoutName} -> ${randomLayoutName}`);
-
-            // After creating the new room, update the currentLayoutName
-            this.currentLayoutName = randomLayoutName;
-            console.log(`Current room type is now: ${this.currentLayoutName}`);
         });
     }
 
@@ -240,9 +273,52 @@ export class RoomManager {
      * Main update loop
      */
     update(playerPosition) {
-        const triggeredZones = this.checkAllRenderingZones(playerPosition);
-        if (triggeredZones.length > 0) {
-            this.handleTriggeredZones(triggeredZones);
+        // Single scan: get active zone/room and triggered zones
+        const { activeZone, activeRoom, triggeredZones } = this.scanAllZones(playerPosition);
+
+        // If player has left the last zone
+        if (this.lastZone && (!activeZone || activeZone !== this.lastZone)) {
+            // Start a timer to update the current room after 0.5s
+            if (this.pendingRoomUpdate) {
+                clearTimeout(this.pendingRoomUpdate);
+                this.pendingRoomUpdate = null;
+            }
+
+            // capture the zone we left and store the timeout id so we can detect cancellation
+            const scheduledLastZone = this.lastZone;
+            const timeoutId = setTimeout(() => {
+                // if pendingRoomUpdate was cleared/cancelled, don't run
+                if (this.pendingRoomUpdate !== timeoutId) return;
+
+                // update to the room that the left-zone belonged to
+                if (scheduledLastZone && scheduledLastZone.parentRoom) {
+                    this.currentRoom = scheduledLastZone.parentRoom;
+                    this.currentLayoutName = this.currentRoom.layoutName;
+                    console.log(`Current room type updated to: ${this.currentLayoutName}`);
+                }
+
+                this.pendingRoomUpdate = null;
+            }, 500);
+
+            this.pendingRoomUpdate = timeoutId;
+        }
+
+        // If player enters a new zone within 0.5s, cancel the pending update
+        if (activeZone && activeZone !== this.lastZone && this.pendingRoomUpdate) {
+            clearTimeout(this.pendingRoomUpdate);
+            this.pendingRoomUpdate = null;
+        }
+
+        // Only handle triggered zones if the player was NOT in any zone last frame.
+        // This ensures room creation only happens when entering a zone from a non-zone.
+        const triggersToHandle = (!this.lastZone) ? triggeredZones : [];
+
+        // Update lastZone
+        this.lastZone = activeZone;
+
+        // Handle zone triggers as before (use triggersToHandle from the single scan)
+        if (triggersToHandle.length > 0) {
+            this.handleTriggeredZones(triggersToHandle);
         }
     }
 
@@ -250,30 +326,4 @@ export class RoomManager {
         return this.rooms;
     }
 
-    dispose() {
-        this.rooms.forEach(room => {
-            room.renderingZones.forEach(zone => {
-                if (zone.debugMesh) {
-                    this.scene.remove(zone.debugMesh);
-                    if (zone.debugMesh.geometry) zone.debugMesh.geometry.dispose();
-                    if (zone.debugMesh.material) zone.debugMesh.material.dispose();
-                }
-            });
-            room.group.traverse(object => {
-                if (object.geometry) object.geometry.dispose();
-                if (object.material) {
-                    if (Array.isArray(object.material)) {
-                        object.material.forEach(material => material.dispose());
-                    } else {
-                        object.material.dispose();
-                    }
-                }
-            });
-            this.scene.remove(room.group);
-            room.bodies.forEach(body => {
-                this.world.removeBody(body);
-            });
-        });
-        this.rooms = [];
-    }
 }

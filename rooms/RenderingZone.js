@@ -52,36 +52,7 @@ export class RenderingZone {
             point.z >= this.minZ &&
             point.z <= this.maxZ;
 
-        this.playerInZone = isInside;
         return isInside;
-    }
-
-    /**
-     * Gets the world position where the new room should be rendered
-     * Uses the opening center as the connection point
-     */
-    getTargetRoomPosition() {
-        const offset = new THREE.Vector3();
-        const roomSize = 30;
-
-        switch (this.openingDirection) {
-            case 'north':
-                offset.set(0, 0, roomSize);
-                break;
-            case 'south':
-                offset.set(0, 0, -roomSize);
-                break;
-            case 'east':
-                offset.set(roomSize, 0, 0);
-                break;
-            case 'west':
-                offset.set(-roomSize, 0, 0);
-                break;
-            default:
-                console.warn(`Unknown opening direction: ${this.openingDirection}`);
-        }
-
-        return this.openingCenter.clone().add(offset);
     }
 
     /**
@@ -109,7 +80,6 @@ export class RenderingZone {
      */
     trigger() {
         this.hasTriggered = true;
-        this.playerInZone = true;
     }
 
     /**
@@ -117,20 +87,6 @@ export class RenderingZone {
      */
     reset() {
         this.hasTriggered = false;
-        this.playerInZone = false;
     }
 
-    /**
-     * Deactivates the zone
-     */
-    deactivate() {
-        this.isActive = false;
-    }
-
-    /**
-     * Activates the zone
-     */
-    activate() {
-        this.isActive = true;
-    }
 }
