@@ -270,6 +270,89 @@ export class RoomManager {
     }
 
     /**
+ * Fully remove a room: meshes, materials, debug meshes and physics bodies
+ * @param {BackroomsRoom} room
+ * @returns {boolean} true if removed
+ */
+    removeRoom(room) {
+        if (!room) return false;
+
+        // Remove rendering zone debug meshes
+        if (room.renderingZones && Array.isArray(room.renderingZones)) {
+            room.renderingZones.forEach(zone => {
+                if (zone.debugMesh) {
+                    this.scene.remove(zone.debugMesh);
+                    if (zone.debugMesh.geometry) zone.debugMesh.geometry.dispose();
+                    if (zone.debugMesh.material) {
+                        if (Array.isArray(zone.debugMesh.material)) {
+                            zone.debugMesh.material.forEach(m => m.dispose());
+                        } else {
+                            zone.debugMesh.material.dispose();
+                        }
+                    }
+                    zone.debugMesh = null;
+                }
+            });
+        }
+
+        // Remove THREE objects (walls, lights, floor, ceiling...) and dispose geometries/materials
+        if (room.group) {
+            room.group.traverse(obj => {
+                // Remove lights attached directly to the group
+                if (obj.isLight) {
+                    // lights don't have geometry/material, just remove from scene/group
+                    if (obj.parent) obj.parent.remove(obj);
+                    return;
+                }
+
+                if (obj.isMesh) {
+                    if (obj.geometry) {
+                        obj.geometry.dispose();
+                    }
+                    if (obj.material) {
+                        if (Array.isArray(obj.material)) {
+                            obj.material.forEach(mat => {
+                                if (mat.map) { mat.map.dispose(); }
+                                mat.dispose();
+                            });
+                        } else {
+                            if (obj.material.map) obj.material.map.dispose();
+                            obj.material.dispose();
+                        }
+                    }
+                }
+            });
+
+            // Remove group from scene
+            if (room.group.parent) room.group.parent.remove(room.group);
+        }
+
+        // Remove physics bodies
+        if (room.bodies && Array.isArray(room.bodies)) {
+            room.bodies.forEach(body => {
+                try {
+                    this.world.removeBody(body);
+                } catch (e) {
+                    // ignore already-removed body
+                }
+            });
+        }
+
+        // Remove any other world constraints / contacts if you stored them
+        if (room.constraints && Array.isArray(room.constraints)) {
+            room.constraints.forEach(c => {
+                try { this.world.removeConstraint(c); } catch (e) { }
+            });
+        }
+
+        // Remove from this.rooms
+        const idx = this.rooms.indexOf(room);
+        if (idx !== -1) this.rooms.splice(idx, 1);
+
+        return true;
+    }
+
+    /**
      * Main update loop
      */
     update(playerPosition) {
@@ -292,9 +375,13 @@ export class RoomManager {
 
                 // update to the room that the left-zone belonged to
                 if (scheduledLastZone && scheduledLastZone.parentRoom) {
+                    const prevLayoutName = this.currentLayoutName;
                     this.currentRoom = scheduledLastZone.parentRoom;
                     this.currentLayoutName = this.currentRoom.layoutName;
                     console.log(`Current room type updated to: ${this.currentLayoutName}`);
+
+                    // Manage room transitions
+                    this.manageRoomTransitions(prevLayoutName, this.currentLayoutName);
                 }
 
                 this.pendingRoomUpdate = null;
@@ -319,6 +406,21 @@ export class RoomManager {
         // Handle zone triggers as before (use triggersToHandle from the single scan)
         if (triggersToHandle.length > 0) {
             this.handleTriggeredZones(triggersToHandle);
+        }
+    }
+
+    manageRoomTransitions(prevLayoutName, newLayoutName) {
+        // Only act if there are two rooms
+        if (this.rooms.length > 1) {
+            if (prevLayoutName === newLayoutName) {
+                // Same room type: remove the newly generated room
+                this.removeRoom(this.rooms[1]);
+            } else {
+                // Different room type: remove the old room, shift new room to index 0
+                this.removeRoom(this.rooms[0]);
+                // After removal, rooms[1] becomes rooms[0] automatically
+                this.currentRoom = this.rooms[0];
+            }
         }
     }
 
