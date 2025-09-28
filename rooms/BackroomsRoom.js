@@ -14,6 +14,7 @@ export class BackroomsRoom extends BaseRoom {
      * Overrides the base method to create materials with backrooms textures.
      */
     _createMaterials() {
+
         const textureLoader = new THREE.TextureLoader();
 
         const wallTexture = textureLoader.load('/textures/walls/backroomsTexture.png');

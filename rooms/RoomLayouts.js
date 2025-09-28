@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+let offset = 0.02;
+
 // Each layout is an object with walls, lights, zones
 export const RoomLayouts = {
     main: {
@@ -22,7 +24,8 @@ export const RoomLayouts = {
             [new THREE.Vector3(15, 0, -8), new THREE.Vector3(10, 0, -8), 0.4],
             [new THREE.Vector3(15, 0, -1), new THREE.Vector3(15, 0, 11), 0.4],
             [new THREE.Vector3(15, 0, -5), new THREE.Vector3(15, 0, -10), 0.4],
-            [new THREE.Vector3(-2, 0, 2), new THREE.Vector3(-2, 0, 0.5), 1.5]
+            [new THREE.Vector3(-2, 0, 2), new THREE.Vector3(-2, 0, 0.5), 1.5],
+            [new THREE.Vector3(10, 0, 5), new THREE.Vector3(12, 0, 5), 0.4]
         ],
         lights: [
             [10, 0],
@@ -53,11 +56,11 @@ export const RoomLayouts = {
         walls: [
             [new THREE.Vector3(12, 0, -6), new THREE.Vector3(-12, 0, -6), 0.4],
             [new THREE.Vector3(12, 0, 6), new THREE.Vector3(-12, 0, 6), 0.4],
-            [new THREE.Vector3(12, 0, -6), new THREE.Vector3(12, 0, 2), 0.4],
-            [new THREE.Vector3(-12, 0, -6), new THREE.Vector3(-12, 0, 2), 0.4],
+            [new THREE.Vector3(12 - offset, 0, -6), new THREE.Vector3(12 - offset, 0, 2), 0.4], // Add offset to avoid walls overlapping
+            [new THREE.Vector3(-12 + offset, 0, -6), new THREE.Vector3(-12 + offset, 0, 2), 0.4],
             [new THREE.Vector3(-12, 0, 2), new THREE.Vector3(-9.5, 0, 2), 0.4],
             [new THREE.Vector3(3, 0, 6), new THREE.Vector3(3, 0, -2), 0.4],
-            [new THREE.Vector3(3, 0, -2), new THREE.Vector3(6, 0, -2), 0.4],
+            [new THREE.Vector3(3, 0, -2), new THREE.Vector3(7, 0, -2), 0.4],
             [new THREE.Vector3(-2, 0, 6), new THREE.Vector3(-2, 0, 4), 0.4],
             [new THREE.Vector3(-7, 0, 6), new THREE.Vector3(-7, 0, -2), 0.4]
         ],

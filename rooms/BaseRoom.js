@@ -63,6 +63,11 @@ export class BaseRoom {
      * @param {number} thickness - The thickness of the wall.
      */
     addWall(from, to, thickness) {
+
+        const desiredTileWidth = 5;    // Set your preferred tile width
+        const desiredTileHeight = 6;   // Set your preferred tile height
+
+
         const diff = to.clone().sub(from);
         const width = diff.length();
 
@@ -76,15 +81,20 @@ export class BaseRoom {
         const rotationY = Math.atan2(diff.x, diff.z);
 
         // --- Visuals ---
-        const wallGeometry = new THREE.BoxGeometry(thickness, this.height, width);
-        const wallMaterial = this.wallMaterial.clone();
+        // Use the shared wall material directly, no cloning or repeat changes
+        const wallMaterial = this.wallMaterial;
 
-        if (wallMaterial.map) {
-            const wallTexture = wallMaterial.map.clone();
-            wallTexture.needsUpdate = true;
-            wallTexture.repeat.set(width / 4, this.height / 6);
-            wallMaterial.map = wallTexture;
+        const wallGeometry = new THREE.BoxGeometry(thickness, this.height, width);
+
+        // Scale the UVs for the wall face(s) you want to tile/stretch
+        const uvAttribute = wallGeometry.attributes.uv;
+        for (let i = 0; i < uvAttribute.count; i++) {
+            // For example, scale U by width/desiredTileWidth, V by height/desiredTileHeight
+            const u = uvAttribute.getX(i) * (width / desiredTileWidth);
+            const v = uvAttribute.getY(i) * (this.height / desiredTileHeight);
+            uvAttribute.setXY(i, u, v);
         }
+        wallGeometry.attributes.uv.needsUpdate = true;
 
         const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
         wallMesh.position.copy(relativePosition); // Relative to room group

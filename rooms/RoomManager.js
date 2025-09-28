@@ -310,14 +310,16 @@ export class RoomManager {
                         obj.geometry.dispose();
                     }
                     if (obj.material) {
+                        const disposeMaterial = (mat) => {
+                            if (mat.map) {
+                                mat.map.dispose();
+                            }
+                            mat.dispose();
+                        };
                         if (Array.isArray(obj.material)) {
-                            obj.material.forEach(mat => {
-                                if (mat.map) { mat.map.dispose(); }
-                                mat.dispose();
-                            });
+                            obj.material.forEach(disposeMaterial);
                         } else {
-                            if (obj.material.map) obj.material.map.dispose();
-                            obj.material.dispose();
+                            disposeMaterial(obj.material);
                         }
                     }
                 }
@@ -335,13 +337,6 @@ export class RoomManager {
                 } catch (e) {
                     // ignore already-removed body
                 }
-            });
-        }
-
-        // Remove any other world constraints / contacts if you stored them
-        if (room.constraints && Array.isArray(room.constraints)) {
-            room.constraints.forEach(c => {
-                try { this.world.removeConstraint(c); } catch (e) { }
             });
         }
 
