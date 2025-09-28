@@ -113,7 +113,7 @@ export function updateHeldLightTarget(heldLight, camera) {
   const targetWorldPos = lightWorldPos.clone().add(cameraWorldDir.multiplyScalar(10));
   lightTarget.position.copy(heldLight.worldToLocal(targetWorldPos));
 }
-
+//
 export function clearColorMixing(lightGroup) {
   lightGroup.userData.mixedColors = [];
   const actualLight = lightGroup.userData.actualLight;

@@ -185,7 +185,7 @@ addWhiteTestWall() {
   testWall.position.set(0, 4, -12); // Position it at the back of the room
   testWall.rotation.y = Math.PI; // Face towards the center of the room
   
-  // Enable shadows
+  // Enable shadow
   testWall.receiveShadow = true;
   
   this.scene.add(testWall);

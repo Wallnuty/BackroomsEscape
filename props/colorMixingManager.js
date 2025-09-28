@@ -150,7 +150,7 @@ export class ColorMixingManager {
     
     return mixedColor;
   }
-
+  //
   // Add this method to calculate color distance safely
   calculateColorDistance(color1, color2) {
     const r1 = color1.r;
