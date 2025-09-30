@@ -275,83 +275,6 @@ export class RoomManager {
         return directions[newIndex];
     }
 
-    /**
- * Fully remove a room: meshes, materials, debug meshes and physics bodies
- * @param {BackroomsRoom} room
- * @returns {boolean} true if removed
- */
-    removeRoom(room) {
-        if (!room) return false;
-
-        // Remove rendering zone debug meshes
-        if (room.renderingZones && Array.isArray(room.renderingZones)) {
-            room.renderingZones.forEach(zone => {
-                if (zone.debugMesh) {
-                    this.scene.remove(zone.debugMesh);
-                    if (zone.debugMesh.geometry) zone.debugMesh.geometry.dispose();
-                    if (zone.debugMesh.material) {
-                        if (Array.isArray(zone.debugMesh.material)) {
-                            zone.debugMesh.material.forEach(m => m.dispose());
-                        } else {
-                            zone.debugMesh.material.dispose();
-                        }
-                    }
-                    zone.debugMesh = null;
-                }
-            });
-        }
-
-        // Remove THREE objects (walls, lights, floor, ceiling...) and dispose geometries/materials
-        if (room.group) {
-            room.group.traverse(obj => {
-                // Remove lights attached directly to the group
-                if (obj.isLight) {
-                    // lights don't have geometry/material, just remove from scene/group
-                    if (obj.parent) obj.parent.remove(obj);
-                    return;
-                }
-
-                if (obj.isMesh) {
-                    if (obj.geometry) {
-                        obj.geometry.dispose();
-                    }
-                    if (obj.material) {
-                        const disposeMaterial = (mat) => {
-                            if (mat.map) {
-                                mat.map.dispose();
-                            }
-                            //mat.dispose();
-                        };
-                        if (Array.isArray(obj.material)) {
-                            obj.material.forEach(disposeMaterial);
-                        } else {
-                            disposeMaterial(obj.material);
-                        }
-                    }
-                }
-            });
-
-            // Remove group from scene
-            if (room.group.parent) room.group.parent.remove(room.group);
-        }
-
-        // Remove physics bodies
-        if (room.bodies && Array.isArray(room.bodies)) {
-            room.bodies.forEach(body => {
-                try {
-                    this.world.removeBody(body);
-                } catch (e) {
-                    // ignore already-removed body
-                }
-            });
-        }
-
-        // Remove from this.rooms
-        const idx = this.rooms.indexOf(room);
-        if (idx !== -1) this.rooms.splice(idx, 1);
-
-        return true;
-    }
 
     /**
      * Main update loop
@@ -386,7 +309,7 @@ export class RoomManager {
                 }
 
                 this.pendingRoomUpdate = null;
-            }, 500);
+            }, 200);
 
             this.pendingRoomUpdate = timeoutId;
         }
@@ -422,6 +345,33 @@ export class RoomManager {
                 // After removal, rooms[1] becomes rooms[0] automatically
                 this.currentRoom = this.rooms[0];
             }
+        }
+    }
+
+    /**
+     * Removes a room from the scene, physics world, and internal array.
+     * @param {BaseRoom} room - The room instance to remove.
+     */
+    removeRoom(room) {
+        // Remove all meshes in the room group from the scene
+        if (room.group && room.group.children) {
+            room.group.children.forEach(child => {
+                this.scene.remove(child);
+            });
+            this.scene.remove(room.group);
+        }
+
+        // Remove all physics bodies from the world
+        if (room.bodies && Array.isArray(room.bodies)) {
+            room.bodies.forEach(body => {
+                this.world.removeBody(body);
+            });
+        }
+
+        // Remove from rooms array
+        const idx = this.rooms.indexOf(room);
+        if (idx !== -1) {
+            this.rooms.splice(idx, 1);
         }
     }
 
