@@ -82,5 +82,53 @@ export const RoomLayouts = {
                 new THREE.Vector3(-12, 0, 4)
             ]
         ]
+    },
+    // Add more layouts here, e.g. secondary, corridor, office, etc.
+    third: {
+        position: new THREE.Vector3(-16, 0, 16),
+        width: 40,
+        height: 5,
+        depth: 16,
+        walls: [
+            [new THREE.Vector3(20, 0, 8), new THREE.Vector3(-20, 0, 8), 0.4],
+            [new THREE.Vector3(20, 0, 8), new THREE.Vector3(20, 0, -8), 0.4],
+            [new THREE.Vector3(-20, 0, 8), new THREE.Vector3(-20, 0, -8), 0.4],
+            [new THREE.Vector3(16, 0, -8 + offset), new THREE.Vector3(-15, 0, -8 + offset), 0.4],
+            [new THREE.Vector3(-19, 0, -8 + offset), new THREE.Vector3(-20, 0, -8 + offset), 0.4],
+
+
+            [new THREE.Vector3(-5, 0, 8), new THREE.Vector3(-5, 0, 3), 0.4],
+            [new THREE.Vector3(-5, 0, -3), new THREE.Vector3(-5, 0, -8), 0.4],
+
+            [new THREE.Vector3(5, 0, 8), new THREE.Vector3(5, 0, 3), 0.4],
+            [new THREE.Vector3(5, 0, -3), new THREE.Vector3(5, 0, -8), 0.4],
+
+            [new THREE.Vector3(-15, 0, 8), new THREE.Vector3(-15, 0, 2), 0.4],
+            [new THREE.Vector3(-15, 0, -2), new THREE.Vector3(-15, 0, -8), 0.4],
+
+            [new THREE.Vector3(16, 0, 4), new THREE.Vector3(16, 0, -8), 0.4],
+
+            // pillar
+            [new THREE.Vector3(10.75, 0, 4), new THREE.Vector3(9.25, 0, 4), 1.5]
+        ],
+        lights: [
+            [10, 0],
+            [0, 0],
+            [-10, 0]
+        ],
+        zones: [
+            [
+                new THREE.Vector3(20, 0, 8),
+                new THREE.Vector3(15, 0, -8),
+                'south',
+                new THREE.Vector3(18, 0, -8)
+            ],
+            [
+                new THREE.Vector3(-9, 0, 8),
+                new THREE.Vector3(-20, 0, -8),
+                'south',
+                new THREE.Vector3(-17, 0, -8)
+            ]
+        ]
     }
 };

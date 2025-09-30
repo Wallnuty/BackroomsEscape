@@ -66,6 +66,7 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
         }
     });
 
+
     // Filter large movement spikes
     const maxDelta = 100; // pixels/frame, adjust as needed
     domElement.addEventListener('mousemove', (event) => {

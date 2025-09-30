@@ -250,13 +250,19 @@ export class RoomManager {
             rotateVec(center)
         ]);
 
-        // Optionally, update zone directions if you want the rotated zone to face a new direction
+        // Adjust width and depth by rotating the original width/depth vector
+        // Use a vector from (0,0,0) to (width, 0, depth), rotate it, and take abs values
+        const sizeVec = rotateVec(new THREE.Vector3(layout.width, 0, layout.depth));
+        const width = Math.abs(sizeVec.x);
+        const depth = Math.abs(sizeVec.z);
 
         return {
             ...layout,
             walls: rotatedWalls,
             lights: rotatedLights,
-            zones: rotatedZones
+            zones: rotatedZones,
+            width,
+            depth
         };
     }
 
