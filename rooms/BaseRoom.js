@@ -99,8 +99,8 @@ export class BaseRoom {
         const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
         wallMesh.position.copy(relativePosition); // Relative to room group
         wallMesh.rotation.y = rotationY;
-        wallMesh.receiveShadow = false;
-        wallMesh.castShadow = false;
+        wallMesh.receiveShadow = true;
+        wallMesh.castShadow = true;
         this.group.add(wallMesh);
 
         // --- Physics ---

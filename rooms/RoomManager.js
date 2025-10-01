@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { BackroomsRoom } from './BackroomsRoom.js';
 import { RoomLayouts } from './RoomLayouts.js';
+import { PickupLightsManager } from '../puzzles/lights.js'; // Add this import
 
 export class RoomManager {
-    constructor(scene, world) {
+    constructor(scene, world, camera) {
         this.scene = scene;
         this.world = world;
         this.rooms = [];
@@ -14,6 +15,9 @@ export class RoomManager {
         scene.add(ambient);
 
         this._createGlobalFloorAndCeiling();
+
+        // Create a single lights manager instance
+        this.lightsManager = new PickupLightsManager(scene, camera);
 
         // Start with the main room (change to RoomLayouts.main if needed)
         this.currentLayoutName = 'main'; // Start in main room
@@ -69,12 +73,22 @@ export class RoomManager {
             );
         });
 
-        room.setZoneDebugVisibility(false); // true to see render zones
+        room.setZoneDebugVisibility(false);
 
-        // Store the layout name on the room object
         room.layoutName = layoutName;
-
         this.rooms.push(room);
+
+        // If this is the main room, spawn pickup lights in the center
+        if (layoutName === 'main') {
+            const center = position.clone();
+            const pickupLightPositions = [
+                { position: center.clone().add(new THREE.Vector3(0.5, 1, 0)), color: 0xff0000 },
+                { position: center.clone().add(new THREE.Vector3(-0.5, 1, 0)), color: 0x00ff00 },
+                { position: center.clone().add(new THREE.Vector3(0, 1, 0.5)), color: 0x0000ff },
+            ];
+            this.lightsManager.initPickupLights(pickupLightPositions);
+        }
+
         return room;
     }
 
@@ -353,10 +367,13 @@ export class RoomManager {
      * @param {BaseRoom} room - The room instance to remove.
      */
     removeRoom(room) {
-        // Remove all meshes in the room group from the scene
+        // Remove all meshes in the room group from the scene and dispose geometry/materials
         if (room.group && room.group.children) {
             room.group.children.forEach(child => {
                 this.scene.remove(child);
+                // Dispose geometry and material if present
+                // if (child.geometry) child.geometry.dispose();
+                // if (child.material) child.material.dispose();
             });
             this.scene.remove(room.group);
         }
@@ -366,6 +383,21 @@ export class RoomManager {
             room.bodies.forEach(body => {
                 this.world.removeBody(body);
             });
+        }
+
+        // Remove pickup lights if this is the main room
+        if (room.layoutName === 'main' && this.lightsManager && this.lightsManager.pickableRoots) {
+            this.lightsManager.pickableRoots.forEach(lightGroup => {
+                this.scene.remove(lightGroup);
+                this.lightsManager.colorMixingManager.removeLight(lightGroup);
+                // Dispose meshes and materials for lights
+                // lightGroup.traverse(obj => {
+                //     if (obj.geometry) obj.geometry.dispose();
+                //     if (obj.material) obj.material.dispose();
+                // });
+            });
+            this.lightsManager.pickableRoots = [];
+            this.lightsManager.heldLight = null;
         }
 
         // Remove from rooms array

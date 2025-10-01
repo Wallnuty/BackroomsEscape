@@ -4,139 +4,259 @@ import { RoomManager } from './rooms/RoomManager.js';
 import { createPhysicsWorld } from './physics/world.js';
 import { createPlayer } from './physics/player.js';
 import { createFirstPersonControls } from './controls.js';
+import { PickupLightsManager } from './puzzles/lights.js';
 
-// Wait for Play button to start the game
-const playButton = document.getElementById('playButton');
-const startScreen = document.getElementById('startScreen');
+class BackroomsGame {
+    constructor() {
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.world = null;
+        this.playerBody = null;
+        this.controls = null;
+        this.roomManager = null; // Add this
 
-playButton.addEventListener('click', () => {
-    playButton.disabled = true;
-    playButton.textContent = '◾ LOADING...';
+        this.pickableRoots = [];
+        this.heldLight = null;
+        this.clock = new THREE.Clock();
 
-    // Stop the start screen music
-    if (window.stopStartScreenMusic) {
-        window.stopStartScreenMusic();
+        this.isGameRunning = false;
+        this.footstepInterval = null;
+
+        this.puzzleTargets = []; // For color puzzle objectives
+
+
+        this.init();
     }
 
-    // VHS-style transition effect
-    startScreen.style.transition = 'opacity 1s ease-out, transform 0.5s ease-in';
-    startScreen.style.opacity = '0';
-    startScreen.style.transform = 'scale(0.8)';
+    init() {
+        this.setupStartScreen();
+    }
 
-    setTimeout(() => {
-        startScreen.style.display = 'none';
-        startGame();
-    }, 1000);
-});
+    setupStartScreen() {
+        const playButton = document.getElementById('playButton');
+        const startScreen = document.getElementById('startScreen');
 
-function startGame() {
-    // THREE.js setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+        playButton.addEventListener('click', () => {
+            this.startGame();
+            playButton.disabled = true;
+            playButton.textContent = '◾ LOADING...';
 
-    // Lighting/tone mapping
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1;
-    renderer.shadowMap.enabled = true;
+            if (window.stopStartScreenMusic) {
+                window.stopStartScreenMusic();
+            }
 
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000, 1);
-    document.body.appendChild(renderer.domElement);
+            startScreen.style.transition = 'opacity 1s ease-out, transform 0.5s ease-in';
+            startScreen.style.opacity = '0';
+            startScreen.style.transform = 'scale(0.8)';
 
-    // Audio setup
-    const listener = new THREE.AudioListener();
-    camera.add(listener);
+            setTimeout(() => {
+                startScreen.style.display = 'none';
+            }, 1000);
+        });
+    }
 
-    // Load footstep sound buffer
-    let footstepBuffer = null;
-    const audioLoader = new THREE.AudioLoader();
-    audioLoader.load('/audio/sfx/carpetCreak.mp3', (buffer) => {
-        footstepBuffer = buffer;
-    });
+    startGame() {
+        this.setupThreeJS();
+        this.setupPhysics();
+        this.setupAudio();
+        this.setupRoomManager(); // Use RoomManager instead of direct room
+        this.setupControls();
+        this.setupEventListeners();
 
-    // Random footstep system
-    function playRandomFootstep() {
-        if (!footstepBuffer) return;
+        this.isGameRunning = true;
+        this.animate();
+    }
 
-        // Generate random position around the player
-        const playerPos = camera.position;
-        const minDistance = 5;
-        const maxDistance = 25;
+    setupThreeJS() {
+        this.scene = new THREE.Scene();
 
-        // Random angle and distance
+        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera.position.set(0, 1.6, 0);
+
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            powerPreference: "high-performance"
+        });
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1;
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setClearColor(0x000000, 1);
+        document.body.appendChild(this.renderer.domElement);
+    }
+
+    setupPhysics() {
+        this.world = createPhysicsWorld();
+        const playerSetup = createPlayer(this.world, this.camera);
+        this.playerBody = playerSetup.body;
+        this.syncCamera = playerSetup.syncCamera;
+    }
+
+    setupAudio() {
+        const listener = new THREE.AudioListener();
+        this.camera.add(listener);
+
+        this.footstepBuffer = null;
+        const audioLoader = new THREE.AudioLoader();
+        audioLoader.load('/audio/sfx/carpetCreak.mp3', (buffer) => {
+            this.footstepBuffer = buffer;
+        });
+
+        this.startAmbientFootsteps();
+    }
+
+    startAmbientFootsteps() {
+        this.playRandomFootstep();
+
+        this.footstepInterval = setInterval(() => {
+            this.playRandomFootstep();
+        }, 120000);
+
+        setTimeout(() => {
+            setInterval(() => {
+                if (Math.random() > 0.7) {
+                    this.playRandomFootstep();
+                }
+            }, 30000 + Math.random() * 60000);
+        }, 15000);
+    }
+
+    playRandomFootstep() {
+        if (!this.footstepBuffer) return;
+
+        const playerPos = this.camera.position.clone();
         const angle = Math.random() * Math.PI * 2;
-        const distance = minDistance + Math.random() * (maxDistance - minDistance);
+        const distance = 8 + Math.random() * 15;
 
-        // Calculate random position
         const randomPos = new THREE.Vector3(
             playerPos.x + Math.cos(angle) * distance,
             playerPos.y,
             playerPos.z + Math.sin(angle) * distance
         );
 
-        // Create positional audio (simpler approach)
-        const footstepAudio = new THREE.PositionalAudio(listener);
-        footstepAudio.setBuffer(footstepBuffer);
-        footstepAudio.setRefDistance(3);
-        footstepAudio.setMaxDistance(25);
-        footstepAudio.setRolloffFactor(2);
-        footstepAudio.setVolume(0.4);
-        footstepAudio.position.copy(randomPos);
+        const audio = new THREE.PositionalAudio(new THREE.AudioListener());
+        audio.setBuffer(this.footstepBuffer);
+        audio.setRefDistance(3);
+        audio.setMaxDistance(25);
+        audio.setRolloffFactor(2);
+        audio.setVolume(0.4);
+        audio.position.copy(randomPos);
 
-        scene.add(footstepAudio);
-        footstepAudio.play();
-
-        // Clean up after the sound finishes
-        footstepAudio.onEnded = () => {
-            scene.remove(footstepAudio);
+        this.scene.add(audio);
+        audio.play();
+        audio.onEnded = () => {
+            this.scene.remove(audio);
         };
-
-        console.log(`👣 Footstep played at: ${randomPos.x.toFixed(1)}, ${randomPos.z.toFixed(1)}`);
     }
 
-    // Start the random footstep timer (120000ms = 2 minutes)
-    const footstepInterval = setInterval(playRandomFootstep, 120000);
-
-    // Optional: Play first footstep after 10-30 seconds for immediate atmosphere
-    setTimeout(playRandomFootstep, 10000 + Math.random() * 20000);
-
-    // Physics world
-    const world = createPhysicsWorld();
-
-    // Player (physics body + camera sync)
-    const { body: playerBody, syncCamera } = createPlayer(world, camera);
-    const { update: updateControls } = createFirstPersonControls(playerBody, camera, renderer.domElement);
-
-    // Room management - this replaces all your room creation code
-    const roomManager = new RoomManager(scene, world);
-
-    // Animation loop
-    const clock = new THREE.Clock();
-    function animate() {
-        const delta = clock.getDelta();
-        world.step(1 / 60, delta, 3);
-        updateControls(delta);
-        syncCamera();
-
-        // Add this line to check rendering zones
-        roomManager.update(camera.position);
-
-        renderer.render(scene, camera);
+    setupRoomManager() {
+        // Instantiate RoomManager and create initial room(s)
+        this.roomManager = new RoomManager(this.scene, this.world, this.camera);
     }
-    renderer.setAnimationLoop(animate);
 
-    // Responsive resize
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    setupControls() {
+        const controls = createFirstPersonControls(this.playerBody, this.camera, this.renderer.domElement);
+        this.controls = controls;
+    }
 
-    // Clean up interval when game ends (optional)
-    window.addEventListener('beforeunload', () => {
-        clearInterval(footstepInterval);
-        roomManager.dispose();
-    });
+    setupEventListeners() {
+        window.addEventListener('pointerdown', (event) => {
+            this.roomManager.lightsManager.handlePointerInteraction(event);
+        });
+
+        window.addEventListener('keydown', (event) => {
+            if (event.code === 'KeyQ' || event.code === 'Escape') {
+                this.roomManager.lightsManager.dropHeldLight();
+            }
+
+            // Debug: Force color mixes
+            if (event.code === 'Key1' && this.heldLight) {
+                this.roomManager.lightsManager.colorMixingManager.forceColorMix(this.heldLight, 0xffff00, 0.8);
+            }
+            if (event.code === 'Key2' && this.heldLight) {
+                this.roomManager.lightsManager.colorMixingManager.forceColorMix(this.heldLight, 0xff00ff, 0.8);
+            }
+            if (event.code === 'Key3' && this.heldLight) {
+                this.roomManager.lightsManager.colorMixingManager.forceColorMix(this.heldLight, 0x00ffff, 0.8);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            this.handleResize();
+        });
+
+        window.addEventListener('beforeunload', () => {
+            this.cleanup();
+        });
+    }
+
+    handleResize() {
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    animate() {
+        if (!this.isGameRunning) return;
+
+        const delta = this.clock.getDelta();
+
+        this.world.step(1 / 60, delta, 3);
+
+        if (this.controls && this.controls.update) {
+            this.controls.update(delta);
+        }
+
+        if (this.syncCamera) {
+            this.syncCamera();
+        }
+
+        // Use lightsManager from roomManager
+        if (this.roomManager && this.roomManager.lightsManager) {
+            this.roomManager.lightsManager.updateHeldLight();
+            this.roomManager.lightsManager.colorMixingManager.updateColorMixing();
+            this.roomManager.lightsManager.checkPuzzles();
+        }
+
+        // Update room manager with player position
+        if (this.roomManager) {
+            this.roomManager.update(this.camera.position);
+        }
+
+        this.renderer.render(this.scene, this.camera);
+
+        requestAnimationFrame(() => this.animate());
+    }
+
+    cleanup() {
+        this.isGameRunning = false;
+
+        if (this.footstepInterval) {
+            clearInterval(this.footstepInterval);
+        }
+
+        if (this.renderer) {
+            this.renderer.dispose();
+        }
+
+        if (this.scene) {
+            this.scene.traverse((object) => {
+                if (object.geometry) object.geometry.dispose();
+                if (object.material) {
+                    if (Array.isArray(object.material)) {
+                        object.material.forEach(material => material.dispose());
+                    } else {
+                        object.material.dispose();
+                    }
+                }
+            });
+        }
+    }
 }
+
+// Initialize the game
+const game = new BackroomsGame();
+window.BackroomsGame = game;
