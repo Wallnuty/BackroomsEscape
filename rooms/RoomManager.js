@@ -385,25 +385,15 @@ export class RoomManager {
             });
         }
 
-        // Remove pickup lights if this is the main room
-        if (room.layoutName === 'main' && this.lightsManager && this.lightsManager.pickableRoots) {
-            this.lightsManager.pickableRoots.forEach(lightGroup => {
-                this.scene.remove(lightGroup);
-                this.lightsManager.colorMixingManager.removeLight(lightGroup);
-                // Dispose meshes and materials for lights
-                // lightGroup.traverse(obj => {
-                //     if (obj.geometry) obj.geometry.dispose();
-                //     if (obj.material) obj.material.dispose();
-                // });
-            });
-            this.lightsManager.pickableRoots = [];
-            this.lightsManager.heldLight = null;
-        }
-
         // Remove from rooms array
         const idx = this.rooms.indexOf(room);
         if (idx !== -1) {
             this.rooms.splice(idx, 1);
+        }
+
+        // Clean up pickup lights not in the current room
+        if (this.currentRoom) {
+            this.cleanupPickupLightsForRoom(this.currentRoom);
         }
     }
 
@@ -411,4 +401,40 @@ export class RoomManager {
         return this.rooms;
     }
 
+    isLightInRoom(lightGroup, room) {
+        const pos = new THREE.Vector3();
+        lightGroup.getWorldPosition(pos);
+
+        const minX = room.position.x - room.width / 2;
+        const maxX = room.position.x + room.width / 2;
+        const minZ = room.position.z - room.depth / 2;
+        const maxZ = room.position.z + room.depth / 2;
+        const minY = room.position.y - room.height / 2;
+        const maxY = room.position.y + room.height / 2;
+
+        return (
+            pos.x >= minX && pos.x <= maxX &&
+            pos.z >= minZ && pos.z <= maxZ &&
+            pos.y >= minY && pos.y <= maxY
+        );
+    }
+
+    cleanupPickupLightsForRoom(room) {
+        if (this.lightsManager && this.lightsManager.pickableRoots) {
+            this.lightsManager.pickableRoots = this.lightsManager.pickableRoots.filter(lightGroup => {
+                if (this.isLightInRoom(lightGroup, room)) {
+                    return true;
+                } else {
+                    this.scene.remove(lightGroup);
+                    this.lightsManager.colorMixingManager.removeLight(lightGroup);
+                    // Optionally dispose geometry/materials here
+                    // lightGroup.traverse(obj => {
+                    //     if (obj.geometry) obj.geometry.dispose();
+                    //     if (obj.material) obj.material.dispose();
+                    // });
+                    return false;
+                }
+            });
+        }
+    }
 }

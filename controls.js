@@ -48,6 +48,11 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
         if (!controls.isLocked) resetMovement();
     });
 
+
+    domElement.addEventListener('click', () => {
+        requestPointerLock(domElement);
+    });
+
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
 
@@ -97,4 +102,16 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
     }
 
     return { update, controls };
+}
+
+// Request pointer lock with unadjustedMovement if supported
+export function requestPointerLock(domElement) {
+    if (domElement && domElement.requestPointerLock) {
+        try {
+            // @ts-ignore
+            domElement.requestPointerLock({ unadjustedMovement: true });
+        } catch (e) {
+            domElement.requestPointerLock();
+        }
+    }
 }

@@ -5,6 +5,7 @@ import { createPhysicsWorld } from './physics/world.js';
 import { createPlayer } from './physics/player.js';
 import { createFirstPersonControls } from './controls.js';
 import { PickupLightsManager } from './puzzles/lights.js';
+import { requestPointerLock } from './controls.js';
 
 class BackroomsGame {
     constructor() {
@@ -39,6 +40,7 @@ class BackroomsGame {
 
         playButton.addEventListener('click', () => {
             this.startGame();
+            requestPointerLock(this.renderer.domElement);
             playButton.disabled = true;
             playButton.textContent = '◾ LOADING...';
 
@@ -175,6 +177,7 @@ class BackroomsGame {
     }
 
     setupEventListeners() {
+
         window.addEventListener('pointerdown', (event) => {
             this.roomManager.lightsManager.handlePointerInteraction(event);
         });
