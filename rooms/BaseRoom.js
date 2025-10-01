@@ -43,7 +43,7 @@ export class BaseRoom {
         const floorMesh = new THREE.Mesh(floorGeometry, materials.floor); // Floor material
         floorMesh.rotation.x = -Math.PI / 2;
         floorMesh.position.y = -this.height / 2;
-        floorMesh.receiveShadow = false;
+        floorMesh.receiveShadow = true;
         this.group.add(floorMesh);
 
         // Create ceiling
@@ -51,7 +51,7 @@ export class BaseRoom {
         const ceilingMesh = new THREE.Mesh(ceilingGeometry, materials.ceiling); // Ceiling material
         ceilingMesh.rotation.x = Math.PI / 2;
         ceilingMesh.position.y = this.height / 2;
-        ceilingMesh.receiveShadow = false;
+        ceilingMesh.receiveShadow = true;
         this.group.add(ceilingMesh);
 
     }

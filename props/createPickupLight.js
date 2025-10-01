@@ -12,6 +12,7 @@ export function createPickupLight(hexColor = 0xff0000, { type = 'spot', intensit
   const bodyGeo = new THREE.BoxGeometry(0.36, 0.36, 0.6);
   const bodyMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.2, roughness: 0.5 });
   const body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.castShadow = false; // Prevent body from casting shadows
   body.castShadow = true;
   group.add(body);
 
@@ -19,6 +20,7 @@ export function createPickupLight(hexColor = 0xff0000, { type = 'spot', intensit
   const bezelGeo = new THREE.TorusGeometry(0.12, 0.03, 12, 24);
   const bezelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
   const bezel = new THREE.Mesh(bezelGeo, bezelMat);
+  bezel.castShadow = false; // Prevent bezel from casting shadows
   bezel.rotation.x = Math.PI;
   bezel.position.z = -0.33;
   group.add(bezel);
@@ -31,6 +33,7 @@ export function createPickupLight(hexColor = 0xff0000, { type = 'spot', intensit
     opacity: 1.0
   });
   const disc = new THREE.Mesh(discGeo, discMat);
+  disc.castShadow = false; // Prevent disc from casting shadows
   disc.position.z = -0.345;
   disc.rotation.x = Math.PI;
   group.add(disc);
@@ -46,7 +49,7 @@ export function createPickupLight(hexColor = 0xff0000, { type = 'spot', intensit
     light.target = lightTarget;
     group.add(lightTarget);
 
-    light.position.set(0, 0, 0.33);
+    light.position.set(0, 0, -0.5);
     lightTarget.position.set(0, 0, -10);
 
     light.decay = 0.5;
@@ -57,7 +60,7 @@ export function createPickupLight(hexColor = 0xff0000, { type = 'spot', intensit
     light.position.set(0, 0, 0.33);
   }
 
-  light.castShadow = false;
+  light.castShadow = true;
   group.add(light);
 
   // Store references for color mixing

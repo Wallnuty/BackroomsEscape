@@ -36,7 +36,7 @@ export class BackroomsRoom extends BaseRoom {
             color: 0xFFFFB3,
             map: wallTexture,
             roughness: 0.9,
-            side: THREE.DoubleSide
+            side: THREE.FrontSide
         });
 
         const floorMaterial = new THREE.MeshStandardMaterial({

@@ -60,12 +60,24 @@ class BackroomsGame {
         this.setupThreeJS();
         this.setupPhysics();
         this.setupAudio();
-        this.setupRoomManager(); // Use RoomManager instead of direct room
+        this.setupRoomManager();
         this.setupControls();
+        this.requestPointerLock();
         this.setupEventListeners();
 
         this.isGameRunning = true;
         this.animate();
+    }
+
+    requestPointerLock() {
+        if (this.renderer && this.renderer.domElement.requestPointerLock) {
+            try {
+                // @ts-ignore
+                this.renderer.domElement.requestPointerLock({ unadjustedMovement: true });
+            } catch (e) {
+                this.renderer.domElement.requestPointerLock();
+            }
+        }
     }
 
     setupThreeJS() {

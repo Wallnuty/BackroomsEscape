@@ -51,20 +51,6 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
 
-    // Request pointer lock with unadjustedMovement if supported
-    domElement.addEventListener('click', () => {
-        const lockOptions = {};
-        // Feature detection: only Chrome/Edge support unadjustedMovement
-        if ('requestPointerLock' in domElement) {
-            try {
-                // @ts-ignore
-                domElement.requestPointerLock({ unadjustedMovement: true });
-            } catch (e) {
-                // Fallback: just lock normally
-                domElement.requestPointerLock();
-            }
-        }
-    });
 
 
     // Filter large movement spikes

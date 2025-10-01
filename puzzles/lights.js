@@ -196,10 +196,11 @@ export class PickupLightsManager {
         forward.y = 0;
         forward.normalize();
 
-        const dropDistance = 2;
+        const dropDistance = 1;
         const dropPosition = new THREE.Vector3()
             .copy(this.camera.position)
             .add(forward.multiplyScalar(dropDistance));
+        dropPosition.y -= 0.35; // Lower the drop position by 0.5 units
 
         this.heldLight.position.copy(dropPosition);
 
