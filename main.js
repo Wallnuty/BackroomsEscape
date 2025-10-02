@@ -15,18 +15,20 @@ class BackroomsGame {
         this.world = null;
         this.playerBody = null;
         this.controls = null;
-        this.roomManager = null; // Add this
+        this.roomManager = null;
 
         this.pickableRoots = [];
         this.heldLight = null;
         this.clock = new THREE.Clock();
 
         this.isGameRunning = false;
+        this.isPaused = false;
         this.footstepInterval = null;
-
-        this.puzzleTargets = []; // For color puzzle objectives
-
+        this.puzzleTargets = [];
         this.blinkTimeouts = [];
+
+        // Track if mouse has moved since resuming
+        this.mouseMovedSinceResume = false;
 
         this.init();
     }
@@ -41,13 +43,11 @@ class BackroomsGame {
 
         playButton.addEventListener('click', () => {
             this.startGame();
-            requestPointerLock(this.renderer.domElement);
+            requestPointerLock(this.renderer?.domElement);
             playButton.disabled = true;
             playButton.textContent = '◾ LOADING...';
 
-            if (window.stopStartScreenMusic) {
-                window.stopStartScreenMusic();
-            }
+            if (window.stopStartScreenMusic) window.stopStartScreenMusic();
 
             startScreen.style.transition = 'opacity 1s ease-out, transform 0.5s ease-in';
             startScreen.style.opacity = '0';
@@ -55,6 +55,7 @@ class BackroomsGame {
 
             setTimeout(() => {
                 startScreen.style.display = 'none';
+                document.getElementById('crosshair').style.display = 'block';
             }, 1000);
         });
     }
@@ -69,15 +70,12 @@ class BackroomsGame {
         this.setupEventListeners();
 
         this.isGameRunning = true;
-        document.getElementById('crosshair').style.display = 'block';
         this.animate();
-
     }
 
     requestPointerLock() {
         if (this.renderer && this.renderer.domElement.requestPointerLock) {
             try {
-                // @ts-ignore
                 this.renderer.domElement.requestPointerLock({ unadjustedMovement: true });
             } catch (e) {
                 this.renderer.domElement.requestPointerLock();
@@ -87,14 +85,10 @@ class BackroomsGame {
 
     setupThreeJS() {
         this.scene = new THREE.Scene();
-
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.position.set(0, 1.6, 0);
 
-        this.renderer = new THREE.WebGLRenderer({
-            antialias: true,
-            powerPreference: "high-performance"
-        });
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1;
         this.renderer.shadowMap.enabled = true;
@@ -134,9 +128,7 @@ class BackroomsGame {
 
         setTimeout(() => {
             setInterval(() => {
-                if (Math.random() > 0.7) {
-                    this.playRandomFootstep();
-                }
+                if (Math.random() > 0.7) this.playRandomFootstep();
             }, 30000 + Math.random() * 60000);
         }, 15000);
     }
@@ -164,51 +156,67 @@ class BackroomsGame {
 
         this.scene.add(audio);
         audio.play();
-        audio.onEnded = () => {
-            this.scene.remove(audio);
-        };
+        audio.onEnded = () => this.scene.remove(audio);
     }
 
     setupRoomManager() {
-        // Instantiate RoomManager and create initial room(s)
         this.roomManager = new RoomManager(this.scene, this.world, this.camera);
     }
 
     setupControls() {
-        const controls = createFirstPersonControls(this.playerBody, this.camera, this.renderer.domElement);
-        this.controls = controls;
+        this.controls = createFirstPersonControls(this.playerBody, this.camera, this.renderer.domElement);
     }
 
     setupEventListeners() {
-
+        // PICKUP only if mouse moved since resume
         window.addEventListener('pointerdown', (event) => {
-            this.roomManager.lightsManager.handlePointerInteraction(event);
+            if (!this.isPaused && this.mouseMovedSinceResume) {
+                this.roomManager.lightsManager.handlePointerInteraction(event);
+            }
         });
 
         window.addEventListener('keydown', (event) => {
-            if (event.code === 'KeyQ' || event.code === 'Escape') {
-                this.roomManager.lightsManager.dropHeldLight();
+            if (event.code === 'Escape') {
+                this.isPaused ? this.resumeGame() : this.pauseGame();
             }
+            if (event.code === 'KeyQ') this.roomManager.lightsManager.dropHeldLight();
 
-            // Debug: Force color mixes
-            if (event.code === 'Key1' && this.heldLight) {
+            if (event.code === 'Key1' && this.heldLight)
                 this.roomManager.lightsManager.colorMixingManager.forceColorMix(this.heldLight, 0xffff00, 0.8);
-            }
-            if (event.code === 'Key2' && this.heldLight) {
+            if (event.code === 'Key2' && this.heldLight)
                 this.roomManager.lightsManager.colorMixingManager.forceColorMix(this.heldLight, 0xff00ff, 0.8);
-            }
-            if (event.code === 'Key3' && this.heldLight) {
+            if (event.code === 'Key3' && this.heldLight)
                 this.roomManager.lightsManager.colorMixingManager.forceColorMix(this.heldLight, 0x00ffff, 0.8);
-            }
         });
 
-        window.addEventListener('resize', () => {
-            this.handleResize();
+        document.getElementById('resumeBtn').addEventListener('click', () => this.resumeGame());
+
+        // Detect mouse movement
+        window.addEventListener('mousemove', () => {
+            this.mouseMovedSinceResume = true;
         });
 
-        window.addEventListener('beforeunload', () => {
-            this.cleanup();
-        });
+        window.addEventListener('resize', () => this.handleResize());
+        window.addEventListener('beforeunload', () => this.cleanup());
+    }
+
+    pauseGame() {
+        this.isPaused = true;
+        document.getElementById('pauseMenu').style.display = 'flex';
+        document.getElementById('crosshair').style.display = 'none';
+        if (this.controls) this.controls.enabled = false;
+        document.exitPointerLock?.();
+    }
+
+    resumeGame() {
+        this.isPaused = false;
+        document.getElementById('pauseMenu').style.display = 'none';
+        document.getElementById('crosshair').style.display = 'block';
+        if (this.controls) this.controls.enabled = true;
+        this.requestPointerLock();
+
+        // Reset mouseMoved flag
+        this.mouseMovedSinceResume = false;
     }
 
     handleResize() {
@@ -222,88 +230,59 @@ class BackroomsGame {
 
         const delta = this.clock.getDelta();
 
-        this.world.step(1 / 60, delta, 3);
+        if (!this.isPaused) {
+            this.world.step(1 / 60, delta, 3);
+            this.controls?.update(delta);
+            this.syncCamera?.();
 
-        if (this.controls && this.controls.update) {
-            this.controls.update(delta);
-        }
-
-        if (this.syncCamera) {
-            this.syncCamera();
-        }
-
-        // Use lightsManager from roomManager
-        if (this.roomManager && this.roomManager.lightsManager) {
-            this.roomManager.lightsManager.updateHeldLight();
-            this.roomManager.lightsManager.colorMixingManager.updateColorMixing();
-            this.roomManager.lightsManager.checkPuzzles();
-        }
-
-        // Update room manager with player position
-        if (this.roomManager) {
-            this.roomManager.update(this.camera.position);
-        }
-
-        const crosshair = document.getElementById('crosshair');
-        const eye = crosshair.querySelector('.eye');
-        const raycaster = new THREE.Raycaster();
-        const center = new THREE.Vector2(0, 0);
-
-        function updateCrosshair() {
-            raycaster.setFromCamera(center, game.camera);
-            const intersects = raycaster.intersectObjects(game.roomManager.lightsManager.pickableRoots, true);
+            if (this.roomManager?.lightsManager) {
+                this.roomManager.lightsManager.updateHeldLight();
+                this.roomManager.lightsManager.colorMixingManager.updateColorMixing();
+                this.roomManager.lightsManager.checkPuzzles();
+            }
+            this.roomManager?.update(this.camera.position);
 
             const crosshair = document.getElementById('crosshair');
-            const eye = crosshair.querySelector('.eye');
+            if (this.roomManager?.lightsManager?.pickableRoots?.length > 0) {
+                if (this.mouseMovedSinceResume) {
+                    const raycaster = new THREE.Raycaster();
+                    raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+                    const intersects = raycaster.intersectObjects(this.roomManager.lightsManager.pickableRoots, true);
 
-            if (intersects.length > 0) {
-                crosshair.classList.add('hovering');
+                    if (intersects.length > 0) crosshair.classList.add('hovering');
+                    else crosshair.classList.remove('hovering');
+                } else {
+                    crosshair.classList.remove('hovering');
+                }
             } else {
                 crosshair.classList.remove('hovering');
             }
-
         }
 
-        // Call this every frame
-        updateCrosshair();
-
         this.renderer.render(this.scene, this.camera);
-
         requestAnimationFrame(() => this.animate());
     }
 
-
     cleanup() {
-
-        if (this.blinkTimeouts) {
-            this.blinkTimeouts.forEach(id => clearTimeout(id));
-        }
+        this.blinkTimeouts.forEach(id => clearTimeout(id));
         this.blinkTimeouts = [];
         this.isGameRunning = false;
 
-        if (this.footstepInterval) {
-            clearInterval(this.footstepInterval);
-        }
+        if (this.footstepInterval) clearInterval(this.footstepInterval);
+        this.renderer?.dispose();
 
-        if (this.renderer) {
-            this.renderer.dispose();
-        }
-
-        if (this.scene) {
-            this.scene.traverse((object) => {
-                if (object.geometry) object.geometry.dispose();
-                if (object.material) {
-                    if (Array.isArray(object.material)) {
-                        object.material.forEach(material => material.dispose());
-                    } else {
-                        object.material.dispose();
-                    }
+        this.scene?.traverse((object) => {
+            if (object.geometry) object.geometry.dispose();
+            if (object.material) {
+                if (Array.isArray(object.material)) {
+                    object.material.forEach(mat => mat.dispose());
+                } else {
+                    object.material.dispose();
                 }
-            });
-        }
+            }
+        });
     }
 }
 
-// Initialize the game
 const game = new BackroomsGame();
 window.BackroomsGame = game;

@@ -358,6 +358,58 @@
              background: transparent;
         }
     }
+    /* Fullscreen overlay */
+    #pauseMenu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 9999;
+    }
+
+    /* "Paused" label near top */
+    .pauseLabel {
+        position: absolute;
+        top: 10vh; /* distance from top */
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: 'VT323', monospace;
+        font-size: clamp(3rem, 8vw, 5rem);
+        color: #F5E6D3;
+        text-shadow: 2px 2px 0px rgba(255, 0, 0, 0.3),
+                    -2px -2px 0px rgba(0, 255, 255, 0.3);
+        text-align: center;
+    }
+
+    /* Container to center the resume button */
+    .pauseContent {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+
+    /* Resume button */
+    #resumeBtn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+    }
+
+    #resumeBtn img {
+        width: 200px;   /* adjust size */
+        height: auto;
+        transition: transform 0.2s;
+    }
+
+    #resumeBtn:hover img {
+        transform: scale(1.1);
+    }
+
     </style>
 </head>
 
@@ -392,7 +444,27 @@
             <div class="pupil"></div>
         </div>
     </div>
-
+    <div id="pauseMenu" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        font-size: 2em;
+        z-index: 9999;
+    ">
+        <p class="pauseLabel">Paused</p>
+        <div class="pauseContent">
+            <button id="resumeBtn">
+                <img src="/pictures/resumebtn.png" alt="Resume Game">
+            </button>
+        </div>
+    </div>
     <script type="module" src="/main.js"></script>
     <script>
         // Background music setup

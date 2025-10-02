@@ -1,19 +1,55 @@
 import * as THREE from 'three';
-import * as CANNON from 'cannon-es';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 
 export function createFirstPersonControls(playerBody, camera, domElement) {
     const controls = new PointerLockControls(camera, domElement);
+    const pauseMenu = document.getElementById('pauseMenu');
+    const resumeBtn = document.getElementById('resumeBtn');
+
+    let paused = false;
+    let canInteract = false; // Track if mouse has moved since resume
 
     // Movement state
     const move = { forward: false, backward: false, left: false, right: false, sprint: false };
-    const speed = 5; // m/s
+    const speed = 5;
     const sprintMultiplier = 1.6;
 
-    // Event listeners
-    function onKeyDown(e) {
-        if (!controls.isLocked) return;
+    // Reset movement helper
+    function resetMovement() {
+        move.forward = move.backward = move.left = move.right = move.sprint = false;
+        playerBody.velocity.x = 0;
+        playerBody.velocity.z = 0;
+    }
 
+    // Pause/unpause helper
+    function setPaused(state) {
+        paused = state;
+        pauseMenu.style.display = paused ? 'flex' : 'none';
+        document.body.style.cursor = paused ? 'auto' : 'none';
+        resetMovement();
+        canInteract = !paused; // Disable interactions while paused
+    }
+
+    // Toggle pause on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Escape') {
+            setPaused(!paused);
+            if (paused) document.exitPointerLock();
+        }
+    });
+
+    // Pointer lock changes
+    document.addEventListener('pointerlockchange', () => {
+        paused = document.pointerLockElement !== domElement;
+        pauseMenu.style.display = paused ? 'flex' : 'none';
+        document.body.style.cursor = paused ? 'auto' : 'none';
+        resetMovement();
+        canInteract = !paused; // Only allow interaction if pointer is locked
+    });
+
+    // Key handling
+    function onKeyDown(e) {
+        if (paused) return;
         switch (e.code) {
             case 'KeyW': case 'ArrowUp': move.forward = true; break;
             case 'KeyS': case 'ArrowDown': move.backward = true; break;
@@ -24,6 +60,7 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
     }
 
     function onKeyUp(e) {
+        if (paused) return;
         switch (e.code) {
             case 'KeyW': case 'ArrowUp': move.forward = false; break;
             case 'KeyS': case 'ArrowDown': move.backward = false; break;
@@ -33,46 +70,48 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
         }
     }
 
-    function resetMovement() {
-        move.forward = false;
-        move.backward = false;
-        move.left = false;
-        move.right = false;
-        move.sprint = false;
-
-        playerBody.velocity.x = 0;
-        playerBody.velocity.z = 0;
-    }
-
-    document.addEventListener('pointerlockchange', () => {
-        if (!controls.isLocked) resetMovement();
-    });
-
-
-    domElement.addEventListener('click', () => {
-        requestPointerLock(domElement);
-    });
-
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
 
+    // Resume button
+    resumeBtn.addEventListener('click', () => {
+        setPaused(false);
 
+        // Slight delay to allow browser to register user gesture
+        setTimeout(() => {
+            requestPointerLock(domElement);
+        }, 1000);
+    });
 
-    // Filter large movement spikes
-    const maxDelta = 100; // pixels/frame, adjust as needed
+    // Canvas click requests pointer lock
+    domElement.addEventListener('click', (event) => {
+        if (!canInteract) {
+            event.stopImmediatePropagation(); // prevent accidental first click
+            return;
+        }
+        if (!document.pointerLockElement) requestPointerLock(domElement);
+    });
+
+    // Mouse movement enables interaction
+    window.addEventListener('mousemove', () => {
+        canInteract = true;
+    });
+
+    // Filter large mouse movement spikes
+    const maxDelta = 100;
     domElement.addEventListener('mousemove', (event) => {
         if (Math.abs(event.movementX) > maxDelta || Math.abs(event.movementY) > maxDelta) {
             event.stopPropagation();
         }
     }, { capture: true });
 
-    // Reusable vectors
+    // Movement vectors
     const forwardVec = new THREE.Vector3();
     const rightVec = new THREE.Vector3();
     const moveDir = new THREE.Vector3();
 
     function update(delta) {
-        if (!controls.isLocked) {
+        if (!controls.isLocked || paused) {
             playerBody.velocity.x *= 0.5;
             playerBody.velocity.z *= 0.5;
             return;
@@ -108,7 +147,6 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
 export function requestPointerLock(domElement) {
     if (domElement && domElement.requestPointerLock) {
         try {
-            // @ts-ignore
             domElement.requestPointerLock({ unadjustedMovement: true });
         } catch (e) {
             domElement.requestPointerLock();
