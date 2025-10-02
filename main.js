@@ -26,6 +26,7 @@ class BackroomsGame {
 
         this.puzzleTargets = []; // For color puzzle objectives
 
+        this.blinkTimeouts = [];
 
         this.init();
     }
@@ -68,7 +69,9 @@ class BackroomsGame {
         this.setupEventListeners();
 
         this.isGameRunning = true;
+        document.getElementById('crosshair').style.display = 'block';
         this.animate();
+
     }
 
     requestPointerLock() {
@@ -241,12 +244,41 @@ class BackroomsGame {
             this.roomManager.update(this.camera.position);
         }
 
+        const crosshair = document.getElementById('crosshair');
+        const eye = crosshair.querySelector('.eye');
+        const raycaster = new THREE.Raycaster();
+        const center = new THREE.Vector2(0, 0);
+
+        function updateCrosshair() {
+            raycaster.setFromCamera(center, game.camera);
+            const intersects = raycaster.intersectObjects(game.roomManager.lightsManager.pickableRoots, true);
+
+            const crosshair = document.getElementById('crosshair');
+            const eye = crosshair.querySelector('.eye');
+
+            if (intersects.length > 0) {
+                crosshair.classList.add('hovering');
+            } else {
+                crosshair.classList.remove('hovering');
+            }
+
+        }
+
+        // Call this every frame
+        updateCrosshair();
+
         this.renderer.render(this.scene, this.camera);
 
         requestAnimationFrame(() => this.animate());
     }
 
+
     cleanup() {
+
+        if (this.blinkTimeouts) {
+            this.blinkTimeouts.forEach(id => clearTimeout(id));
+        }
+        this.blinkTimeouts = [];
         this.isGameRunning = false;
 
         if (this.footstepInterval) {
