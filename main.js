@@ -144,13 +144,59 @@ class BackroomsGame {
     const listener = new THREE.AudioListener();
     this.camera.add(listener);
 
+    // Existing footstep audio
     this.footstepBuffer = null;
     const audioLoader = new THREE.AudioLoader();
     audioLoader.load("/audio/sfx/carpetCreak.mp3", (buffer) => {
       this.footstepBuffer = buffer;
     });
 
+    // Add "Not A Human" as background music
+    this.setupInGameMusic(listener);
+
     this.startAmbientFootsteps();
+  }
+
+  setupInGameMusic(listener) {
+    const audio = new THREE.Audio(listener);
+    const audioLoader = new THREE.AudioLoader();
+
+    audioLoader.load("/audio/music/NotAHuman.mp3", (buffer) => {
+      audio.setBuffer(buffer);
+      audio.setLoop(true);
+      audio.setVolume(0); // Start at volume 0 for fade in
+      audio.play();
+
+      // Store reference for later control
+      this.inGameMusic = audio;
+      console.log("Not A Human music started - fading in...");
+
+      // Fade in over 3 seconds
+      this.fadeInMusic(audio, 0.2, 3000); // Target volume 0.2, over 3 seconds
+    });
+  }
+
+  // Add this new method to your BackroomsGame class
+  fadeInMusic(audio, targetVolume, duration) {
+    const startVolume = 0;
+    const volumeStep = targetVolume / (duration / 50); // Update every 50ms
+    let currentVolume = startVolume;
+
+    const fadeInterval = setInterval(() => {
+      currentVolume += volumeStep;
+
+      if (currentVolume >= targetVolume) {
+        currentVolume = targetVolume;
+        audio.setVolume(currentVolume);
+        clearInterval(fadeInterval);
+        console.log("Music fade in complete");
+      } else {
+        audio.setVolume(currentVolume);
+      }
+    }, 50); // Update every 50 milliseconds for smooth fade
+
+    // Store interval reference for cleanup if needed
+    this.musicFadeInterval = fadeInterval;
   }
 
   startAmbientFootsteps() {
