@@ -154,9 +154,9 @@ export const RoomLayouts = {
         models: [
             {
                 path: '/models/deluxe_ballpit.glb',
-                position: new THREE.Vector3(0, -2.5, 0), // Center of room, on the floor
-                scale: new THREE.Vector3(2, 2, 2),
-                rotation: new THREE.Vector3(0, 0, 0)
+                position: new THREE.Vector3(0, -6, 0), // Center of room, on the floor
+                scale: new THREE.Vector3(1.5, 1.5, 1.5),
+                rotation: new THREE.Vector3(0, -Math.PI / 2, 0)
             }
         ]
     }

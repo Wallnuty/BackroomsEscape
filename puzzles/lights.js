@@ -39,6 +39,74 @@ export class PickupLightsManager {
         });
     }
 
+    // Add the missing method
+    pickupSpecificLight(lightGroup) {
+        if (this.pickableRoots.includes(lightGroup)) {
+            this.heldLight = lightGroup;
+            this.onLightPickup();
+        }
+    }
+
+    onLightPickup() {
+        if (!this.heldLight || !this.heldLight.userData) return;
+
+        if (this.heldLight.userData.lightTarget) {
+            this.heldLight.userData.lightTarget.position.set(0, 0, -5);
+        }
+
+        if (this.heldLight.userData.disc && this.heldLight.userData.disc.material) {
+            this.heldLight.userData.disc.material.opacity = 0.8;
+        }
+    }
+
+    dropHeldLight() {
+        if (!this.heldLight) return;
+
+        const forward = new THREE.Vector3();
+        this.camera.getWorldDirection(forward);
+        forward.y = 0;
+        forward.normalize();
+
+        const dropDistance = 1;
+        const dropPosition = new THREE.Vector3()
+            .copy(this.camera.position)
+            .add(forward.multiplyScalar(dropDistance));
+        dropPosition.y -= 0.35; // Lower the drop position by 0.5 units
+
+        this.heldLight.position.copy(dropPosition);
+
+        if (this.heldLight.userData.disc && this.heldLight.userData.disc.material) {
+            this.heldLight.userData.disc.material.opacity = 1.0;
+        }
+
+        this.heldLight = null;
+    }
+
+    updateHeldLight() {
+        if (!this.heldLight) return;
+
+        const holdDistance = 1.1;
+        const verticalOffset = -0.3;
+        const horizontalOffset = 0.2;
+
+        const forward = new THREE.Vector3();
+        const right = new THREE.Vector3();
+        this.camera.getWorldDirection(forward);
+        right.crossVectors(forward, this.camera.up).normalize();
+
+        const holdPosition = new THREE.Vector3()
+            .copy(this.camera.position)
+            .add(forward.multiplyScalar(holdDistance))
+            .add(right.multiplyScalar(horizontalOffset))
+            .add(new THREE.Vector3(0, verticalOffset, 0));
+
+        this.heldLight.position.copy(holdPosition);
+        this.heldLight.quaternion.copy(this.camera.quaternion);
+
+        updateHeldLightTarget(this.heldLight, this.camera);
+    }
+
+    // Keep all other pickup light logic methods...
     setupPuzzle() {
         // Example puzzle: Create color targets around the room
         this.puzzleTargets = [
@@ -147,91 +215,5 @@ export class PickupLightsManager {
             }
         };
         animateRing();
-    }
-
-    handlePointerInteraction(event) {
-        if (!this.heldLight) {
-            this.tryPickupLight();
-        } else {
-            this.dropHeldLight();
-        }
-    }
-
-    tryPickupLight() {
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera({ x: 0, y: 0 }, this.camera);
-
-        const intersects = raycaster.intersectObjects(this.pickableRoots, true);
-
-        if (intersects.length > 0) {
-            let obj = intersects[0].object;
-            while (obj && !obj.userData.isPickupLight) {
-                obj = obj.parent;
-            }
-
-            if (obj) {
-                this.heldLight = obj;
-                this.onLightPickup();
-            }
-        }
-    }
-
-    onLightPickup() {
-        if (!this.heldLight || !this.heldLight.userData) return;
-
-        if (this.heldLight.userData.lightTarget) {
-            this.heldLight.userData.lightTarget.position.set(0, 0, -5);
-        }
-
-        if (this.heldLight.userData.disc && this.heldLight.userData.disc.material) {
-            this.heldLight.userData.disc.material.opacity = 0.8;
-        }
-    }
-
-    dropHeldLight() {
-        if (!this.heldLight) return;
-
-        const forward = new THREE.Vector3();
-        this.camera.getWorldDirection(forward);
-        forward.y = 0;
-        forward.normalize();
-
-        const dropDistance = 1;
-        const dropPosition = new THREE.Vector3()
-            .copy(this.camera.position)
-            .add(forward.multiplyScalar(dropDistance));
-        dropPosition.y -= 0.35; // Lower the drop position by 0.5 units
-
-        this.heldLight.position.copy(dropPosition);
-
-        if (this.heldLight.userData.disc && this.heldLight.userData.disc.material) {
-            this.heldLight.userData.disc.material.opacity = 1.0;
-        }
-
-        this.heldLight = null;
-    }
-
-    updateHeldLight() {
-        if (!this.heldLight) return;
-
-        const holdDistance = 1.1;
-        const verticalOffset = -0.3;
-        const horizontalOffset = 0.2;
-
-        const forward = new THREE.Vector3();
-        const right = new THREE.Vector3();
-        this.camera.getWorldDirection(forward);
-        right.crossVectors(forward, this.camera.up).normalize();
-
-        const holdPosition = new THREE.Vector3()
-            .copy(this.camera.position)
-            .add(forward.multiplyScalar(holdDistance))
-            .add(right.multiplyScalar(horizontalOffset))
-            .add(new THREE.Vector3(0, verticalOffset, 0));
-
-        this.heldLight.position.copy(holdPosition);
-        this.heldLight.quaternion.copy(this.camera.quaternion);
-
-        updateHeldLightTarget(this.heldLight, this.camera);
     }
 }

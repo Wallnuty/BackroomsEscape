@@ -12,7 +12,6 @@ export class RoomManager {
         this.world = world;
         this.rooms = [];
 
-
         const ambient = new THREE.AmbientLight(0xded18a, 0.4);
         scene.add(ambient);
 
@@ -20,7 +19,10 @@ export class RoomManager {
 
         // Create managers
         this.lightsManager = new PickupLightsManager(scene, camera);
-        this.modelInteractionManager = new ModelInteractionManager(scene, camera); // Add this
+        this.modelInteractionManager = new ModelInteractionManager(scene, camera);
+
+        // Connect the managers
+        this.modelInteractionManager.setPickupLightsManager(this.lightsManager);
 
         // Start with the main room
         this.currentLayoutName = 'main';
@@ -118,8 +120,11 @@ export class RoomManager {
                     const modelGroup = new THREE.Group();
                     modelGroup.add(model);
 
-                    // Apply position, rotation, and scale to the group
-                    modelGroup.position.copy(modelConfig.position);
+                    // Calculate world position: room center + model offset
+                    const worldPosition = room.position.clone().add(modelConfig.position);
+
+                    // Apply position, rotation, and scale to the group in world coordinates
+                    modelGroup.position.copy(worldPosition);
                     modelGroup.scale.copy(modelConfig.scale);
                     modelGroup.rotation.set(
                         modelConfig.rotation.x,
@@ -133,42 +138,18 @@ export class RoomManager {
                     modelGroup.userData.modelPath = modelConfig.path;
                     modelGroup.name = `interactableModel_${index}`;
 
-                    // Add to room group
-                    room.group.add(modelGroup);
+                    // Add directly to scene instead of room group to avoid coordinate transformation
+                    this.scene.add(modelGroup);
 
                     // Add to model interaction manager
                     this.modelInteractionManager.addInteractableModel(modelGroup);
 
-                    console.log(`Model ${modelConfig.path} loaded and marked as interactable in ${room.layoutName} room`);
-                },
-                (progress) => {
-                    console.log('Loading progress:', progress);
-                },
-                (error) => {
-                    console.error('Error loading model:', error);
+                    console.log(`Model ${modelConfig.path} loaded at world position ${worldPosition.x}, ${worldPosition.y}, ${worldPosition.z}`);
                 }
             );
         });
     }
 
-    /**
-     * Checks all rooms for rendering zone triggers
-     * (REMOVED) - replaced by scanAllZones below to avoid double-looping
-     */
-    // checkAllRenderingZones(playerPosition) {
-    //     const allTriggeredZones = [];
-    //     this.rooms.forEach(room => {
-    //         const triggeredZones = room.checkRenderingZones(playerPosition);
-    //         allTriggeredZones.push(...triggeredZones);
-    //     });
-    //     return allTriggeredZones;
-    // }
-
-    /**
-     * Single-pass scan over all rooms/zones.
-     * Returns the active zone/room (first zone containing the player)
-     * and an array of zones that were newly triggered this frame.
-     */
     scanAllZones(playerPosition) {
         let activeZone = null;
         let activeRoom = null;

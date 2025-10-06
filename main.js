@@ -241,6 +241,9 @@ class BackroomsGame {
 
   setupRoomManager() {
     this.roomManager = new RoomManager(this.scene, this.world, this.camera);
+
+    // Connect the game instance to model interaction manager for reset functionality
+    this.roomManager.modelInteractionManager.setGameInstance(this);
   }
 
   setupControls() {
@@ -254,11 +257,8 @@ class BackroomsGame {
   setupEventListeners() {
     window.addEventListener("pointerdown", (event) => {
       if (!this.isPaused && this.mouseMovedSinceResume) {
-        // Try model interaction first, then light interaction
-        const modelHandled = this.roomManager.modelInteractionManager.handlePointerInteraction(event);
-        if (!modelHandled) {
-          this.roomManager.lightsManager.handlePointerInteraction(event);
-        }
+        // Use only the model interaction manager (which now handles both models and lights)
+        this.roomManager.modelInteractionManager.handlePointerInteraction(event);
       }
     });
     const cameraToggleBtn = document.getElementById("cameraToggleBtn");
@@ -328,10 +328,167 @@ class BackroomsGame {
     this.mouseMovedSinceResume = false;
   }
 
-  handleResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+  // Add this method to the BackroomsGame class
+  resetWorld() {
+    console.log("Resetting world...");
+
+    // Fade to black effect
+    this.createResetEffect();
+
+    // Reset after fade effect
+    setTimeout(() => {
+      this.performWorldReset();
+    }, 1500);
+  }
+
+  createResetEffect() {
+    // Create a black overlay for fade effect
+    const overlay = document.createElement("div");
+    overlay.id = "resetOverlay";
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: black;
+        opacity: 0;
+        z-index: 1000;
+        transition: opacity 1s ease-in-out;
+        pointer-events: none;
+    `;
+    document.body.appendChild(overlay);
+
+    // Trigger fade in
+    setTimeout(() => {
+      overlay.style.opacity = "1";
+    }, 10);
+
+    // Remove overlay after reset - keep it black longer
+    setTimeout(() => {
+      overlay.style.opacity = "0";
+      setTimeout(() => {
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
+      }, 1000);
+    }, 2000); // Keep black overlay for 3 seconds total
+  }
+
+  performWorldReset() {
+    console.log("Performing world reset...");
+
+    // 1. Clear the entire scene (except global objects we want to keep)
+    this.clearScene();
+
+    // 2. Reset player position
+    this.resetPlayerPosition();
+
+    // 3. Destroy and recreate room manager (much simpler!)
+    this.destroyRoomManager();
+    this.setupRoomManager();
+
+    // 4. Reset game state
+    this.resetGameState();
+
+    console.log("World reset complete!");
+  }
+
+  destroyRoomManager() {
+    if (this.roomManager) {
+      // Cancel any pending timeouts
+      if (this.roomManager.pendingRoomUpdate) {
+        clearTimeout(this.roomManager.pendingRoomUpdate);
+      }
+
+      // Clear reference
+      this.roomManager = null;
+
+      console.log("Room manager destroyed");
+    }
+  }
+
+  resetPlayerPosition() {
+    // Reset physics body position
+    this.playerBody.position.set(-15, -2.1, 3); // Original spawn position
+    this.playerBody.velocity.set(0, 0, 0);
+    this.playerBody.angularVelocity.set(0, 0, 0);
+
+    // Sync camera
+    this.syncCamera();
+
+    // Reset camera rotation to face forward
+    this.camera.rotation.set(0, 0, 0);
+
+    console.log("Player position reset to origin");
+  }
+
+  resetGameState() {
+    // Reset any game state variables
+    this.heldLight = null;
+    this.puzzleTargets = [];
+
+    // Reset mouse movement tracking
+    this.mouseMovedSinceResume = false;
+
+    // Reset crosshair state
+    const crosshair = document.getElementById("crosshair");
+    if (crosshair) {
+      crosshair.classList.remove("hovering");
+    }
+
+    console.log("Game state cleared completely");
+  }
+
+  clearScene() {
+    // Store objects we want to keep
+    const objectsToKeep = [
+      this.playerMarker,
+      // Keep any ambient lights, cameras, etc.
+    ];
+
+    // Get all objects in the scene
+    const objectsToRemove = [];
+    this.scene.traverse((object) => {
+      if (object !== this.scene && !objectsToKeep.includes(object)) {
+        objectsToRemove.push(object);
+      }
+    });
+
+    // Remove and dispose everything
+    objectsToRemove.forEach((object) => {
+      // Remove from parent
+      if (object.parent) {
+        object.parent.remove(object);
+      }
+
+      // Dispose geometry
+      if (object.geometry) {
+        object.geometry.dispose();
+      }
+
+      // Dispose materials
+      if (object.material) {
+        if (Array.isArray(object.material)) {
+          object.material.forEach(mat => mat.dispose());
+        } else {
+          object.material.dispose();
+        }
+      }
+
+      // Dispose textures
+      if (object.material && object.material.map) {
+        object.material.map.dispose();
+      }
+    });
+
+    // Clear all physics bodies except player
+    const bodiesToRemove = this.world.bodies.filter(body => body !== this.playerBody);
+    bodiesToRemove.forEach(body => {
+      this.world.removeBody(body);
+    });
+
+    console.log(`Cleared ${objectsToRemove.length} objects from scene`);
   }
 
   animate() {
@@ -376,11 +533,10 @@ class BackroomsGame {
       if (this.activeCameraIndex === 0) {
         // First-person: show crosshair normally
         if (this.mouseMovedSinceResume) {
-          // Check both model hover and light hover
-          const modelHover = this.roomManager?.modelInteractionManager?.checkModelHover();
-          const lightHover = this.checkLightHover();
+          // Use the unified hover check
+          const isHovering = this.roomManager?.modelInteractionManager?.checkInteractableHover();
 
-          if (modelHover || lightHover) {
+          if (isHovering) {
             crosshair.classList.add("hovering");
           } else {
             crosshair.classList.remove("hovering");
@@ -403,17 +559,12 @@ class BackroomsGame {
     requestAnimationFrame(() => this.animate());
   }
 
-  checkLightHover() {
-    if (this.roomManager?.lightsManager?.pickableRoots?.length > 0) {
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
-      const intersects = raycaster.intersectObjects(
-        this.roomManager.lightsManager.pickableRoots,
-        true
-      );
-      return intersects.length > 0;
-    }
-    return false;
+  handleResize() {
+    if (!this.camera || !this.renderer) return;
+
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
   cleanup() {
