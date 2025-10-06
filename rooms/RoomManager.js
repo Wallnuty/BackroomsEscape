@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'; // Add this
 import { BackroomsRoom } from './BackroomsRoom.js';
 import { RoomLayouts } from './RoomLayouts.js';
 import { PickupLightsManager } from '../puzzles/lights.js'; // Add this import
@@ -26,6 +27,7 @@ export class RoomManager {
         this.lastZone = null;            // The last zone the player was in
         this.pendingRoomUpdate = null;   // Timeout handle for delayed update
         this.currentRoom = this.rooms[0]; // Track the actual room object
+        this.renderZonesDisabled = false; // Flag to disable render zone logic
     }
 
     _createGlobalFloorAndCeiling() {
@@ -51,7 +53,8 @@ export class RoomManager {
             depth = 30,
             walls = [],
             lights = [],
-            zones = []
+            zones = [],
+            models = [] // Add models support
         } = layout;
 
         const room = new BackroomsRoom(this.scene, this.world, width, height, depth, position);
@@ -73,6 +76,11 @@ export class RoomManager {
             );
         });
 
+        // Load models if any
+        if (models.length > 0) {
+            this.loadModelsForRoom(room, models);
+        }
+
         room.setZoneDebugVisibility(false);
 
         room.layoutName = layoutName;
@@ -90,6 +98,42 @@ export class RoomManager {
         }
 
         return room;
+    }
+
+    /**
+     * Loads 3D models for a room
+     */
+    loadModelsForRoom(room, models) {
+        const loader = new GLTFLoader();
+
+        models.forEach(modelConfig => {
+            loader.load(
+                modelConfig.path,
+                (gltf) => {
+                    const model = gltf.scene;
+
+                    // Apply position, rotation, and scale
+                    model.position.copy(modelConfig.position);
+                    model.scale.copy(modelConfig.scale);
+                    model.rotation.set(
+                        modelConfig.rotation.x,
+                        modelConfig.rotation.y,
+                        modelConfig.rotation.z
+                    );
+
+                    // Add to room group
+                    room.group.add(model);
+
+                    console.log(`Model ${modelConfig.path} loaded in ${room.layoutName} room`);
+                },
+                (progress) => {
+                    console.log('Loading progress:', progress);
+                },
+                (error) => {
+                    console.error('Error loading model:', error);
+                }
+            );
+        });
     }
 
     /**
@@ -294,6 +338,10 @@ export class RoomManager {
      * Main update loop
      */
     update(playerPosition) {
+        // If render zones are disabled, skip all zone logic
+        if (this.renderZonesDisabled) {
+            return;
+        }
         // Single scan: get active zone/room and triggered zones
         const { activeZone, activeRoom, triggeredZones } = this.scanAllZones(playerPosition);
 
@@ -318,6 +366,13 @@ export class RoomManager {
                     this.currentLayoutName = this.currentRoom.layoutName;
                     console.log(`Current room type updated to: ${this.currentLayoutName}`);
 
+                    // If current room is now exit, seal it and disable render zones
+                    if (this.currentLayoutName === 'exit') {
+                        this.sealExitRoom();
+                        this.renderZonesDisabled = true;
+                        console.log('Exit room detected - sealed and render zones disabled');
+                    }
+
                     // Manage room transitions
                     this.manageRoomTransitions(prevLayoutName, this.currentLayoutName);
                 }
@@ -334,9 +389,8 @@ export class RoomManager {
             this.pendingRoomUpdate = null;
         }
 
-        // Only handle triggered zones if the player was NOT in any zone last frame.
-        // This ensures room creation only happens when entering a zone from a non-zone.
-        const triggersToHandle = (!this.lastZone) ? triggeredZones : [];
+        // Only handle triggered zones if the player was NOT in any zone last frame AND render zones are not disabled
+        const triggersToHandle = (!this.lastZone && !this.renderZonesDisabled) ? triggeredZones : [];
 
         // Update lastZone
         this.lastZone = activeZone;
@@ -436,5 +490,58 @@ export class RoomManager {
                 }
             });
         }
+    }
+
+    /**
+     * Seals the exit room by adding a hardcoded wall at the opening
+     */
+    sealExitRoom() {
+        if (!this.currentRoom || this.currentLayoutName !== 'exit') return;
+
+        // Get the exit room's zone to find where the opening is
+        const exitZone = this.currentRoom.renderingZones[0]; // Exit room has one zone
+        if (!exitZone) return;
+
+        const direction = exitZone.openingDirection;
+        const center = exitZone.openingCenter.clone();
+
+        // Convert world position to room-relative position
+        const roomPosition = this.currentRoom.position;
+        const relativeCenter = center.clone().sub(roomPosition);
+
+        // Create wall coordinates based on the opening direction
+        let wallStart, wallEnd;
+        const wallThickness = 0.4;
+
+        switch (direction) {
+            case 'south':
+                // Wall blocks the south opening
+                wallStart = new THREE.Vector3(relativeCenter.x - 2, 0, relativeCenter.z);
+                wallEnd = new THREE.Vector3(relativeCenter.x + 2, 0, relativeCenter.z);
+                break;
+            case 'north':
+                // Wall blocks the north opening
+                wallStart = new THREE.Vector3(relativeCenter.x - 2, 0, relativeCenter.z);
+                wallEnd = new THREE.Vector3(relativeCenter.x + 2, 0, relativeCenter.z);
+                break;
+            case 'east':
+                // Wall blocks the east opening
+                wallStart = new THREE.Vector3(relativeCenter.x, 0, relativeCenter.z - 2);
+                wallEnd = new THREE.Vector3(relativeCenter.x, 0, relativeCenter.z + 2);
+                break;
+            case 'west':
+                // Wall blocks the west opening
+                wallStart = new THREE.Vector3(relativeCenter.x, 0, relativeCenter.z - 2);
+                wallEnd = new THREE.Vector3(relativeCenter.x, 0, relativeCenter.z + 2);
+                break;
+            default:
+                console.warn('Unknown direction for sealing wall:', direction);
+                return;
+        }
+
+        // Add the sealing wall to the current room
+        this.currentRoom.addWall(wallStart, wallEnd, wallThickness);
+
+        console.log(`Exit room sealed with wall from ${wallStart.x}, ${wallStart.z} to ${wallEnd.x}, ${wallEnd.z}`);
     }
 }

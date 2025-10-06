@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 let offset = 0.02;
 
@@ -22,8 +23,8 @@ export const RoomLayouts = {
             [new THREE.Vector3(5, 0, 2), new THREE.Vector3(5, 0, -5), 0.4],
             [new THREE.Vector3(-1, 0, 15), new THREE.Vector3(-1, 0, 8), 0.4],
             [new THREE.Vector3(15, 0, -8), new THREE.Vector3(10, 0, -8), 0.4],
-            [new THREE.Vector3(15, 0, -1), new THREE.Vector3(15, 0, 11), 0.4],
-            [new THREE.Vector3(15, 0, -5), new THREE.Vector3(15, 0, -10), 0.4],
+            [new THREE.Vector3(15 - offset, 0, -1), new THREE.Vector3(15 - offset, 0, 11), 0.4],
+            [new THREE.Vector3(15 - offset, 0, -5), new THREE.Vector3(15 - offset, 0, -10), 0.4],
             [new THREE.Vector3(-2, 0, 2), new THREE.Vector3(-2, 0, 0.5), 1.5],
             [new THREE.Vector3(10, 0, 5), new THREE.Vector3(12, 0, 5), 0.4]
         ],
@@ -46,9 +47,7 @@ export const RoomLayouts = {
                 new THREE.Vector3(15, 0, 13)
             ]
         ]
-    },
-    // Add more layouts here, e.g. secondary, corridor, office, etc.
-    secondary: {
+    }, secondary: {
         position: new THREE.Vector3(-16, 0, 16),
         width: 24,
         height: 5,
@@ -82,9 +81,7 @@ export const RoomLayouts = {
                 new THREE.Vector3(-12, 0, 4)
             ]
         ]
-    },
-    // Add more layouts here, e.g. secondary, corridor, office, etc.
-    third: {
+    }, third: {
         position: new THREE.Vector3(-16, 0, 16),
         width: 40,
         height: 5,
@@ -129,6 +126,38 @@ export const RoomLayouts = {
                 'south',
                 new THREE.Vector3(-17, 0, -8)
             ]
+        ]
+    }, exit: {
+        position: new THREE.Vector3(-16, 0, 16),
+        width: 10,
+        height: 5,
+        depth: 10,
+        walls: [
+            [new THREE.Vector3(5, 0, -5), new THREE.Vector3(5, 0, 5), 0.4],
+            [new THREE.Vector3(-5, 0, -5), new THREE.Vector3(-5, 0, 5), 0.4],
+            [new THREE.Vector3(-5, 0, 5), new THREE.Vector3(5, 0, 5), 0.4],
+            [new THREE.Vector3(-5, 0, -5), new THREE.Vector3(-2, 0, -5), 0.4],
+            [new THREE.Vector3(2, 0, -5), new THREE.Vector3(5, 0, -5), 0.4],
+        ],
+        lights: [
+            [0, 0]
+        ],
+        zones: [
+            [
+                new THREE.Vector3(-5, 0, -5),
+                new THREE.Vector3(5, 0, -4),
+                'south',
+                new THREE.Vector3(0, 0, -5)
+            ]
+        ],
+        // Add ballpit configuration
+        models: [
+            {
+                path: '/models/deluxe_ballpit.glb',
+                position: new THREE.Vector3(0, -2.5, 0), // Center of room, on the floor
+                scale: new THREE.Vector3(2, 2, 2),
+                rotation: new THREE.Vector3(0, 0, 0)
+            }
         ]
     }
 };
