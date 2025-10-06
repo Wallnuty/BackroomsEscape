@@ -387,11 +387,11 @@
     /* "Paused" label near top */
     .pauseLabel {
       position: absolute;
-      top: 10vh;
-      /* distance from top */
+      top: 20vh;
+      /* Changed from 10vh to give more space from top */
       left: 50%;
       transform: translateX(-50%);
-      font-family: "VT323", monospace;
+      font-family: "CoralineCat", "VT323", monospace;
       font-size: clamp(3rem, 8vw, 5rem);
       color: #f5e6d3;
       text-shadow: 2px 2px 0px rgba(255, 0, 0, 0.3),
@@ -399,10 +399,11 @@
       text-align: center;
     }
 
-    /* Container to center the resume button */
+    /* Container to center the buttons */
     .pauseContent {
       position: absolute;
-      top: 50%;
+      top: 55%;
+      /* Moved down slightly from 50% */
       left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
@@ -410,27 +411,9 @@
 
     /* Resume button */
     #resumeBtn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-    }
-
-    #resumeBtn img {
       width: 200px;
-      /* adjust size */
-      height: auto;
-      transition: transform 0.2s;
-    }
-
-    #resumeBtn:hover img {
-      transform: scale(1.1);
-    }
-
-    #cameraToggleBtn {
-      width: 200px;
-      height: auto;
-      font-family: "VT323", monospace;
+      height: 40px;
+      font-family: "CoralineCat", "VT323", monospace;
       font-size: 2rem;
       color: #2c1810;
       background: #f5e6d3;
@@ -440,7 +423,52 @@
       letter-spacing: 0.1em;
       box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
       transition: transform 0.2s, background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      padding: 0;
+      margin-bottom: 30px;
+      /* Increased from 20px for more space */
     }
+
+    #resumeBtn:hover {
+      background: #ff0e6a;
+      color: #f5e6d3;
+      transform: scale(1.05);
+    }
+
+    /* Remove the old image styles */
+    #resumeBtn img {
+      display: none;
+      /* Hide the image */
+    }
+
+    #cameraToggleBtn {
+      width: 200px;
+      height: 40px;
+      /* fixed height ensures vertical centering works */
+      font-family: "CoralineCat", "VT323", monospace;
+      font-size: 2rem;
+      color: #2c1810;
+      background: #f5e6d3;
+      border: 3px solid #f5e6d3;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
+      transition: transform 0.2s, background 0.2s;
+      display: flex;
+      align-items: center;
+      /* centers vertically */
+      justify-content: center;
+      /* centers horizontally */
+      line-height: 1;
+      /* ensures no extra vertical padding from text */
+      padding: 0;
+      /* remove default padding */
+    }
+
 
     #cameraToggleBtn:hover {
       background: #ff0e6a;
@@ -497,10 +525,7 @@
       ">
     <p class="pauseLabel">Paused</p>
     <div class="pauseContent">
-      <button id="resumeBtn">
-        <img src="/pictures/resumebtn.png" alt="Resume Game" />
-      </button>
-      <br /><br />
+      <button id="resumeBtn">Resume</button>
       <button id="cameraToggleBtn">Map</button>
     </div>
   </div>
