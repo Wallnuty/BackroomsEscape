@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'; // Add this
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { BackroomsRoom } from './BackroomsRoom.js';
 import { RoomLayouts } from './RoomLayouts.js';
-import { PickupLightsManager } from '../puzzles/lights.js'; // Add this import
+import { PickupLightsManager } from '../puzzles/lights.js';
+import { ModelInteractionManager } from '../puzzles/modelInteraction.js'; // Add this import
 
 export class RoomManager {
     constructor(scene, world, camera) {
@@ -11,23 +12,24 @@ export class RoomManager {
         this.world = world;
         this.rooms = [];
 
-        //Add global yellow lighting
+
         const ambient = new THREE.AmbientLight(0xded18a, 0.4);
         scene.add(ambient);
 
         this._createGlobalFloorAndCeiling();
 
-        // Create a single lights manager instance
+        // Create managers
         this.lightsManager = new PickupLightsManager(scene, camera);
+        this.modelInteractionManager = new ModelInteractionManager(scene, camera); // Add this
 
-        // Start with the main room (change to RoomLayouts.main if needed)
-        this.currentLayoutName = 'main'; // Start in main room
+        // Start with the main room
+        this.currentLayoutName = 'main';
         this.createCustomRoom(RoomLayouts.main, this.currentLayoutName);
 
-        this.lastZone = null;            // The last zone the player was in
-        this.pendingRoomUpdate = null;   // Timeout handle for delayed update
-        this.currentRoom = this.rooms[0]; // Track the actual room object
-        this.renderZonesDisabled = false; // Flag to disable render zone logic
+        this.lastZone = null;
+        this.pendingRoomUpdate = null;
+        this.currentRoom = this.rooms[0];
+        this.renderZonesDisabled = false;
     }
 
     _createGlobalFloorAndCeiling() {
@@ -106,25 +108,38 @@ export class RoomManager {
     loadModelsForRoom(room, models) {
         const loader = new GLTFLoader();
 
-        models.forEach(modelConfig => {
+        models.forEach((modelConfig, index) => {
             loader.load(
                 modelConfig.path,
                 (gltf) => {
                     const model = gltf.scene;
 
-                    // Apply position, rotation, and scale
-                    model.position.copy(modelConfig.position);
-                    model.scale.copy(modelConfig.scale);
-                    model.rotation.set(
+                    // Create a group to contain the model and mark it as interactable
+                    const modelGroup = new THREE.Group();
+                    modelGroup.add(model);
+
+                    // Apply position, rotation, and scale to the group
+                    modelGroup.position.copy(modelConfig.position);
+                    modelGroup.scale.copy(modelConfig.scale);
+                    modelGroup.rotation.set(
                         modelConfig.rotation.x,
                         modelConfig.rotation.y,
                         modelConfig.rotation.z
                     );
 
-                    // Add to room group
-                    room.group.add(model);
+                    // Mark as interactable model
+                    modelGroup.userData.isInteractableModel = true;
+                    modelGroup.userData.modelConfig = modelConfig;
+                    modelGroup.userData.modelPath = modelConfig.path;
+                    modelGroup.name = `interactableModel_${index}`;
 
-                    console.log(`Model ${modelConfig.path} loaded in ${room.layoutName} room`);
+                    // Add to room group
+                    room.group.add(modelGroup);
+
+                    // Add to model interaction manager
+                    this.modelInteractionManager.addInteractableModel(modelGroup);
+
+                    console.log(`Model ${modelConfig.path} loaded and marked as interactable in ${room.layoutName} room`);
                 },
                 (progress) => {
                     console.log('Loading progress:', progress);
@@ -424,10 +439,12 @@ export class RoomManager {
         // Remove all meshes in the room group from the scene and dispose geometry/materials
         if (room.group && room.group.children) {
             room.group.children.forEach(child => {
+                // Remove from model interaction manager if it's an interactable model
+                if (child.userData.isInteractableModel) {
+                    this.modelInteractionManager.removeInteractableModel(child);
+                }
+
                 this.scene.remove(child);
-                // Dispose geometry and material if present
-                // if (child.geometry) child.geometry.dispose();
-                // if (child.material) child.material.dispose();
             });
             this.scene.remove(room.group);
         }

@@ -254,7 +254,11 @@ class BackroomsGame {
   setupEventListeners() {
     window.addEventListener("pointerdown", (event) => {
       if (!this.isPaused && this.mouseMovedSinceResume) {
-        this.roomManager.lightsManager.handlePointerInteraction(event);
+        // Try model interaction first, then light interaction
+        const modelHandled = this.roomManager.modelInteractionManager.handlePointerInteraction(event);
+        if (!modelHandled) {
+          this.roomManager.lightsManager.handlePointerInteraction(event);
+        }
       }
     });
     const cameraToggleBtn = document.getElementById("cameraToggleBtn");
@@ -371,19 +375,16 @@ class BackroomsGame {
 
       if (this.activeCameraIndex === 0) {
         // First-person: show crosshair normally
-        if (
-          this.roomManager?.lightsManager?.pickableRoots?.length > 0 &&
-          this.mouseMovedSinceResume
-        ) {
-          const raycaster = new THREE.Raycaster();
-          raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
-          const intersects = raycaster.intersectObjects(
-            this.roomManager.lightsManager.pickableRoots,
-            true
-          );
+        if (this.mouseMovedSinceResume) {
+          // Check both model hover and light hover
+          const modelHover = this.roomManager?.modelInteractionManager?.checkModelHover();
+          const lightHover = this.checkLightHover();
 
-          if (intersects.length > 0) crosshair.classList.add("hovering");
-          else crosshair.classList.remove("hovering");
+          if (modelHover || lightHover) {
+            crosshair.classList.add("hovering");
+          } else {
+            crosshair.classList.remove("hovering");
+          }
         } else {
           crosshair.classList.remove("hovering");
         }
@@ -400,6 +401,19 @@ class BackroomsGame {
 
     this.renderer.render(this.scene, this.camera);
     requestAnimationFrame(() => this.animate());
+  }
+
+  checkLightHover() {
+    if (this.roomManager?.lightsManager?.pickableRoots?.length > 0) {
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+      const intersects = raycaster.intersectObjects(
+        this.roomManager.lightsManager.pickableRoots,
+        true
+      );
+      return intersects.length > 0;
+    }
+    return false;
   }
 
   cleanup() {
