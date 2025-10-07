@@ -1,6 +1,4 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-
 let offset = 0.02;
 
 // Each layout is an object with walls, lights, zones
@@ -153,10 +151,10 @@ export const RoomLayouts = {
         // Add ballpit configuration
         models: [
             {
-                path: '/models/deluxe_ballpit.glb',
-                position: new THREE.Vector3(0, -6, 0), // Center of room, on the floor
+                path: '/models/redSlide.glb',
+                position: new THREE.Vector3(1, -6, 3), // Center of room, on the floor
                 scale: new THREE.Vector3(1.5, 1.5, 1.5),
-                rotation: new THREE.Vector3(0, -Math.PI / 2, 0)
+                rotation: new THREE.Vector3(0, 0, 0)
             }
         ]
     }

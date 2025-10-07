@@ -120,11 +120,7 @@ export class RoomManager {
                     const modelGroup = new THREE.Group();
                     modelGroup.add(model);
 
-                    // Calculate world position: room center + model offset
-                    const worldPosition = room.position.clone().add(modelConfig.position);
-
-                    // Apply position, rotation, and scale to the group in world coordinates
-                    modelGroup.position.copy(worldPosition);
+                    // Apply scale and rotation to the model group
                     modelGroup.scale.copy(modelConfig.scale);
                     modelGroup.rotation.set(
                         modelConfig.rotation.x,
@@ -132,19 +128,32 @@ export class RoomManager {
                         modelConfig.rotation.z
                     );
 
+                    // Check if the room has a rotation (from room generation)
+                    if (room.rotationY !== undefined) {
+                        // For rotated rooms, we need to rotate the model's position
+                        const rotatedPosition = this.rotatePoint(modelConfig.position, room.rotationY);
+                        modelGroup.position.copy(rotatedPosition);
+
+                        // Also rotate the model itself to maintain consistent orientation
+                        modelGroup.rotation.y += room.rotationY;
+                    } else {
+                        // No room rotation - use position as-is
+                        modelGroup.position.copy(modelConfig.position);
+                    }
+
                     // Mark as interactable model
                     modelGroup.userData.isInteractableModel = true;
                     modelGroup.userData.modelConfig = modelConfig;
                     modelGroup.userData.modelPath = modelConfig.path;
                     modelGroup.name = `interactableModel_${index}`;
 
-                    // Add directly to scene instead of room group to avoid coordinate transformation
-                    this.scene.add(modelGroup);
+                    // Add to room group
+                    room.group.add(modelGroup);
 
                     // Add to model interaction manager
                     this.modelInteractionManager.addInteractableModel(modelGroup);
 
-                    console.log(`Model ${modelConfig.path} loaded at world position ${worldPosition.x}, ${worldPosition.y}, ${worldPosition.z}`);
+                    console.log(`Model ${modelConfig.path} loaded and added to room group`);
                 }
             );
         });
@@ -220,8 +229,10 @@ export class RoomManager {
             // Create the new room at the calculated position
             const rotatedLayout = this.rotateLayout(randomLayout, rotationY);
             const newLayout = { ...rotatedLayout, position: newRoomPosition };
-            this.createCustomRoom(newLayout, randomLayoutName);
+            const newRoom = this.createCustomRoom(newLayout, randomLayoutName);
 
+            // Store the rotation angle in the room for model loading
+            newRoom.rotationY = rotationY;
         });
     }
 
@@ -419,14 +430,18 @@ export class RoomManager {
     removeRoom(room) {
         // Remove all meshes in the room group from the scene and dispose geometry/materials
         if (room.group && room.group.children) {
-            room.group.children.forEach(child => {
+            // Create a copy of children array to avoid mutation during iteration
+            const children = [...room.group.children];
+
+            children.forEach(child => {
                 // Remove from model interaction manager if it's an interactable model
                 if (child.userData.isInteractableModel) {
                     this.modelInteractionManager.removeInteractableModel(child);
+                    console.log(`Removed model from interaction manager: ${child.userData.modelPath}`);
                 }
-
-                this.scene.remove(child);
             });
+
+            // Remove the entire room group from scene (this removes all children too)
             this.scene.remove(room.group);
         }
 

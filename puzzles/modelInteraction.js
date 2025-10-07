@@ -7,10 +7,10 @@ export class ModelInteractionManager {
         this.interactableModels = [];
         this.pickupLightsManager = null;
 
-        // Interaction distance settings
-        this.maxInteractionDistance = 4.0;
+        // Interaction distance settings - temporarily increased for debugging
+        this.maxInteractionDistance = 8.0; // Increased from 4.0
         this.maxLightInteractionDistance = 4.0;
-        this.maxModelInteractionDistance = 4.0;
+        this.maxModelInteractionDistance = 8.0; // Increased from 4.0
 
         // Add reference to main game for reset functionality
         this.gameInstance = null;
@@ -88,10 +88,14 @@ export class ModelInteractionManager {
         }
 
         const allInteractables = this.getAllInteractableObjects();
+        console.log('All interactables:', allInteractables.length); // Debug
+
         const intersects = raycaster.intersectObjects(allInteractables, true);
+        console.log('Intersects found:', intersects.length); // Debug
 
         if (intersects.length > 0) {
             let obj = intersects[0].object;
+            console.log('Hit object:', obj.name, obj.type); // Debug
 
             // Find the root interactable object
             while (obj && !obj.userData.isInteractableModel && !obj.userData.isPickupLight) {
@@ -99,6 +103,16 @@ export class ModelInteractionManager {
             }
 
             if (obj) {
+                console.log('Root interactable found:', obj.name, obj.userData); // Debug
+
+                // Get distance for debugging
+                const objectPosition = new THREE.Vector3();
+                obj.getWorldPosition(objectPosition);
+                const distance = this.camera.position.distanceTo(objectPosition);
+                console.log('Distance to object:', distance, 'Max allowed:', this.maxModelInteractionDistance); // Debug
+                console.log('Camera position:', this.camera.position); // Debug
+                console.log('Object position:', objectPosition); // Debug
+
                 // Check if object is within interaction distance
                 if (!this.isWithinInteractionDistance(obj)) {
                     console.log('Object too far away to interact with');
@@ -114,7 +128,11 @@ export class ModelInteractionManager {
                     this.onModelInteraction(obj);
                     return true;
                 }
+            } else {
+                console.log('No root interactable object found'); // Debug
             }
+        } else {
+            console.log('No intersects found with raycaster'); // Debug
         }
         return false; // No interaction
     }
@@ -141,27 +159,27 @@ export class ModelInteractionManager {
         return false;
     }
 
-    // Handle model interactions
-    onModelInteraction(modelGroup) {
-        console.log(`Interacted with model: ${modelGroup.userData.modelPath}`);
-
-        // Model-specific interactions
-        if (modelGroup.userData.modelPath.includes('ballpit')) {
-            this.handleBallpitInteraction(modelGroup);
-        }
-
-        // Add more model-specific interactions as needed
-    }
-
     // Specific interaction handlers
-    handleBallpitInteraction(modelGroup) {
-        console.log('You interacted with the ballpit! 🎾');
+    handleSlideInteraction(modelGroup) {
+        console.log('You interacted with the slide! 🛝');
         console.log('The world begins to dissolve around you...');
 
         // Trigger world reset
         if (this.gameInstance) {
             this.gameInstance.resetWorld();
         }
+    }
+
+    // Handle model interactions
+    onModelInteraction(modelGroup) {
+        console.log(`Interacted with model: ${modelGroup.userData.modelPath}`);
+
+        // Model-specific interactions - check for slide
+        if (modelGroup.userData.modelPath.toLowerCase().includes('slide')) {
+            this.handleSlideInteraction(modelGroup);
+        }
+
+        // Add more model-specific interactions as needed
     }
 
     // Get all interactable models
