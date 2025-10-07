@@ -125,7 +125,37 @@ export const RoomLayouts = {
                 new THREE.Vector3(-17, 0, -8)
             ]
         ]
-    }, exit: {
+    }, controlRoom: {
+        position: new THREE.Vector3(-10, 0, 10),
+        width: 20,
+        height: 5,
+        depth: 20,
+        walls: [
+            [new THREE.Vector3(10, 0, 10), new THREE.Vector3(-10, 0, 10), 0.4],
+            [new THREE.Vector3(10, 0, -10), new THREE.Vector3(-10, 0, -10), 0.4],
+            [new THREE.Vector3(10, 0, 10), new THREE.Vector3(10, 0, -10), 0.4],
+            [new THREE.Vector3(-10, 0, 10), new THREE.Vector3(-10, 0, -10), 0.4],
+
+            // Interior “console” area
+            [new THREE.Vector3(-4, 0, -2), new THREE.Vector3(4, 0, -2), 0.4],
+            [new THREE.Vector3(0, 0, -2), new THREE.Vector3(0, 0, -6), 0.4],
+        ],
+        lights: [
+            [0, 0],
+            [5, 5],
+            [-5, -5],
+        ],
+        zones: [
+            [
+                new THREE.Vector3(10, 0, 10),
+                new THREE.Vector3(5, 0, -10),
+                'west',
+                new THREE.Vector3(10, 0, 0),
+            ]
+        ]
+    },
+    
+    exit: {
         position: new THREE.Vector3(-16, 0, 16),
         width: 10,
         height: 5,

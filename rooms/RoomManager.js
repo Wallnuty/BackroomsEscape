@@ -32,6 +32,24 @@ export class RoomManager {
         this.pendingRoomUpdate = null;
         this.currentRoom = this.rooms[0];
         this.renderZonesDisabled = false;
+      this.roomButton = new RoomButton(
+    this.scene,
+    this.world,
+    this.currentRoom.position.clone().add(new THREE.Vector3(4.7, -0.5, 0)),
+    () => {
+        // Defer room creation and removal to next frame
+        requestAnimationFrame(() => {
+            const prevRoom = this.currentRoom;
+            const newRoom = this.createCustomRoom(RoomLayouts.controlRoom, 'controlRoom');
+            this.removeRoom(prevRoom);
+            this.currentRoom = newRoom;
+            this.currentLayoutName = 'controlRoom';
+            console.log('Switched to control room via button');
+        });
+    }
+);
+    window.addEventListener('keydown', e => this.roomButton?.handleKeyDown(e));
+    window.addEventListener('keyup', e => this.roomButton?.handleKeyUp(e));
     }
 
     _createGlobalFloorAndCeiling() {
@@ -406,6 +424,9 @@ export class RoomManager {
         if (triggersToHandle.length > 0) {
             this.handleTriggeredZones(triggersToHandle);
         }
+        if (this.roomButton) {
+            this.roomButton.update(playerPosition);
+    }
     }
 
     manageRoomTransitions(prevLayoutName, newLayoutName) {
