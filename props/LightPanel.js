@@ -24,13 +24,16 @@ export class LightPanel {
         // The visible emissive panel mesh
         const lightPanelMesh = new THREE.Mesh(lightPanelGeometry, lightPanelMaterial);
         lightPanelMesh.rotation.x = Math.PI / 2;
-        lightPanelMesh.position.y = -0.05; // Offset slightly from the light source to prevent z-fighting
+        lightPanelMesh.position.y = -0.05;
         this.group.add(lightPanelMesh);
 
         // The actual light source
         const rectLight = new THREE.RectAreaLight(color, intensity, width, height);
         rectLight.rotation.x = -Math.PI / 2; // Point down
         this.group.add(rectLight);
+
+        //Make it accessible from PlaygroundRoom
+        this.light = rectLight;
     }
 
     /**

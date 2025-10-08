@@ -52,7 +52,10 @@ export class ModelInteractionManager {
 
         // Add pickup lights if available
         if (this.pickupLightsManager && this.pickupLightsManager.pickableRoots) {
-            allObjects.push(...this.pickupLightsManager.pickableRoots);
+            const isPlayground = this.gameInstance?.currentRoom?.constructor.name === 'PlaygroundRoom';
+            if (!isPlayground) {
+                allObjects.push(...this.pickupLightsManager.pickableRoots);
+            }
         }
 
         return allObjects;
@@ -81,60 +84,74 @@ export class ModelInteractionManager {
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera({ x: 0, y: 0 }, this.camera);
 
-        // If we're holding a light, always drop it on any click (no distance check for dropping)
-        if (this.pickupLightsManager && this.pickupLightsManager.heldLight) {
-            this.pickupLightsManager.dropHeldLight();
-            return true;
-        }
+        const interactables = this.getAllInteractableObjects().filter(obj =>
+            this.isWithinInteractionDistance(obj)
+        );
 
-        const allInteractables = this.getAllInteractableObjects();
-        console.log('All interactables:', allInteractables.length); // Debug
-
-        const intersects = raycaster.intersectObjects(allInteractables, true);
-        console.log('Intersects found:', intersects.length); // Debug
+        const intersects = raycaster.intersectObjects(interactables, true);
 
         if (intersects.length > 0) {
             let obj = intersects[0].object;
-            console.log('Hit object:', obj.name, obj.type); // Debug
 
-            // Find the root interactable object
-            while (obj && !obj.userData.isInteractableModel && !obj.userData.isPickupLight) {
-                obj = obj.parent;
+            // Check if it is the teleport slide
+            if (obj.userData.isTeleportSlide && this.gameInstance) {
+                this.gameInstance.teleportToPlayground();
+                return; // Skip other interactions
+            }
+            // If we're holding a light, always drop it on any click (no distance check for dropping)
+            if (this.pickupLightsManager && this.pickupLightsManager.heldLight) {
+                this.pickupLightsManager.dropHeldLight();
+                return true;
             }
 
-            if (obj) {
-                console.log('Root interactable found:', obj.name, obj.userData); // Debug
+            const allInteractables = this.getAllInteractableObjects();
+            console.log('All interactables:', allInteractables.length); // Debug
 
-                // Get distance for debugging
-                const objectPosition = new THREE.Vector3();
-                obj.getWorldPosition(objectPosition);
-                const distance = this.camera.position.distanceTo(objectPosition);
-                console.log('Distance to object:', distance, 'Max allowed:', this.maxModelInteractionDistance); // Debug
-                console.log('Camera position:', this.camera.position); // Debug
-                console.log('Object position:', objectPosition); // Debug
+            console.log('Intersects found:', intersects.length); // Debug
 
-                // Check if object is within interaction distance
-                if (!this.isWithinInteractionDistance(obj)) {
-                    console.log('Object too far away to interact with');
-                    return false;
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                console.log('Hit object:', obj.name, obj.type); // Debug
+
+                // Find the root interactable object
+                while (obj && !obj.userData.isInteractableModel && !obj.userData.isPickupLight) {
+                    obj = obj.parent;
                 }
 
-                if (obj.userData.isPickupLight) {
-                    // Pick up the light (we already checked we're not holding one above)
-                    this.pickupLightsManager.pickupSpecificLight(obj);
-                    return true;
-                } else if (obj.userData.isInteractableModel) {
-                    // Handle model interaction
-                    this.onModelInteraction(obj);
-                    return true;
+                if (obj) {
+                    console.log('Root interactable found:', obj.name, obj.userData); // Debug
+
+                    // Get distance for debugging
+                    const objectPosition = new THREE.Vector3();
+                    obj.getWorldPosition(objectPosition);
+                    const distance = this.camera.position.distanceTo(objectPosition);
+                    console.log('Distance to object:', distance, 'Max allowed:', this.maxModelInteractionDistance); // Debug
+                    console.log('Camera position:', this.camera.position); // Debug
+                    console.log('Object position:', objectPosition); // Debug
+
+                    // Check if object is within interaction distance
+                    if (!this.isWithinInteractionDistance(obj)) {
+                        console.log('Object too far away to interact with');
+                        return false;
+                    }
+
+                    if (obj.userData.isPickupLight) {
+                        // Pick up the light (we already checked we're not holding one above)
+                        this.pickupLightsManager.pickupSpecificLight(obj);
+                        return true;
+                    } else if (obj.userData.isInteractableModel) {
+                        // Handle model interaction
+                        this.onModelInteraction(obj);
+                        return true;
+                    }
+                } else {
+                    console.log('No root interactable object found'); // Debug
                 }
             } else {
-                console.log('No root interactable object found'); // Debug
+                console.log('No intersects found with raycaster'); // Debug
             }
-        } else {
-            console.log('No intersects found with raycaster'); // Debug
+            return false; // No interaction
         }
-        return false; // No interaction
     }
 
     // Check if crosshair should show hover state for any interactable
@@ -159,14 +176,12 @@ export class ModelInteractionManager {
         return false;
     }
 
-    // Specific interaction handlers
     handleSlideInteraction(modelGroup) {
-        console.log('You interacted with the slide! 🛝');
-        console.log('The world begins to dissolve around you...');
-
-        // Trigger world reset
+        console.log('Slide clicked! Loading playground...');
         if (this.gameInstance) {
-            this.gameInstance.resetWorld();
+            if (this.gameInstance.currentRoom) this.gameInstance.currentRoom.unload();
+            this.clearAll();
+            this.gameInstance.loadPlayground();
         }
     }
 

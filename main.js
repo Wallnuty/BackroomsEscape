@@ -64,6 +64,33 @@ class BackroomsGame {
     });
   }
 
+  loadPlayground() {
+      console.log("Loading playground...");
+
+      // 1. Reset the current world/scene
+      this.clearScene();
+      this.destroyRoomManager();
+
+      // 2. Create a new RoomManager if needed
+      this.setupRoomManager();
+
+      // 3. Create a new playground room
+      if (this.roomManager) {
+          // Assuming RoomManager has a loadPlayground() method
+          if (typeof this.roomManager.loadPlayground === 'function') {
+              this.roomManager.loadPlayground();
+          } else {
+              console.warn("RoomManager does not have loadPlayground()");
+          }
+      }
+
+      // 4. Reset player position to playground spawn
+      this.playerBody.position.set(0, 1.6, 0); // Example playground spawn
+      this.playerBody.velocity.set(0, 0, 0);
+      this.syncCamera();
+  }
+
+
   startGame() {
     this.setupThreeJS();
     this.setupPhysics();
@@ -240,7 +267,7 @@ class BackroomsGame {
   }
 
   setupRoomManager() {
-    this.roomManager = new RoomManager(this.scene, this.world, this.camera);
+    this.roomManager = new RoomManager(this.scene, this.world, this.camera,{ body: this.playerBody, syncCamera: this.syncCamera });
 
     // Connect the game instance to model interaction manager for reset functionality
     this.roomManager.modelInteractionManager.setGameInstance(this);

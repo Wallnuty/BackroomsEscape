@@ -5,11 +5,14 @@ import { BackroomsRoom } from './BackroomsRoom.js';
 import { RoomLayouts } from './RoomLayouts.js';
 import { PickupLightsManager } from '../puzzles/lights.js';
 import { ModelInteractionManager } from '../puzzles/modelInteraction.js'; // Add this import
+import { PlaygroundLayout } from './PlaygroundLayout.js';
+import { PlaygroundRoom } from './PlaygroundRoom.js';
 
 export class RoomManager {
-    constructor(scene, world, camera) {
+    constructor(scene, world, camera, player) {
         this.scene = scene;
         this.world = world;
+        this.player = player;
         this.rooms = [];
 
         const ambient = new THREE.AmbientLight(0xded18a, 0.4);
@@ -101,7 +104,55 @@ export class RoomManager {
             this.lightsManager.initPickupLights(pickupLightPositions);
         }
 
+        // Special: register playground models
+        if (layoutName === 'playground' && layout.models) {
+            layout.models.forEach((modelConfig, index) => {
+                const modelGroup = new THREE.Group();
+                modelGroup.userData.isInteractableModel = true;
+                modelGroup.userData.modelConfig = modelConfig;
+                modelGroup.name = `playgroundModel_${index}`;
+                room.group.add(modelGroup);
+                this.modelInteractionManager.addInteractableModel(modelGroup);
+            });
+        }
+
         return room;
+    }
+
+    loadPlayground() {
+        console.log("RoomManager: spawning playground...");
+
+        // Remove previous room & associated lights
+        if (this.currentRoom) {
+            this.currentRoom.unload(); // removes meshes and physics
+            if (this.lightsManager && this.lightsManager.pickableRoots) {
+                this.lightsManager.pickableRoots.forEach(light => this.scene.remove(light));
+                this.lightsManager.pickableRoots = [];
+            }
+        }
+
+        // Create new playground room
+        const playgroundRoom = new PlaygroundRoom(
+            this.scene,
+            this.world,
+            new THREE.Vector3(0, 0, 0) // room position
+        );
+
+        this.scene.add(playgroundRoom.group);
+        this.currentRoom = playgroundRoom;
+
+        // Spawn player slightly above floor
+        const floorY = -playgroundRoom.height / 2;
+        const offsetAboveFloor = 1.0;
+        this.player.body.position.set(
+            playgroundRoom.position.x,
+            floorY + offsetAboveFloor,
+            playgroundRoom.position.z
+        );
+        this.player.body.velocity.set(0, 0, 0);
+        this.player.syncCamera();
+
+        console.log("Playground room loaded with existing floor, ceiling, walls, and models.");
     }
 
     /**
@@ -369,6 +420,7 @@ export class RoomManager {
                 // update to the room that the left-zone belonged to
                 if (scheduledLastZone && scheduledLastZone.parentRoom) {
                     const prevLayoutName = this.currentLayoutName;
+                    this.createCustomRoom(RoomLayouts.main, 'main'); // existing main room
                     this.currentRoom = scheduledLastZone.parentRoom;
                     this.currentLayoutName = this.currentRoom.layoutName;
                     console.log(`Current room type updated to: ${this.currentLayoutName}`);
