@@ -211,7 +211,7 @@ export class PlaygroundRoom {
         });
     }
 
-
+    
     /** Called every frame if needed */
     update(delta) {
         // No flicker lights or pickups here
