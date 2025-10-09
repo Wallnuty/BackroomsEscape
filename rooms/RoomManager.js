@@ -5,8 +5,8 @@ import { BackroomsRoom } from './BackroomsRoom.js';
 import { RoomLayouts } from './RoomLayouts.js';
 import { PickupLightsManager } from '../puzzles/lights.js';
 import { ModelInteractionManager } from '../puzzles/modelInteraction.js'; // Add this import
-import { PlaygroundLayout } from './PlaygroundLayout.js';
-import { PlaygroundRoom } from './PlaygroundRoom.js';
+import { RoomLayouts as PlaygroundLayout } from './Playground/PlaygroundLayout.js';
+import { PlaygroundRoom } from './Playground/PlaygroundRoom.js';
 
 export class RoomManager {
     constructor(scene, world, camera, player) {

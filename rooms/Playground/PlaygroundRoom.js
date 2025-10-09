@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { PlaygroundLayout } from './PlaygroundLayout.js';
-import { LightPanel } from '../props/LightPanel.js';
+import { RoomLayouts } from './PlaygroundLayout.js';
+import { LightPanel } from '../../props/LightPanel.js';
 
 export class PlaygroundRoom {
     constructor(scene, world, position = new THREE.Vector3(0, 0, 0)) {
@@ -17,9 +17,9 @@ export class PlaygroundRoom {
         this.loader = new GLTFLoader();
         this.bodies = [];
         this.models = [];
-        this.width = PlaygroundLayout.width;
-        this.height = PlaygroundLayout.height;
-        this.depth = PlaygroundLayout.depth;
+        this.width = RoomLayouts.Playground.width;
+        this.height = RoomLayouts.Playground.height;
+        this.depth = RoomLayouts.Playground.depth;
 
         this._createVisuals();
         this._createPhysicsWalls();
@@ -129,7 +129,7 @@ export class PlaygroundRoom {
     /** Load GLB models defined in PlaygroundLayout */
     /** Load GLB models defined in PlaygroundLayout with improved colliders */
     _loadModels() {
-        PlaygroundLayout.models.forEach(modelData => {
+        RoomLayouts.Playground.models.forEach(modelData => {
             this.loader.load(modelData.path, gltf => {
                 const obj = gltf.scene;
                 obj.position.copy(modelData.position);
@@ -199,7 +199,7 @@ export class PlaygroundRoom {
     _setupLights() {
         // Add ceiling light panels from layout
         const ceilingY = this.height / 2 - 0.1; // just below ceiling
-        PlaygroundLayout.lights.forEach(([x, z]) => {
+        RoomLayouts.Playground.lights.forEach(([x, z]) => {
             const panel = new LightPanel({
                 intensity: 13,
                 width: 2,
