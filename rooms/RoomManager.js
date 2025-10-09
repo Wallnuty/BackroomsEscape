@@ -5,8 +5,11 @@ import { BackroomsRoom } from './BackroomsRoom.js';
 import { RoomLayouts } from './RoomLayouts.js';
 import { PickupLightsManager } from '../puzzles/lights.js';
 import { ModelInteractionManager } from '../puzzles/modelInteraction.js'; // Add this import
-import { RoomLayouts as PlaygroundLayout } from './Playground/PlaygroundLayout.js';
+import { PlaygroundLayouts } from './Playground/PlaygroundLayout.js';
+import { Hallway } from './Playground/Hallway.js';
 import { PlaygroundRoom } from './Playground/PlaygroundRoom.js';
+import { CSG } from 'three-csg-ts';
+
 
 export class RoomManager {
     constructor(scene, world, camera, player) {
@@ -14,27 +17,28 @@ export class RoomManager {
         this.world = world;
         this.player = player;
         this.rooms = [];
+        this.hallways = []; // <--- initialize here
+        this.lastZone = null;
+        this.pendingRoomUpdate = null;
+        this.currentRoom = null;
+        this.currentLayoutName = 'main';
+        this.renderZonesDisabled = false;
 
+        // lighting
         const ambient = new THREE.AmbientLight(0xded18a, 0.4);
         scene.add(ambient);
 
         this._createGlobalFloorAndCeiling();
 
-        // Create managers
+        // Managers
         this.lightsManager = new PickupLightsManager(scene, camera);
         this.modelInteractionManager = new ModelInteractionManager(scene, camera);
-
-        // Connect the managers
         this.modelInteractionManager.setPickupLightsManager(this.lightsManager);
 
-        // Start with the main room
-        this.currentLayoutName = 'main';
-        this.createCustomRoom(RoomLayouts.main, this.currentLayoutName);
-
-        this.lastZone = null;
-        this.pendingRoomUpdate = null;
-        this.currentRoom = this.rooms[0];
-        this.renderZonesDisabled = false;
+        // Start with the main room (first level)
+        //this.createCustomRoom(RoomLayouts.main, 'main');
+        //this.currentRoom = this.rooms[0];
+        this.loadConnectedRooms();
     }
 
     _createGlobalFloorAndCeiling() {
@@ -50,51 +54,78 @@ export class RoomManager {
     }
 
     /**
-     * Creates a custom room from a layout object
+     * Creates a custom room from a layout object.
+     * - If layoutName === 'playground' => use PlaygroundRoom (it internally creates visuals/physics/models)
+     * - Else => use BackroomsRoom and apply walls/lights/zones/models from the layout
      */
     createCustomRoom(layout, layoutName = null) {
+        // defensive: ensure layout exists
+        if (!layout) {
+            console.warn('createCustomRoom called with undefined layout:', layoutName);
+            return null;
+        }
+
+        // destructure with defaults (layout must supply position for Backrooms usage)
         const {
-            position,
+            position = new THREE.Vector3(0, 0, 0),
             width = 30,
             height = 5,
             depth = 30,
             walls = [],
             lights = [],
             zones = [],
-            models = [] // Add models support
+            models = []
         } = layout;
 
-        const room = new BackroomsRoom(this.scene, this.world, width, height, depth, position);
+        let room;
 
-        walls.forEach(([from, to, thickness]) => {
-            room.addWall(from, to, thickness);
-        });
+        // Playground has its own Room class that handles visuals/physics/models
+        if (layoutName === 'playground' || layoutName === 'Playground') {
+            room = new PlaygroundRoom(this.scene, this.world, position.clone());
+            // PlaygroundRoom already builds walls/lights/models, so we skip re-applying them below.
+        } else {
+            // Default to BackroomsRoom for generic layouts (main, secondary, etc.)
+            room = new BackroomsRoom(this.scene, this.world, width, height, depth, position.clone());
 
-        lights.forEach(([x, z]) => {
-            room.addLightPanel(x, z);
-        });
+            // Apply walls (BackroomsRoom should expose addWall)
+            if (Array.isArray(walls) && walls.length > 0 && typeof room.addWall === 'function') {
+                walls.forEach(([from, to, thickness]) => {
+                    // from/to are local room coordinates; addWall expects coords relative to room origin
+                    room.addWall(from.clone(), to.clone(), thickness);
+                });
+            }
 
-        zones.forEach(([from, to, direction, center]) => {
-            room.addRenderingZone(
-                from.clone().add(position),
-                to.clone().add(position),
-                direction,
-                center.clone().add(position)
-            );
-        });
+            // Apply lights (BackroomsRoom should expose addLightPanel)
+            if (Array.isArray(lights) && lights.length > 0 && typeof room.addLightPanel === 'function') {
+                lights.forEach(([x, z]) => {
+                    room.addLightPanel(x, z);
+                });
+            }
 
-        // Load models if any
-        if (models.length > 0) {
-            this.loadModelsForRoom(room, models);
+            // Apply zones: these are global positions; BackroomsRoom.addRenderingZone expects world coordinates
+            if (Array.isArray(zones) && zones.length > 0 && typeof room.addRenderingZone === 'function') {
+                zones.forEach(([from, to, direction, center]) => {
+                    room.addRenderingZone(
+                        from.clone().add(position),
+                        to.clone().add(position),
+                        direction,
+                        center.clone().add(position)
+                    );
+                });
+            }
+
+            // Load static models for non-Playground rooms (BackroomsRoom doesn't auto-load models in your code)
+            if (Array.isArray(models) && models.length > 0) {
+                this.loadModelsForRoom(room, models);
+            }
         }
 
-        room.setZoneDebugVisibility(false);
-
-        room.layoutName = layoutName;
+        // Common: set flags and push into rooms list
+        room.layoutName = layoutName || 'custom';
         this.rooms.push(room);
 
-        // If this is the main room, spawn pickup lights in the center
-        if (layoutName === 'main') {
+        // If layoutName === 'main' spawn pickup lights (your existing logic)
+        if (layoutName === 'main' && this.lightsManager && position) {
             const center = position.clone();
             const pickupLightPositions = [
                 { position: center.clone().add(new THREE.Vector3(0.5, 1, 0)), color: 0xff0000 },
@@ -104,14 +135,17 @@ export class RoomManager {
             this.lightsManager.initPickupLights(pickupLightPositions);
         }
 
-        // Special: register playground models
-        if (layoutName === 'playground' && layout.models) {
+        // If it's playground and layout contains explicit models array (rare), register lightweight placeholders for interaction
+        if ((layoutName === 'playground' || layoutName === 'Playground') && Array.isArray(layout.models) && layout.models.length > 0) {
             layout.models.forEach((modelConfig, index) => {
                 const modelGroup = new THREE.Group();
                 modelGroup.userData.isInteractableModel = true;
                 modelGroup.userData.modelConfig = modelConfig;
+                modelGroup.userData.modelPath = modelConfig.path || '';
                 modelGroup.name = `playgroundModel_${index}`;
-                room.group.add(modelGroup);
+                // place group at modelConfig.position relative to room, so it is in the scene hierarchy
+                modelGroup.position.copy(modelConfig.position || new THREE.Vector3());
+                if (room.group) room.group.add(modelGroup);
                 this.modelInteractionManager.addInteractableModel(modelGroup);
             });
         }
@@ -119,41 +153,156 @@ export class RoomManager {
         return room;
     }
 
-    loadPlayground() {
-        console.log("RoomManager: spawning playground...");
+createHallwayBetweenRooms(roomA, roomB, width = 8, height = 10, doorWidth = 4, doorHeight = 5) {
+    const start = roomA.position.clone();
+    const end = roomB.position.clone();
+    const midpoint = start.clone().add(end).multiplyScalar(0.5);
+    const distance = 8;
+    const direction = new THREE.Vector3().subVectors(end, start).normalize();
+    const angleY = Math.atan2(direction.z, direction.x);
 
-        // Remove previous room & associated lights
-        if (this.currentRoom) {
-            this.currentRoom.unload(); // removes meshes and physics
-            if (this.lightsManager && this.lightsManager.pickableRoots) {
-                this.lightsManager.pickableRoots.forEach(light => this.scene.remove(light));
-                this.lightsManager.pickableRoots = [];
-            }
+    // --- Floor ---
+    const floorGeo = new THREE.BoxGeometry(distance, 0.2, width);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+    const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+    floorMesh.position.set(midpoint.x, midpoint.y - height / 2 + 0.1, midpoint.z);
+    floorMesh.rotation.y = -angleY;
+    this.scene.add(floorMesh);
+
+    // --- Walls ---
+    const wallGeo = new THREE.BoxGeometry(distance, height, 0.2); // thin wall along Z
+    const leftWall = new THREE.Mesh(wallGeo, floorMat);
+    const rightWall = new THREE.Mesh(wallGeo, floorMat);
+    leftWall.position.set(midpoint.x, midpoint.y, midpoint.z - width / 2 + 0.1);
+    rightWall.position.set(midpoint.x, midpoint.y, midpoint.z + width / 2 - 0.1);
+    leftWall.rotation.y = -angleY;
+    rightWall.rotation.y = -angleY;
+    this.scene.add(leftWall, rightWall);
+
+    // --- Physics bodies ---
+    const shapes = [
+        { mesh: floorMesh, size: [distance/2, 0.1, width/2] },
+        { mesh: leftWall, size: [distance/2, height/2, 0.1] },
+        { mesh: rightWall, size: [distance/2, height/2, 0.1] }
+    ];
+    shapes.forEach(s => {
+        const body = new CANNON.Body({ mass: 0 });
+        const shape = new CANNON.Box(new CANNON.Vec3(...s.size));
+        body.addShape(shape);
+        body.position.copy(s.mesh.position);
+        this.world.addBody(body);
+    });
+
+    // --- Cut doors in connected room walls ---
+    const cutDoor = (wallMesh, doorWidth, doorHeight) => {
+        if (!wallMesh) return;
+
+        const holeGeo = new THREE.BoxGeometry(doorWidth, doorHeight, wallMesh.geometry.parameters.depth + 0.1);
+        const holeMesh = new THREE.Mesh(holeGeo);
+        holeMesh.position.set(0, -height/2 + doorHeight/2, 0); // bottom-center of wall
+
+        const wallWithHole = CSG.subtract(wallMesh, holeMesh);
+        wallWithHole.position.copy(wallMesh.position);
+        wallWithHole.rotation.copy(wallMesh.rotation);
+
+        this.scene.remove(wallMesh);
+        this.scene.add(wallWithHole);
+
+        return wallWithHole;
+    };
+
+    // You must assign `roomA.connectingWall` and `roomB.connectingWall` beforehand
+    if (roomA.connectingWall) roomA.connectingWall = cutDoor(roomA.connectingWall, doorWidth, doorHeight);
+    if (roomB.connectingWall) roomB.connectingWall = cutDoor(roomB.connectingWall, doorWidth, doorHeight);
+}
+
+
+/**
+ * Loads the linear Playground -> SignIn -> Extra system (along +Z axis)
+ */
+loadConnectedRooms() {
+    // Cleanup old rooms/hallways
+    this.rooms.forEach(r => { if (typeof r.unload === 'function') r.unload(); });
+    this.hallways.forEach(h => {
+        if (h.mesh) this.scene.remove(h.mesh);
+        if (h.body) this.world.removeBody(h.body);
+    });
+    this.rooms = [];
+    this.hallways = [];
+
+    // --- SYSTEM along X-axis ---
+    const spacing = 8; // shorter hallway distance
+    let cursorX = 0;
+
+    const createAndPosition = (layoutObj, layoutKey) => {
+        const room = this.createCustomRoom(layoutObj, layoutKey);
+        if (!room) return null;
+
+        // Position room along X-axis
+        if (room.group) {
+            room.group.position.set(
+                cursorX,
+                layoutObj.position?.y ?? 0,
+                layoutObj.position?.z ?? 0
+            );
         }
 
-        // Create new playground room
-        const playgroundRoom = new PlaygroundRoom(
-            this.scene,
-            this.world,
-            new THREE.Vector3(0, 0, 0) // room position
+        // Store position for linking
+        room.position = new THREE.Vector3(
+            cursorX,
+            layoutObj.position?.y ?? 0,
+            layoutObj.position?.z ?? 0
         );
 
-        this.scene.add(playgroundRoom.group);
-        this.currentRoom = playgroundRoom;
+        // Update any dependent geometry
+        if (typeof room.updatePositionDependentObjects === 'function') {
+            room.updatePositionDependentObjects();
+        }
 
-        // Spawn player slightly above floor
-        const floorY = -playgroundRoom.height / 2;
-        const offsetAboveFloor = 1.0;
+        // Advance cursor for next room
+        const roomWidth = room.width || layoutObj.width || 40;
+        cursorX -= roomWidth + spacing; // move left for next room
+
+        return room;
+    };
+
+    // Create rooms linearly: Playground → SignIn → Extra (along -X)
+    const playgroundRoom = createAndPosition(PlaygroundLayouts.Playground, 'playground');
+    const signInRoom = createAndPosition(PlaygroundLayouts.SignIn, 'signin');
+    const extraRoom = createAndPosition(PlaygroundLayouts.Extra, 'extra');
+
+    // Connect rooms with short hallways (X-direction)
+    const createHallway = (roomA, roomB) => {
+        if (!roomA || !roomB) return;
+        const start = roomA.position.clone();
+        const end = roomB.position.clone();
+        // keep Z same (parallel), connect along X
+        start.z = end.z = roomA.position.z;
+        this.createHallwayBetweenRooms(roomA, roomB, 8, 10);
+    };
+
+    if (playgroundRoom && signInRoom) createHallway(playgroundRoom, signInRoom);
+    if (signInRoom && extraRoom) createHallway(signInRoom, extraRoom);
+
+    this.rooms = [playgroundRoom, signInRoom, extraRoom].filter(Boolean);
+
+    // Place player in Playground room
+    if (playgroundRoom && this.player && this.player.body) {
+        const floorY = -(playgroundRoom.height || PlaygroundLayouts.Playground.height) / 2;
         this.player.body.position.set(
             playgroundRoom.position.x,
-            floorY + offsetAboveFloor,
+            floorY + 1.0,
             playgroundRoom.position.z
         );
         this.player.body.velocity.set(0, 0, 0);
-        this.player.syncCamera();
-
-        console.log("Playground room loaded with existing floor, ceiling, walls, and models.");
+        if (typeof this.player.syncCamera === 'function') this.player.syncCamera();
     }
+
+    this.currentRoom = playgroundRoom;
+    this.currentLayoutName = 'playground';
+    console.log('Playground → SignIn → Extra system loaded along X-axis (parallel rooms).');
+}
+
 
     /**
      * Loads 3D models for a room

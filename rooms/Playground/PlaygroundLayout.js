@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
-export const RoomLayouts = {
-
+// --- Room definitions ---
+export const PlaygroundLayouts = {
   Playground: {
     position: new THREE.Vector3(0, 0, 0),
     width: 40,
@@ -10,36 +10,73 @@ export const RoomLayouts = {
   },
 
   SignIn: {
-    position: new THREE.Vector3(0, 0, 0),
+    position: new THREE.Vector3(-50, 0, 0),
     width: 40,
     height: 8,
     depth: 40,
   },
 
   Extra: {
-    position: new THREE.Vector3(0, 0, 0),
+    position: new THREE.Vector3(-100, 0, 0),
     width: 40,
     height: 8,
     depth: 40,
   }
-
 };
 
-// --- Helper function to create walls based on room dimensions ---
+// --- Walls and lights helpers ---
 function createWalls(room) {
   const halfW = room.width / 2;
   const halfH = room.height / 2;
   const halfD = room.depth / 2;
 
-  room.walls = [
+  // basic walls as array-of-arrays
+  let walls = [
     [new THREE.Vector3(-halfW, 0, -halfD), new THREE.Vector3(halfW, 0, -halfD), 0.4], // back
     [new THREE.Vector3(halfW, 0, -halfD), new THREE.Vector3(halfW, 0, halfD), 0.4],  // right
     [new THREE.Vector3(halfW, 0, halfD), new THREE.Vector3(-halfW, 0, halfD), 0.4],  // front
     [new THREE.Vector3(-halfW, 0, halfD), new THREE.Vector3(-halfW, 0, -halfD), 0.4]  // left
   ];
+
+  // --- Door cutouts ---
+  const halfDoor = 4; // door half-width
+
+  if (room === PlaygroundLayouts.Playground) {
+    // left wall cutout
+    const wall = walls[3];
+    const zC = 0;
+    walls.splice(3, 1,
+      [wall[0].clone(), new THREE.Vector3(wall[1].x, 0, zC - halfDoor), wall[2]],
+      [new THREE.Vector3(wall[0].x, 0, zC + halfDoor), wall[1].clone(), wall[2]]
+    );
+  } else if (room === PlaygroundLayouts.SignIn) {
+    // left wall cutout
+    let wall = walls[3];
+    let zC = 0;
+    walls.splice(3, 1,
+      [wall[0].clone(), new THREE.Vector3(wall[1].x, 0, zC - halfDoor), wall[2]],
+      [new THREE.Vector3(wall[0].x, 0, zC + halfDoor), wall[1].clone(), wall[2]]
+    );
+    // right wall cutout
+    wall = walls[1];
+    zC = 0;
+    walls.splice(1, 1,
+      [wall[0].clone(), new THREE.Vector3(wall[1].x, 0, zC - halfDoor), wall[2]],
+      [new THREE.Vector3(wall[0].x, 0, zC + halfDoor), wall[1].clone(), wall[2]]
+    );
+  } else if (room === PlaygroundLayouts.Extra) {
+    // right wall cutout
+    const wall = walls[1];
+    const zC = 0;
+    walls.splice(1, 1,
+      [wall[0].clone(), new THREE.Vector3(wall[1].x, 0, zC - halfDoor), wall[2]],
+      [new THREE.Vector3(wall[0].x, 0, zC + halfDoor), wall[1].clone(), wall[2]]
+    );
+  }
+
+  room.walls = walls;
 }
 
-// --- Helper function to create ceiling lights ---
 function createLights(room, spacing = 8) {
   const halfW = room.width / 2;
   const halfD = room.depth / 2;
@@ -51,9 +88,9 @@ function createLights(room, spacing = 8) {
   ];
 }
 
-// --- Helper function to define example models ---
+// --- Models ---
 function createModels() {
-  RoomLayouts.Playground.models = [
+  PlaygroundLayouts.Playground.models = [
     {
       path: '/models/old_playground_slide.glb',
       position: new THREE.Vector3(14, -6, 14),
@@ -77,7 +114,7 @@ function createModels() {
     }
   ];
 
-  RoomLayouts.SignIn.models = [
+  PlaygroundLayouts.SignIn.models = [
     {
       path: '/models/desk.glb',
       position: new THREE.Vector3(0, -2.5, 0),
@@ -94,24 +131,46 @@ function createModels() {
     }
   ];
 
-  RoomLayouts.Extra.models = [];
+  PlaygroundLayouts.Extra.models = [];
 }
 
-// --- Apply helpers to each room ---
-for (const roomKey in RoomLayouts) {
-  createWalls(RoomLayouts[roomKey]);
-  createLights(RoomLayouts[roomKey]);
+// --- Apply helpers ---
+for (const key in PlaygroundLayouts) {
+  createWalls(PlaygroundLayouts[key]);
+  createLights(PlaygroundLayouts[key]);
 }
 createModels();
 
-// Optional: zones (only Playground example)
-const halfW = RoomLayouts.Playground.width / 2;
-const halfD = RoomLayouts.Playground.depth / 2;
-RoomLayouts.Playground.zones = [
+// --- Zones for teleport / corridor ---
+PlaygroundLayouts.Playground.zones = [
   [
-    new THREE.Vector3(halfW, 0, halfD),
-    new THREE.Vector3(-halfW, 0, -halfD),
-    'north',
-    new THREE.Vector3(0, 0, halfD)
+    new THREE.Vector3(-20,0,-20),
+    new THREE.Vector3(-40,0,20),
+    'toSignIn',
+    PlaygroundLayouts.SignIn.position.clone()
+  ]
+];
+
+PlaygroundLayouts.SignIn.zones = [
+  [
+    new THREE.Vector3(20,0,-20),
+    new THREE.Vector3(0,0,20),
+    'toPlayground',
+    PlaygroundLayouts.Playground.position.clone()
+  ],
+  [
+    new THREE.Vector3(-20,0,-20),
+    new THREE.Vector3(-40,0,20),
+    'toExtra',
+    PlaygroundLayouts.Extra.position.clone()
+  ]
+];
+
+PlaygroundLayouts.Extra.zones = [
+  [
+    new THREE.Vector3(20,0,-20),
+    new THREE.Vector3(0,0,20),
+    'toSignIn',
+    PlaygroundLayouts.SignIn.position.clone()
   ]
 ];

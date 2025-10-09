@@ -178,10 +178,24 @@ export class ModelInteractionManager {
 
     handleSlideInteraction(modelGroup) {
         console.log('Slide clicked! Loading playground...');
-        if (this.gameInstance) {
-            if (this.gameInstance.currentRoom) this.gameInstance.currentRoom.unload();
+        if (this.gameInstance && this.gameInstance.roomManager) {
+            // Clear all interactable models first
             this.clearAll();
-            this.gameInstance.loadPlayground();
+
+            // Reset the RoomManager to load the Playground and connected rooms
+            this.gameInstance.roomManager.loadConnectedRooms();
+
+            // Reset model interaction manager references
+            this.setInteractableModels([]);
+            if (this.pickupLightsManager) {
+                if (this.pickupLightsManager && this.pickupLightsManager.pickableRoots) {
+                    this.pickupLightsManager.pickableRoots.forEach(lightGroup => {
+                        clearColorMixing(lightGroup);
+                    });
+                }
+            }
+
+            console.log('Playground loaded successfully.');
         }
     }
 

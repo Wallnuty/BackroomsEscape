@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 
 export class Hallway {
-    constructor(scene, world, start, end, height = 4, width = 6) {
+    constructor(scene, world, start, end, height, width) {
         this.scene = scene;
         this.world = world;
 

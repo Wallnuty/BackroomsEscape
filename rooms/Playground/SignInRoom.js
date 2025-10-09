@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { RoomLayouts } from './PlaygroundLayout.js';
+import { PlaygroundLayouts } from './PlaygroundLayout.js';
 import { LightPanel } from '../../props/LightPanel.js';
 
 export class SignInRoom {
@@ -19,7 +19,7 @@ export class SignInRoom {
         this.bodies = [];
         this.models = [];
 
-        const layout = RoomLayouts.SignIn;
+        const layout = PlaygroundLayouts.SignIn;
         this.width = layout.width;
         this.height = layout.height;
         this.depth = layout.depth;
@@ -137,55 +137,65 @@ export class SignInRoom {
     }
 
     _createPhysicsWalls() {
-        const t = 0.5;
-        const halfW = this.width/2;
-        const halfH = this.height/2;
-        const halfD = this.depth/2;
+        const t = 0.5; // wall thickness
+        const halfW = this.width / 2;
+        const halfH = this.height / 2;
+        const halfD = this.depth / 2;
 
-        const addWall = (x,y,z,sx,sy,sz)=>{
-            const shape = new CANNON.Box(new CANNON.Vec3(sx,sy,sz));
-            const body = new CANNON.Body({mass:0});
+        const addWall = (x, y, z, sx, sy, sz) => {
+            const shape = new CANNON.Box(new CANNON.Vec3(sx, sy, sz));
+            const body = new CANNON.Body({ mass: 0 });
             body.addShape(shape);
-            body.position.set(this.position.x+x,this.position.y+y,this.position.z+z);
+            body.position.set(this.position.x + x, this.position.y + y, this.position.z + z);
             this.world.addBody(body);
             this.bodies.push(body);
         };
 
-        const walls = ['back','right','front','left'];
-        walls.forEach(wName=>{
-            const openings = this.openings.filter(o=>o.wall===wName);
-            if(openings.length===0){
-                switch(wName){
-                    case 'back': addWall(0,0,-halfD-t/2, halfW, halfH, t/2); break;
-                    case 'front': addWall(0,0,halfD+t/2, halfW, halfH, t/2); break;
-                    case 'left': addWall(-halfW-t/2,0,0, t/2, halfH, halfD); break;
-                    case 'right': addWall(halfW+t/2,0,0, t/2, halfH, halfD); break;
-                }
+        const walls = ['back', 'right', 'front', 'left'];
+
+        walls.forEach(wName => {
+            const openings = this.openings.filter(o => o.wall === wName);
+            const isZWall = (wName === 'back' || wName === 'front');
+            const wallPos = isZWall ? (wName === 'back' ? -halfD - t/2 : halfD + t/2)
+                                    : (wName === 'left' ? -halfW - t/2 : halfW + t/2);
+            const wallLength = isZWall ? this.width : this.depth;
+
+            if (openings.length === 0) {
+                // no openings, full wall
+                if (isZWall) addWall(0, 0, wallPos, halfW, halfH, t/2);
+                else addWall(wallPos, 0, 0, t/2, halfH, halfD);
             } else {
-                openings.forEach(o=>{
-                    if(wName==='back' || wName==='front'){
-                        const z = wName==='back'?-halfD-t/2:halfD+t/2;
-                        const leftWidth = o.xMin + halfW;
-                        const rightWidth = halfW - o.xMax;
-                        if(leftWidth>0) addWall(-halfW+leftWidth/2,0,z,leftWidth/2,halfH,t/2);
-                        if(rightWidth>0) addWall(o.xMax - halfW + rightWidth/2,0,z,rightWidth/2,halfH,t/2);
-                    } else {
-                        const x = wName==='left'?-halfW-t/2:halfW+t/2;
-                        const bottomDepth = o.zMin + halfD;
-                        const topDepth = halfD - o.zMax;
-                        if(bottomDepth>0) addWall(x,0,-halfD+bottomDepth/2,t/2,halfH,bottomDepth/2);
-                        if(topDepth>0) addWall(x,0,o.zMax - halfD + topDepth/2,t/2,halfH,topDepth/2);
-                    }
-                });
+                // split wall around openings
+                if (isZWall) {
+                    openings.sort((a, b) => a.xMin - b.xMin);
+                    let lastX = -halfW;
+                    openings.forEach(o => {
+                        const leftWidth = o.xMin - lastX;
+                        if (leftWidth > 0) addWall(-halfW + leftWidth / 2, 0, wallPos, leftWidth / 2, halfH, t/2);
+                        lastX = o.xMax;
+                    });
+                    const rightWidth = halfW - lastX;
+                    if (rightWidth > 0) addWall(lastX + rightWidth / 2, 0, wallPos, rightWidth / 2, halfH, t/2);
+                } else {
+                    openings.sort((a, b) => a.zMin - b.zMin);
+                    let lastZ = -halfD;
+                    openings.forEach(o => {
+                        const lowerDepth = o.zMin - lastZ;
+                        if (lowerDepth > 0) addWall(wallPos, 0, lastZ + lowerDepth/2, t/2, halfH, lowerDepth/2);
+                        lastZ = o.zMax;
+                    });
+                    const upperDepth = halfD - lastZ;
+                    if (upperDepth > 0) addWall(wallPos, 0, lastZ + upperDepth/2, t/2, halfH, upperDepth/2);
+                }
             }
         });
 
-        // Ceiling
-        addWall(0,halfH+t/2,0, halfW, t/2, halfD);
+        // Ceiling (optional)
+        addWall(0, halfH + t/2, 0, halfW, t/2, halfD);
     }
 
     _loadModels() {
-        const layout = RoomLayouts.SignIn;
+        const layout = PlaygroundLayouts.SignIn;
         if(!layout.models) return;
         layout.models.forEach(modelData=>{
             this.loader.load(modelData.path, gltf=>{
@@ -211,7 +221,7 @@ export class SignInRoom {
     }
 
     _setupLights() {
-        const layout = RoomLayouts.SignIn;
+        const layout = PlaygroundLayouts.SignIn;
         const ceilingY = this.height/2-0.1;
         layout.lights.forEach(([x,z])=>{
             const panel = new LightPanel({intensity:13,width:2,height:2,color:0xffffff});

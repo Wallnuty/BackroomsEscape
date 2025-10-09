@@ -69,25 +69,31 @@ class BackroomsGame {
 
       // 1. Reset the current world/scene
       this.clearScene();
-      this.destroyRoomManager();
 
-      // 2. Create a new RoomManager if needed
+      // 2. Destroy old RoomManager and create a new one
+      this.destroyRoomManager();
       this.setupRoomManager();
 
-      // 3. Create a new playground room
+      // 3. Load connected rooms including the Playground
       if (this.roomManager) {
-          // Assuming RoomManager has a loadPlayground() method
-          if (typeof this.roomManager.loadPlayground === 'function') {
-              this.roomManager.loadPlayground();
-          } else {
-              console.warn("RoomManager does not have loadPlayground()");
-          }
+          this.roomManager.loadConnectedRooms();
       }
 
-      // 4. Reset player position to playground spawn
-      this.playerBody.position.set(0, 1.6, 0); // Example playground spawn
-      this.playerBody.velocity.set(0, 0, 0);
-      this.syncCamera();
+      // 4. Reset player position to Playground spawn
+      const playgroundRoom = this.roomManager?.currentRoom;
+      if (playgroundRoom) {
+          const floorY = -playgroundRoom.height / 2;
+          const offsetAboveFloor = 1.0;
+          this.playerBody.position.set(
+              playgroundRoom.position.x,
+              floorY + offsetAboveFloor,
+              playgroundRoom.position.z
+          );
+          this.playerBody.velocity.set(0, 0, 0);
+          this.syncCamera();
+      }
+
+      console.log("Playground loaded successfully.");
   }
 
 
@@ -437,7 +443,8 @@ class BackroomsGame {
 
   resetPlayerPosition() {
     // Reset physics body position
-    this.playerBody.position.set(-15, -2.1, 3); // Original spawn position
+    //this.playerBody.position.set(-15, -2.1, 3); // Original spawn position
+    this.playerBody.position.set(-16, 0, 16);
     this.playerBody.velocity.set(0, 0, 0);
     this.playerBody.angularVelocity.set(0, 0, 0);
 
@@ -548,7 +555,7 @@ class BackroomsGame {
         const playerPos = this.playerBody.position;
         const targetPos = new THREE.Vector3(
           playerPos.x,
-          playerPos.y + 20,
+          playerPos.y + 100,
           playerPos.z
         );
         this.camera.position.lerp(targetPos, 0.1);

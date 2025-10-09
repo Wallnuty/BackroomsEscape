@@ -1,14 +1,27 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { RoomLayouts } from './PlaygroundLayout.js';
+import { PlaygroundLayouts } from './PlaygroundLayout.js';
 import { LightPanel } from '../../props/LightPanel.js';
 
 export class PlaygroundRoom {
-    constructor(scene, world, position = new THREE.Vector3(0, 0, 0)) {
+    constructor(scene, world, position = new THREE.Vector3(0, 0, 0), connections = {}, corridorWidth = 6) {
         this.scene = scene;
         this.world = world;
         this.position = position;
+        this.openings = [];
+        this.renderingZones = [];
+
+        // Create openings for connections
+        const halfCorridor = corridorWidth / 2;
+        for (const [wall, connectedRoom] of Object.entries(connections)) {
+            if (!connectedRoom) continue;
+            if (wall === 'back' || wall === 'front') {
+                this.openings.push({ wall, xMin: -halfCorridor, xMax: halfCorridor });
+            } else { // left/right
+                this.openings.push({ wall, zMin: -halfCorridor, zMax: halfCorridor });
+            }
+        }
 
         this.group = new THREE.Group();
         this.group.position.copy(position);
@@ -17,9 +30,9 @@ export class PlaygroundRoom {
         this.loader = new GLTFLoader();
         this.bodies = [];
         this.models = [];
-        this.width = RoomLayouts.Playground.width;
-        this.height = RoomLayouts.Playground.height;
-        this.depth = RoomLayouts.Playground.depth;
+        this.width = PlaygroundLayouts.Playground.width;
+        this.height = PlaygroundLayouts.Playground.height;
+        this.depth = PlaygroundLayouts.Playground.depth;
 
         this._createVisuals();
         this._createPhysicsWalls();
@@ -30,7 +43,6 @@ export class PlaygroundRoom {
     /** Create visual walls, ceiling, and floor with textures */
     _createVisuals() {
         const loader = new THREE.TextureLoader();
-
         const halfW = this.width / 2;
         const halfH = this.height / 2;
         const halfD = this.depth / 2;
@@ -67,6 +79,8 @@ export class PlaygroundRoom {
             { base: 'textures/walls/wall4_basecolor.png', normal: 'textures/walls/wall4_normalgl.png', rough: 'textures/walls/wall4_roughness.png' }
         ];
 
+        const wallNames = ['back', 'right', 'front', 'left'];
+
         for (let i = 0; i < 4; i++) {
             const material = new THREE.MeshStandardMaterial({
                 map: loader.load(wallPaths[i].base),
@@ -74,25 +88,75 @@ export class PlaygroundRoom {
                 roughnessMap: loader.load(wallPaths[i].rough),
             });
 
-            let wallGeo;
-            let wallMesh;
+            const wallName = wallNames[i];
+            const openings = this.openings.filter(o => o.wall === wallName);
+            const isZWall = wallName === 'back' || wallName === 'front';
 
-            if (i < 2) { // front/back walls
-                wallGeo = new THREE.PlaneGeometry(this.width, this.height);
-                wallMesh = new THREE.Mesh(wallGeo, material);
-                wallMesh.position.set(0, 0, i === 0 ? -halfD : halfD);
-                if (i === 1) wallMesh.rotation.y = Math.PI;
-            } else { // left/right walls
-                wallGeo = new THREE.PlaneGeometry(this.depth, this.height);
-                wallMesh = new THREE.Mesh(wallGeo, material);
-                wallMesh.position.set(i === 2 ? -halfW : halfW, 0, 0);
-                wallMesh.rotation.y = i === 2 ? Math.PI / 2 : -Math.PI / 2;
+            if (openings.length === 0) {
+                // Full wall
+                let wallGeo, wallMesh;
+                if (isZWall) {
+                    wallGeo = new THREE.PlaneGeometry(this.width, this.height);
+                    wallMesh = new THREE.Mesh(wallGeo, material);
+                    wallMesh.position.set(0, 0, wallName === 'back' ? -halfD : halfD);
+                    if (wallName === 'front') wallMesh.rotation.y = Math.PI;
+                } else {
+                    wallGeo = new THREE.PlaneGeometry(this.depth, this.height);
+                    wallMesh = new THREE.Mesh(wallGeo, material);
+                    wallMesh.position.set(wallName === 'left' ? -halfW : halfW, 0, 0);
+                    wallMesh.rotation.y = wallName === 'left' ? Math.PI / 2 : -Math.PI / 2;
+                }
+                this.group.add(wallMesh);
+            } else {
+                // Wall with openings
+                if (isZWall) {
+                    openings.sort((a,b)=>a.xMin-b.xMin);
+                    let lastX = -halfW;
+                    openings.forEach(o => {
+                        const leftWidth = o.xMin - lastX;
+                        if (leftWidth > 0) {
+                            const wallGeo = new THREE.PlaneGeometry(leftWidth, this.height);
+                            const wallMesh = new THREE.Mesh(wallGeo, material);
+                            wallMesh.position.set(lastX + leftWidth/2, 0, wallName === 'back' ? -halfD : halfD);
+                            if (wallName === 'front') wallMesh.rotation.y = Math.PI;
+                            this.group.add(wallMesh);
+                        }
+                        lastX = o.xMax;
+                    });
+                    const rightWidth = halfW - lastX;
+                    if (rightWidth > 0) {
+                        const wallGeo = new THREE.PlaneGeometry(rightWidth, this.height);
+                        const wallMesh = new THREE.Mesh(wallGeo, material);
+                        wallMesh.position.set(lastX + rightWidth/2, 0, wallName === 'back' ? -halfD : halfD);
+                        if (wallName === 'front') wallMesh.rotation.y = Math.PI;
+                        this.group.add(wallMesh);
+                    }
+                } else {
+                    openings.sort((a,b)=>a.zMin-b.zMin);
+                    let lastZ = -halfD;
+                    openings.forEach(o => {
+                        const lowerDepth = o.zMin - lastZ;
+                        if (lowerDepth > 0) {
+                            const wallGeo = new THREE.PlaneGeometry(lowerDepth, this.height);
+                            const wallMesh = new THREE.Mesh(wallGeo, material);
+                            wallMesh.position.set(wallName === 'left' ? -halfW : halfW, 0, lastZ + lowerDepth/2);
+                            wallMesh.rotation.y = wallName === 'left' ? Math.PI / 2 : -Math.PI / 2;
+                            this.group.add(wallMesh);
+                        }
+                        lastZ = o.zMax;
+                    });
+                    const upperDepth = halfD - lastZ;
+                    if (upperDepth > 0) {
+                        const wallGeo = new THREE.PlaneGeometry(upperDepth, this.height);
+                        const wallMesh = new THREE.Mesh(wallGeo, material);
+                        wallMesh.position.set(wallName === 'left' ? -halfW : halfW, 0, lastZ + upperDepth/2);
+                        wallMesh.rotation.y = wallName === 'left' ? Math.PI / 2 : -Math.PI / 2;
+                        this.group.add(wallMesh);
+                    }
+                }
             }
-
-            this.group.add(wallMesh);
         }
     }
-
 
     /** Add static physics walls for collision */
     _createPhysicsWalls() {
@@ -105,89 +169,87 @@ export class PlaygroundRoom {
             const shape = new CANNON.Box(new CANNON.Vec3(sx, sy, sz));
             const body = new CANNON.Body({ mass: 0 });
             body.addShape(shape);
-            body.position.set(
-                this.position.x + x,
-                this.position.y + y,
-                this.position.z + z
-            );
+            body.position.set(this.position.x + x, this.position.y + y, this.position.z + z);
             this.world.addBody(body);
             this.bodies.push(body);
         };
 
-        // Back wall
-        addWall(0, 0, -halfD - t / 2, halfW, halfH, t / 2);
-        // Front wall
-        addWall(0, 0, halfD + t / 2, halfW, halfH, t / 2);
-        // Left wall
-        addWall(-halfW - t / 2, 0, 0, t / 2, halfH, halfD);
-        // Right wall
-        addWall(halfW + t / 2, 0, 0, t / 2, halfH, halfD);
+        const walls = ['back','right','front','left'];
+        walls.forEach(wName => {
+            const openings = this.openings.filter(o => o.wall === wName);
+            const isZWall = wName === 'back' || wName === 'front';
+            const wallPos = isZWall ? (wName === 'back' ? -halfD - t/2 : halfD + t/2)
+                                    : (wName === 'left' ? -halfW - t/2 : halfW + t/2);
+            const wallLength = isZWall ? this.width : this.depth;
+
+            if (openings.length === 0) {
+                // full wall
+                if (isZWall) addWall(0, 0, wallPos, halfW, halfH, t/2);
+                else addWall(wallPos, 0, 0, t/2, halfH, halfD);
+            } else {
+                if (isZWall) {
+                    openings.sort((a,b)=>a.xMin-b.xMin);
+                    let lastX = -halfW;
+                    openings.forEach(o => {
+                        const leftWidth = o.xMin - lastX;
+                        if(leftWidth>0) addWall(-halfW + leftWidth/2, 0, wallPos, leftWidth/2, halfH, t/2);
+                        lastX = o.xMax;
+                    });
+                    const rightWidth = halfW - lastX;
+                    if(rightWidth>0) addWall(lastX + rightWidth/2, 0, wallPos, rightWidth/2, halfH, t/2);
+                } else {
+                    openings.sort((a,b)=>a.zMin-b.zMin);
+                    let lastZ = -halfD;
+                    openings.forEach(o => {
+                        const lowerDepth = o.zMin - lastZ;
+                        if(lowerDepth>0) addWall(wallPos, 0, lastZ + lowerDepth/2, t/2, halfH, lowerDepth/2);
+                        lastZ = o.zMax;
+                    });
+                    const upperDepth = halfD - lastZ;
+                    if(upperDepth>0) addWall(wallPos, 0, lastZ + upperDepth/2, t/2, halfH, upperDepth/2);
+                }
+            }
+        });
+
         // Ceiling (optional)
-        addWall(0, halfH + t / 2, 0, halfW, t / 2, halfD);
+        addWall(0, halfH + t/2, 0, halfW, t/2, halfD);
     }
 
     /** Load GLB models defined in PlaygroundLayout */
-    /** Load GLB models defined in PlaygroundLayout with improved colliders */
     _loadModels() {
-        RoomLayouts.Playground.models.forEach(modelData => {
+        PlaygroundLayouts.Playground.models.forEach(modelData => {
             this.loader.load(modelData.path, gltf => {
                 const obj = gltf.scene;
                 obj.position.copy(modelData.position);
                 obj.scale.copy(modelData.scale);
-                obj.rotation.set(
-                    modelData.rotation.x,
-                    modelData.rotation.y,
-                    modelData.rotation.z
-                );
+                obj.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
                 this.group.add(obj);
                 this.models.push(obj);
 
                 if (!this.world) return;
 
-                // Create a compound collider using multiple boxes or cylinders
                 const compoundBody = new CANNON.Body({ mass: 0 });
-                
-                // Example logic: check type and add suitable shapes
+                const bbox = new THREE.Box3().setFromObject(obj);
+                const size = new THREE.Vector3();
+                bbox.getSize(size);
+
                 if (modelData.type === 'slide') {
-                    // Slide: one long inclined box + small base box
-                    const bbox = new THREE.Box3().setFromObject(obj);
-                    const size = new THREE.Vector3();
-                    bbox.getSize(size);
-
-                    // Inclined main part
-                    const mainBox = new CANNON.Box(
-                        new CANNON.Vec3(size.x / 2, size.y / 4, size.z / 4)
-                    );
-                    compoundBody.addShape(mainBox, new CANNON.Vec3(0, size.y / 4, 0), new CANNON.Quaternion().setFromEuler(-Math.PI/6, 0, 0));
-
-                    // Base
-                    const baseBox = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 8, size.z / 8));
-                    compoundBody.addShape(baseBox, new CANNON.Vec3(0, -size.y / 8, size.z / 4));
+                    const mainBox = new CANNON.Box(new CANNON.Vec3(size.x/2, size.y/4, size.z/4));
+                    compoundBody.addShape(mainBox, new CANNON.Vec3(0, size.y/4, 0), new CANNON.Quaternion().setFromEuler(-Math.PI/6,0,0));
+                    const baseBox = new CANNON.Box(new CANNON.Vec3(size.x/2, size.y/8, size.z/8));
+                    compoundBody.addShape(baseBox, new CANNON.Vec3(0,-size.y/8, size.z/4));
                 } else if (modelData.type === 'swing') {
-                    // Swing: two vertical posts + seat
-                    const bbox = new THREE.Box3().setFromObject(obj);
-                    const size = new THREE.Vector3();
-                    bbox.getSize(size);
-
-                    // Left post
-                    const postLeft = new CANNON.Box(new CANNON.Vec3(size.x / 16, size.y / 2, size.z / 16));
-                    compoundBody.addShape(postLeft, new CANNON.Vec3(-size.x / 4, 0, 0));
-                    // Right post
-                    const postRight = new CANNON.Box(new CANNON.Vec3(size.x / 16, size.y / 2, size.z / 16));
-                    compoundBody.addShape(postRight, new CANNON.Vec3(size.x / 4, 0, 0));
-                    // Seat
-                    const seat = new CANNON.Box(new CANNON.Vec3(size.x / 4, size.y / 16, size.z / 8));
-                    compoundBody.addShape(seat, new CANNON.Vec3(0, -size.y / 2 + size.y / 16, 0));
+                    const postLeft = new CANNON.Box(new CANNON.Vec3(size.x/16, size.y/2, size.z/16));
+                    compoundBody.addShape(postLeft, new CANNON.Vec3(-size.x/4,0,0));
+                    const postRight = new CANNON.Box(new CANNON.Vec3(size.x/16, size.y/2, size.z/16));
+                    compoundBody.addShape(postRight, new CANNON.Vec3(size.x/4,0,0));
+                    const seat = new CANNON.Box(new CANNON.Vec3(size.x/4, size.y/16, size.z/8));
+                    compoundBody.addShape(seat, new CANNON.Vec3(0,-size.y/2+size.y/16,0));
                 } else {
-                    // Default: simple bounding box
-                    const bbox = new THREE.Box3().setFromObject(obj);
-                    const size = new THREE.Vector3();
-                    bbox.getSize(size);
-                    const box = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2));
+                    const box = new CANNON.Box(new CANNON.Vec3(size.x/2, size.y/2, size.z/2));
                     compoundBody.addShape(box);
                 }
 
-                // Position compound body
                 const objPos = obj.position;
                 compoundBody.position.set(objPos.x, objPos.y, objPos.z);
                 this.world.addBody(compoundBody);
@@ -197,34 +259,24 @@ export class PlaygroundRoom {
     }
 
     _setupLights() {
-        // Add ceiling light panels from layout
-        const ceilingY = this.height / 2 - 0.1; // just below ceiling
-        RoomLayouts.Playground.lights.forEach(([x, z]) => {
-            const panel = new LightPanel({
-                intensity: 13,
-                width: 2,
-                height: 2,
-                color: 0xffffff
-            });
+        const ceilingY = this.height / 2 - 0.1;
+        PlaygroundLayouts.Playground.lights.forEach(([x,z]) => {
+            const panel = new LightPanel({ intensity: 13, width: 2, height: 2, color: 0xffffff });
             panel.setPosition(x, ceilingY, z);
             this.group.add(panel.group);
         });
     }
 
-    
-    /** Called every frame if needed */
     update(delta) {
-        // No flicker lights or pickups here
+        // Optional per-frame updates
     }
 
-    /** Cleanup */
     unload() {
         this.models.forEach(obj => this.group.remove(obj));
         this.bodies.forEach(b => this.world.removeBody(b));
         this.scene.remove(this.group);
     }
 
-    /** Spawn position (above ground floor) */
     getSpawnPosition() {
         return new THREE.Vector3(0, -1.8, 0);
     }
