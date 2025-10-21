@@ -1,0 +1,584 @@
+import * as THREE from 'three';
+import { createPickupLight } from '../../props/createPickupLight.js';
+import { ColorSensor } from './ColorSensor.js';
+import { PuzzleDoor } from './PuzzleDoor.js';
+
+export class ColorPuzzleManager {
+    constructor(scene, lightsManager) {
+        this.scene = scene;
+        this.lightsManager = lightsManager;
+        this.sensors = [];
+        this.doors = [];
+        
+        this.puzzleState = {
+            redRoomOpen: false,
+            purpleRoomOpen: false,
+            finalExitOpen: false,
+            hasRedLight: true,
+            hasBlueLight: false,
+            hasGreenLight: false
+        };
+
+        this.initPuzzle();
+    }
+
+    initPuzzle() {
+        this.createPuzzleDoors();
+        this.createColorSensors();
+        this.setupInitialLights();
+        
+        // DEBUG: Test sensor setup
+        setTimeout(() => this.testSensorDetection(), 1000);
+        
+        // TEMPORARY: Spawn all lights for testing
+        setTimeout(() => {
+            console.log("🔧 TEMPORARY: Spawning all lights for testing");
+            this.spawnLightInRoom('blue', new THREE.Vector3(8, 1, 0));
+            this.spawnLightInRoom('green', new THREE.Vector3(-8, 1, 0));
+        }, 3000);
+    }
+
+    createPuzzleDoors() {
+        const BRIGHT_PURPLE = 0xFF00FF; // Magenta (bright purple)
+        const BRIGHT_RED = 0xFF0000;    // Pure red
+        const WHITE = 0xFFFFFF;         // White
+
+        // Purple Door (requires purple light)
+        const purpleDoor = new PuzzleDoor(
+            this.scene,
+            new THREE.Vector3(-20, 2.5, 0),
+            new THREE.Vector3(-20, 2.5, 5),
+            BRIGHT_PURPLE,
+            'purple'
+        );
+        this.doors.push(purpleDoor);
+
+        // Red Door (requires red light)
+        const redDoor = new PuzzleDoor(
+            this.scene,
+            new THREE.Vector3(20, 2.5, 0),
+            new THREE.Vector3(20, 2.5, 5),
+            BRIGHT_RED,
+            'red'
+        );
+        this.doors.push(redDoor);
+
+        // Final Exit Door (requires white light)
+        const finalDoor = new PuzzleDoor(
+            this.scene,
+            new THREE.Vector3(0, 2.5, 20),
+            new THREE.Vector3(0, 2.5, 25),
+            WHITE,
+            'final'
+        );
+        this.doors.push(finalDoor);
+
+        console.log("🎯 Puzzle doors created");
+    }
+
+    createColorSensors() {
+        const BRIGHT_PURPLE = 0xFF00FF; // Magenta (bright purple)
+        const BRIGHT_RED = 0xFF0000;    // Pure red
+        const WHITE = 0xFFFFFF;         // White
+
+        // Sensor for Purple Door
+        const purpleSensor = new ColorSensor(
+            this.scene,
+            new THREE.Vector3(-20, 1.5, -1),
+            BRIGHT_PURPLE,
+            6.0,
+            'purple'
+        );
+        this.sensors.push(purpleSensor);
+
+        // Sensor for Red Door
+        const redSensor = new ColorSensor(
+            this.scene,
+            new THREE.Vector3(20, 1.5, -1),
+            BRIGHT_RED,
+            6.0,
+            'red'
+        );
+        this.sensors.push(redSensor);
+
+        // Sensor for Final Door
+        const finalSensor = new ColorSensor(
+            this.scene,
+            new THREE.Vector3(0, 1.5, 19),
+            WHITE,
+            6.0,
+            'final'
+        );
+        this.sensors.push(finalSensor);
+
+        // Demo sensor showing purple requirement
+        const demoSensor = new ColorSensor(
+            this.scene,
+            new THREE.Vector3(0, 1.5, -15),
+            BRIGHT_PURPLE,
+            8.0,
+            'demo'
+        );
+        this.sensors.push(demoSensor);
+
+        console.log("🔦 Color sensors created with combined color detection");
+    }
+
+    setupInitialLights() {
+        // Create initial red light directly without PuzzleLightManager
+        const redLightConfig = {
+            position: new THREE.Vector3(2, 1, -12),
+            color: 0xff0000
+        };
+
+        const light = createPickupLight(redLightConfig.color, {
+            type: 'spot',
+            intensity: 12,
+            distance: 100
+        });
+
+        light.group.position.copy(redLightConfig.position);
+        light.group.name = 'red_light_main';
+
+        this.scene.add(light.group);
+        this.lightsManager.pickableRoots.push(light.group);
+        this.lightsManager.colorMixingManager.addLight(light.group);
+
+        // Point the red light toward the demo sensor
+        const demoSensorPos = new THREE.Vector3(0, 1.5, -15);
+        light.group.lookAt(demoSensorPos);
+
+        console.log("💡 Initial red light created and pointed at demo sensor");
+    }
+
+    checkSensors() {
+        this.sensors.forEach(sensor => {
+            if (sensor.isSolved) return;
+
+            // Get all light positions first
+            const lightPositions = this.lightsManager.pickableRoots.map(light => {
+                const pos = new THREE.Vector3();
+                light.getWorldPosition(pos);
+                return pos;
+            });
+
+            // Try combined color detection first (for multiple lights mixing)
+            const combinedCorrect = this.checkCombinedColorForSensor(sensor, this.lightsManager.pickableRoots, lightPositions);
+            
+            if (combinedCorrect) {
+                this.onSensorSolved(sensor, null); // Pass null since it's combined detection
+                return;
+            }
+
+            // Fallback to individual light checking
+            this.lightsManager.pickableRoots.forEach((light, index) => {
+                const lightPos = lightPositions[index];
+                const currentColor = this.lightsManager.colorMixingManager.getCurrentMixedColor(light);
+                const isCorrectColor = sensor.checkColor(currentColor, lightPos);
+
+                if (isCorrectColor) {
+                    this.onSensorSolved(sensor, light);
+                }
+            });
+        });
+    }
+
+    checkCombinedColorForSensor(sensor, lights, lightPositions) {
+        let combinedColor = new THREE.Color(0x000000);
+        let activeLights = 0;
+
+        // Combine colors from all lights within range using ADDITIVE mixing
+        lights.forEach((light, index) => {
+            const lightPos = lightPositions[index];
+            const distance = lightPos.distanceTo(sensor.position);
+            
+            if (distance < sensor.detectionRadius) {
+                const lightColor = this.lightsManager.colorMixingManager.getCurrentMixedColor(light);
+                
+                // ADDITIVE color mixing (not averaging)
+                combinedColor.r = Math.max(combinedColor.r, lightColor.r); // Take the brightest component
+                combinedColor.g = Math.max(combinedColor.g, lightColor.g);
+                combinedColor.b = Math.max(combinedColor.b, lightColor.b);
+                activeLights++;
+            }
+        });
+
+        // If no lights in range, return false
+        if (activeLights === 0) return false;
+
+        // For multiple lights, boost the color intensity
+        if (activeLights > 1) {
+            const boostFactor = 1.0 + (activeLights * 0.3); // Boost based on number of lights
+            combinedColor.r = Math.min(combinedColor.r * boostFactor, 1.0);
+            combinedColor.g = Math.min(combinedColor.g * boostFactor, 1.0);
+            combinedColor.b = Math.min(combinedColor.b * boostFactor, 1.0);
+        }
+
+        const colorDistance = this.calculateColorDistance(combinedColor, sensor.targetColor);
+        const isCorrect = colorDistance < 0.5; // INCREASED TOLERANCE from 0.3 to 0.5
+
+        // Enhanced logging for combined colors
+        if (colorDistance < 0.8) { // Log when somewhat close
+            console.log(`🌈 Sensor ${sensor.id} - COMBINED DETECTION:`);
+            console.log(`   📊 Active lights in range: ${activeLights}`);
+            console.log(`   🎨 Combined Color: R=${combinedColor.r.toFixed(3)}, G=${combinedColor.g.toFixed(3)}, B=${combinedColor.b.toFixed(3)}`);
+            console.log(`   🎯 Target Color: R=${sensor.targetColor.r.toFixed(3)}, G=${sensor.targetColor.g.toFixed(3)}, B=${sensor.targetColor.b.toFixed(3)}`);
+            console.log(`   📏 Color Distance: ${colorDistance.toFixed(3)}`);
+            console.log(`   ✅ Match: ${isCorrect}`);
+            console.log(`---`);
+        }
+
+        return isCorrect;
+    }
+
+    calculateColorDistance(color1, color2) {
+        const r1 = color1.r;
+        const g1 = color1.g;
+        const b1 = color1.b;
+
+        const r2 = color2.r;
+        const g2 = color2.g;
+        const b2 = color2.b;
+
+        const dr = r1 - r2;
+        const dg = g1 - g2;
+        const db = b1 - b2;
+
+        return Math.sqrt(dr * dr + dg * dg + db * db);
+    }
+
+    onSensorSolved(sensor, light) {
+        console.log(`🎉 Sensor ${sensor.id} solved!`);
+        sensor.solve();
+        
+        switch(sensor.id) {
+            case 'red':
+                this.openDoor('red');
+                this.spawnLightInRoom('blue', new THREE.Vector3(25, 1, 0));
+                this.puzzleState.hasBlueLight = true;
+                this.puzzleState.redRoomOpen = true;
+                console.log("🔵 Blue light spawned in red room");
+                break;
+                
+            case 'purple':
+                this.openDoor('purple');
+                this.spawnLightInRoom('green', new THREE.Vector3(-25, 1, 0));
+                this.puzzleState.hasGreenLight = true;
+                this.puzzleState.purpleRoomOpen = true;
+                console.log("🟢 Green light spawned in purple room");
+                break;
+                
+            case 'final':
+                this.openDoor('final');
+                this.puzzleState.finalExitOpen = true;
+                this.onPuzzleComplete();
+                break;
+                
+            case 'demo':
+                // Just visual feedback for teaching
+                sensor.createSolveEffect();
+                console.log("💡 Demo sensor activated - teaching mechanic");
+                break;
+        }
+    }
+
+    spawnLightInRoom(color, position) {
+        const colorConfigs = {
+            'blue': { 
+                color: 0x0000ff, 
+                name: 'blue_light_room',
+                config: { type: 'spot', intensity: 12, distance: 100 }
+            },
+            'green': { 
+                color: 0x00ff00, 
+                name: 'green_light_room',
+                config: { type: 'spot', intensity: 12, distance: 100 }
+            },
+            'red': { 
+                color: 0xff0000, 
+                name: 'red_light_extra',
+                config: { type: 'spot', intensity: 12, distance: 100 }
+            }
+        };
+
+        const config = colorConfigs[color];
+        if (config && this.lightsManager) {
+            // Use the existing light creation system
+            const light = createPickupLight(config.color, config.config);
+            light.group.position.copy(position);
+            light.group.name = config.name;
+
+            // Add to scene and light management systems
+            this.scene.add(light.group);
+            this.lightsManager.pickableRoots.push(light.group);
+            this.lightsManager.colorMixingManager.addLight(light.group);
+
+            console.log(`✅ Spawned ${color} light at`, position);
+            
+            // Create spawn effect
+            this.createLightSpawnEffect(position, config.color);
+            
+            return light.group;
+        }
+        
+        return null;
+    }
+
+    createLightSpawnEffect(position, color) {
+        // Create a pulsing sphere effect
+        const geometry = new THREE.SphereGeometry(0.8, 16, 16);
+        const material = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.7
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        sphere.position.copy(position);
+        this.scene.add(sphere);
+
+        // Create expanding rings
+        const ringGeometry = new THREE.RingGeometry(0.5, 1.0, 32);
+        const ringMaterial = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.5,
+            side: THREE.DoubleSide
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.position.copy(position);
+        ring.position.y += 0.1;
+        ring.rotation.x = -Math.PI / 2;
+        this.scene.add(ring);
+
+        // Animate the spawn effect
+        const startTime = Date.now();
+        const animateSpawn = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = elapsed / 1500;
+
+            if (progress < 1) {
+                // Pulsing sphere
+                sphere.scale.setScalar(1 + Math.sin(progress * Math.PI * 2) * 0.3);
+                sphere.material.opacity = 0.7 * (1 - progress);
+                
+                // Expanding ring
+                ring.scale.setScalar(1 + progress * 3);
+                ring.material.opacity = 0.5 * (1 - progress);
+                
+                requestAnimationFrame(animateSpawn);
+            } else {
+                // Cleanup
+                this.scene.remove(sphere);
+                this.scene.remove(ring);
+                sphere.geometry.dispose();
+                sphere.material.dispose();
+                ring.geometry.dispose();
+                ring.material.dispose();
+            }
+        };
+        animateSpawn();
+    }
+
+    openDoor(doorId) {
+        const door = this.doors.find(d => d.id === doorId);
+        if (door && !door.isOpen) {
+            door.open();
+            console.log(`🚪 Door ${doorId} opened!`);
+        }
+    }
+
+    onPuzzleComplete() {
+        console.log("🎉 COLOR PUZZLE COMPLETED! 🎉");
+        
+        // Trigger level completion sequence
+        this.createCompletionEffect();
+        
+        // Create celebration message
+        setTimeout(() => {
+            this.showCompletionMessage();
+        }, 2000);
+
+        // You can add level transition logic here
+        setTimeout(() => {
+            console.log("➡️ Ready for next level...");
+        }, 5000);
+    }
+
+    showCompletionMessage() {
+        // Create a simple completion message
+        const message = document.createElement('div');
+        message.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+            z-index: 1000;
+            text-align: center;
+            border: 2px solid gold;
+        `;
+        message.innerHTML = '🎉 POOL ROOM PUZZLE COMPLETE! 🎉<br><small>All color mysteries solved!</small>';
+        document.body.appendChild(message);
+        
+        setTimeout(() => {
+            if (document.body.contains(message)) {
+                document.body.removeChild(message);
+            }
+        }, 5000);
+    }
+
+    createCompletionEffect() {
+        // Create multiple celebration effects
+        const positions = [
+            new THREE.Vector3(0, 5, 0),
+            new THREE.Vector3(-5, 5, -5),
+            new THREE.Vector3(5, 5, 5),
+            new THREE.Vector3(-5, 5, 5),
+            new THREE.Vector3(5, 5, -5)
+        ];
+
+        const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
+
+        positions.forEach((pos, index) => {
+            const geometry = new THREE.SphereGeometry(1.5, 16, 16);
+            const material = new THREE.MeshBasicMaterial({
+                color: colors[index],
+                transparent: true,
+                opacity: 0.8
+            });
+            const sphere = new THREE.Mesh(geometry, material);
+            sphere.position.copy(pos);
+            this.scene.add(sphere);
+
+            // Animate and remove
+            const startTime = Date.now();
+            const animate = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = elapsed / 3000;
+
+                if (progress < 1) {
+                    sphere.scale.setScalar(1 + progress * 2);
+                    material.opacity = 0.8 * (1 - progress);
+                    sphere.rotation.y += 0.05;
+                    requestAnimationFrame(animate);
+                } else {
+                    this.scene.remove(sphere);
+                    sphere.geometry.dispose();
+                    sphere.material.dispose();
+                }
+            };
+            animate();
+        });
+    }
+
+    update() {
+        this.checkSensors();
+        this.doors.forEach(door => door.update());
+    }
+
+    // Helper method to get puzzle state for UI
+    getPuzzleState() {
+        return {
+            ...this.puzzleState,
+            sensorsSolved: this.sensors.filter(sensor => sensor.isSolved).map(sensor => sensor.id),
+            doorsOpen: this.doors.filter(door => door.isOpen).map(door => door.id)
+        };
+    }
+
+    testSensorDetection() {
+        console.log("=== 🧪 SENSOR DETECTION TEST ===");
+        
+        this.sensors.forEach(sensor => {
+            console.log(`🔦 Sensor ${sensor.id}:`);
+            console.log(`   📍 Position:`, sensor.position);
+            console.log(`   🎯 Target: R=${sensor.targetColor.r.toFixed(3)}, G=${sensor.targetColor.g.toFixed(3)}, B=${sensor.targetColor.b.toFixed(3)}`);
+            console.log(`   📏 Detection Radius: ${sensor.detectionRadius}m`);
+            console.log(`   ✅ Solved: ${sensor.isSolved}`);
+        });
+
+        console.log(`💡 Available lights: ${this.lightsManager.pickableRoots.length}`);
+        this.lightsManager.pickableRoots.forEach((light, index) => {
+            const pos = new THREE.Vector3();
+            light.getWorldPosition(pos);
+            const color = this.lightsManager.colorMixingManager.getCurrentMixedColor(light);
+            console.log(`   Light ${index}: ${light.name || 'unnamed'}`);
+            console.log(`     📍 Position:`, pos);
+            console.log(`     🎨 Current Color: R=${color.r.toFixed(3)}, G=${color.g.toFixed(3)}, B=${color.b.toFixed(3)}`);
+        });
+        
+        console.log("=== TEST COMPLETE ===");
+    }
+
+    // Debug methods for manual testing
+    debugSpawnBlueLight() {
+        console.log("🔧 Debug: Spawning blue light");
+        this.spawnLightInRoom('blue', new THREE.Vector3(5, 1, 5));
+    }
+
+    debugSpawnGreenLight() {
+        console.log("🔧 Debug: Spawning green light");
+        this.spawnLightInRoom('green', new THREE.Vector3(-5, 1, 5));
+    }
+
+    debugSpawnRedLight() {
+        console.log("🔧 Debug: Spawning red light");
+        this.spawnLightInRoom('red', new THREE.Vector3(0, 1, 5));
+    }
+
+    debugSolveAllSensors() {
+        console.log("🔧 TEST MODE: Solving all sensors");
+        this.sensors.forEach(sensor => {
+            if (!sensor.isSolved) {
+                sensor.solve();
+                console.log(`   ✅ Solved sensor: ${sensor.id}`);
+            }
+        });
+        
+        // Open all doors
+        this.doors.forEach(door => {
+            if (!door.isOpen) {
+                door.open();
+                console.log(`   🚪 Opened door: ${door.id}`);
+            }
+        });
+    }
+
+    debugResetPuzzle() {
+        console.log("🔧 Debug: Resetting puzzle");
+        
+        // Reset sensors
+        this.sensors.forEach(sensor => {
+            sensor.isSolved = false;
+            sensor.indicatorMaterial.opacity = 0.3;
+            console.log(`   🔄 Reset sensor: ${sensor.id}`);
+        });
+        
+        // Close doors
+        this.doors.forEach(door => {
+            door.isOpen = false;
+            door.isAnimating = false;
+            door.animationProgress = 0;
+            door.door.position.copy(door.position);
+            door.indicator.position.copy(door.position);
+            door.doorMaterial.emissiveIntensity = 0.1;
+            console.log(`   🔄 Closed door: ${door.id}`);
+        });
+        
+        // Reset puzzle state
+        this.puzzleState = {
+            redRoomOpen: false,
+            purpleRoomOpen: false,
+            finalExitOpen: false,
+            hasRedLight: true,
+            hasBlueLight: false,
+            hasGreenLight: false
+        };
+        
+        console.log("🔄 Puzzle reset complete");
+    }
+}

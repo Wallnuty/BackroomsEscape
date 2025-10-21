@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import * as CANNON from "cannon-es";
-import { RoomManager } from "./rooms/RoomManager.js";
+import { PoolRoomManager } from "./rooms/poolRoom/PoolRoomManager.js";
 import { createPhysicsWorld } from "./physics/world.js";
 import { createPlayer } from "./physics/player.js";
 import { createFirstPersonControls } from "./controls.js";
@@ -240,10 +240,11 @@ class BackroomsGame {
   }
 
   setupRoomManager() {
-    this.roomManager = new RoomManager(this.scene, this.world, this.camera);
-
-    // Connect the game instance to model interaction manager for reset functionality
-    this.roomManager.modelInteractionManager.setGameInstance(this);
+      // Change from RoomManager to PoolRoomManager
+      this.roomManager = new PoolRoomManager(this.scene, this.world, this.camera);
+      
+      // Connect the game instance to model interaction manager for reset functionality
+      this.roomManager.modelInteractionManager.setGameInstance(this);
   }
 
   setupControls() {
@@ -409,18 +410,13 @@ class BackroomsGame {
   }
 
   resetPlayerPosition() {
-    // Reset physics body position
-    this.playerBody.position.set(-15, -2.1, 3); // Original spawn position
-    this.playerBody.velocity.set(0, 0, 0);
-    this.playerBody.angularVelocity.set(0, 0, 0);
+      // Spawn in center of pool room
+      this.playerBody.position.set(0, 1.6, 0);
+      this.playerBody.velocity.set(0, 0, 0);
+      this.playerBody.angularVelocity.set(0, 0, 0);
 
-    // Sync camera
-    this.syncCamera();
-
-    // Reset camera rotation to face forward
-    this.camera.rotation.set(0, 0, 0);
-
-    console.log("Player position reset to origin");
+      this.syncCamera();
+      this.camera.rotation.set(0, 0, 0);
   }
 
   resetGameState() {
@@ -491,102 +487,68 @@ class BackroomsGame {
     console.log(`Cleared ${objectsToRemove.length} objects from scene`);
   }
 
-  animate() {
-    if (!this.isGameRunning) return;
+    animate() {
+      if (!this.isGameRunning) return;
 
-    const delta = this.clock.getDelta();
+      const delta = this.clock.getDelta();
 
-    if (!this.isPaused) {
-      this.world.step(1 / 60, delta, 3);
+      if (!this.isPaused) {
+          this.world.step(1 / 60, delta, 3);
 
-      // Only update FP controls if active camera is FP
-      if (this.activeCameraIndex === 0) {
-        this.controls?.update(delta);
-        this.syncCamera?.();
-      }
-
-      if (this.roomManager?.lightsManager) {
-        this.roomManager.lightsManager.updateHeldLight();
-        this.roomManager.lightsManager.colorMixingManager.updateColorMixing();
-        this.roomManager.lightsManager.checkPuzzles();
-      }
-      const playerPos =
-        this.activeCameraIndex === 0
-          ? this.camera.position
-          : this.playerBody.position;
-
-      this.roomManager?.update(playerPos);
-
-      if (this.camera.userData.followPlayer) {
-        const playerPos = this.playerBody.position;
-        const targetPos = new THREE.Vector3(
-          playerPos.x,
-          playerPos.y + 20,
-          playerPos.z
-        );
-        this.camera.position.lerp(targetPos, 0.1);
-        this.camera.lookAt(playerPos.x, playerPos.y + 1, playerPos.z);
-      }
-
-      const crosshair = document.getElementById("crosshair");
-
-      if (this.activeCameraIndex === 0) {
-        // First-person: show crosshair normally
-        if (this.mouseMovedSinceResume) {
-          // Use the unified hover check
-          const isHovering = this.roomManager?.modelInteractionManager?.checkInteractableHover();
-
-          if (isHovering) {
-            crosshair.classList.add("hovering");
-          } else {
-            crosshair.classList.remove("hovering");
+          // Only update FP controls if active camera is FP
+          if (this.activeCameraIndex === 0) {
+              this.controls?.update(delta);
+              this.syncCamera?.();
           }
-        } else {
-          crosshair.classList.remove("hovering");
-        }
-        crosshair.style.display = "block";
-      } else {
-        crosshair.style.display = "none";
+
+          if (this.roomManager?.lightsManager) {
+              this.roomManager.lightsManager.updateHeldLight();
+              this.roomManager.lightsManager.colorMixingManager.updateColorMixing();
+          }
+
+          // Make sure puzzle system is updating
+          if (this.roomManager?.colorPuzzleManager) {
+              this.roomManager.colorPuzzleManager.update();
+          }
+
+          const playerPos = this.activeCameraIndex === 0 ? this.camera.position : this.playerBody.position;
+          this.roomManager?.update(playerPos);
+
+          // ... rest of your animate method
       }
-      if (this.playerMarker) {
-        this.playerMarker.position.copy(this.playerBody.position);
-        this.playerMarker.position.y += 0.5;
-        this.playerMarker.visible = this.activeCameraIndex !== 0;
-      }
+
+      this.renderer.render(this.scene, this.camera);
+      requestAnimationFrame(() => this.animate());
+  }
+
+    handleResize() {
+      if (!this.camera || !this.renderer) return;
+
+      this.camera.aspect = window.innerWidth / window.innerHeight;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    this.renderer.render(this.scene, this.camera);
-    requestAnimationFrame(() => this.animate());
-  }
+    cleanup() {
+      this.blinkTimeouts.forEach((id) => clearTimeout(id));
+      this.blinkTimeouts = [];
+      this.isGameRunning = false;
 
-  handleResize() {
-    if (!this.camera || !this.renderer) return;
+      if (this.footstepInterval) clearInterval(this.footstepInterval);
+      this.renderer?.dispose();
 
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-  }
-
-  cleanup() {
-    this.blinkTimeouts.forEach((id) => clearTimeout(id));
-    this.blinkTimeouts = [];
-    this.isGameRunning = false;
-
-    if (this.footstepInterval) clearInterval(this.footstepInterval);
-    this.renderer?.dispose();
-
-    this.scene?.traverse((object) => {
-      if (object.geometry) object.geometry.dispose();
-      if (object.material) {
-        if (Array.isArray(object.material)) {
-          object.material.forEach((mat) => mat.dispose());
-        } else {
-          object.material.dispose();
+      this.scene?.traverse((object) => {
+        if (object.geometry) object.geometry.dispose();
+        if (object.material) {
+          if (Array.isArray(object.material)) {
+            object.material.forEach((mat) => mat.dispose());
+          } else {
+            object.material.dispose();
+          }
         }
-      }
-    });
+      });
+    }
   }
-}
 
 const game = new BackroomsGame();
 window.BackroomsGame = game;
