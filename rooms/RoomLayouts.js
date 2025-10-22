@@ -79,7 +79,18 @@ export const RoomLayouts = {
                 'east',
                 new THREE.Vector3(-12, 0, 4)
             ]
-        ]
+        ],
+        // Add the 8-ball model to the secondary room
+        models: [
+            {
+                path: '/models/eight_ball.glb',
+                position: new THREE.Vector3(0, -2.4, 5),
+                scale: new THREE.Vector3(0.12, 0.12, 0.12),
+                rotation: new THREE.Vector3(-Math.PI / 4, 0, 0),
+                // make the 8-ball non-interactable
+                interactable: false
+            }
+        ],
     }, third: {
         position: new THREE.Vector3(-16, 0, 16),
         width: 40,

@@ -136,8 +136,9 @@ export class RoomManager {
                         modelGroup.position.copy(modelConfig.position);
                     }
 
-                    // Mark as interactable model
-                    modelGroup.userData.isInteractableModel = true;
+                    // Mark as interactable model (only if config allows)
+                    const isInteractable = modelConfig.interactable !== false; // default true
+                    modelGroup.userData.isInteractableModel = !!isInteractable;
                     modelGroup.userData.modelConfig = modelConfig;
                     modelGroup.userData.modelPath = modelConfig.path;
                     modelGroup.name = `interactableModel_${index}`;
@@ -146,7 +147,7 @@ export class RoomManager {
                     room.group.add(modelGroup);
 
                     // Add to model interaction manager
-                    this.modelInteractionManager.addInteractableModel(modelGroup);
+                    if (isInteractable) this.modelInteractionManager.addInteractableModel(modelGroup);
 
                     console.log(`Model ${modelConfig.path} loaded and added to room group`);
                 }
