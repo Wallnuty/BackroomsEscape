@@ -67,8 +67,11 @@ export class RoomManager {
             room.addWall(from, to, thickness);
         });
 
-        lights.forEach(([x, z]) => {
-            room.addLightPanel(x, z);
+        lights.forEach(lightEntry => {
+            const x = lightEntry[0];
+            const z = lightEntry[1];
+            const flicker = !!lightEntry[2];
+            room.addLightPanel(x, z, flicker);
         });
 
         zones.forEach(([from, to, direction, center]) => {
@@ -90,16 +93,8 @@ export class RoomManager {
         room.layoutName = layoutName;
         this.rooms.push(room);
 
-        // If this is the main room, spawn pickup lights in the center
-        if (layoutName === 'main') {
-            const center = position.clone();
-            const pickupLightPositions = [
-                { position: center.clone().add(new THREE.Vector3(0.5, 1, 0)), color: 0xff0000 },
-                { position: center.clone().add(new THREE.Vector3(-0.5, 1, 0)), color: 0x00ff00 },
-                { position: center.clone().add(new THREE.Vector3(0, 1, 0.5)), color: 0x0000ff },
-            ];
-            this.lightsManager.initPickupLights(pickupLightPositions);
-        }
+        // NOTE: pickup lights are no longer spawned automatically for the main room.
+        // If you want to spawn them later, call this.lightsManager.initPickupLights(...) from game code.
 
         return room;
     }
@@ -302,9 +297,13 @@ export class RoomManager {
         ]);
 
         // Rotate lights
-        const rotatedLights = layout.lights.map(([x, z]) => {
+        // Rotate lights (preserve optional flicker flag)
+        const rotatedLights = layout.lights.map(entry => {
+            const x = entry[0];
+            const z = entry[1];
+            const flicker = entry[2] || false;
             const v = rotateVec(new THREE.Vector3(x, 0, z));
-            return [v.x, v.z];
+            return [v.x, v.z, flicker];
         });
 
         // Rotate zones
@@ -441,6 +440,13 @@ export class RoomManager {
                 }
             });
 
+            // stop any running periodic blackouts on panels to avoid leaked timers
+            if (room.lightPanels) {
+                room.lightPanels.forEach(p => {
+                    if (typeof p.stopPeriodicBlackout === 'function') p.stopPeriodicBlackout();
+                });
+            }
+
             // Remove the entire room group from scene (this removes all children too)
             this.scene.remove(room.group);
         }
@@ -458,52 +464,52 @@ export class RoomManager {
             this.rooms.splice(idx, 1);
         }
 
-        // Clean up pickup lights not in the current room
-        if (this.currentRoom) {
-            this.cleanupPickupLightsForRoom(this.currentRoom);
-        }
+        // // Clean up pickup lights not in the current room
+        // if (this.currentRoom) {
+        //     this.cleanupPickupLightsForRoom(this.currentRoom);
+        // }
     }
 
     getRooms() {
         return this.rooms;
     }
 
-    isLightInRoom(lightGroup, room) {
-        const pos = new THREE.Vector3();
-        lightGroup.getWorldPosition(pos);
+    // isLightInRoom(lightGroup, room) {
+    //     const pos = new THREE.Vector3();
+    //     lightGroup.getWorldPosition(pos);
 
-        const minX = room.position.x - room.width / 2;
-        const maxX = room.position.x + room.width / 2;
-        const minZ = room.position.z - room.depth / 2;
-        const maxZ = room.position.z + room.depth / 2;
-        const minY = room.position.y - room.height / 2;
-        const maxY = room.position.y + room.height / 2;
+    //     const minX = room.position.x - room.width / 2;
+    //     const maxX = room.position.x + room.width / 2;
+    //     const minZ = room.position.z - room.depth / 2;
+    //     const maxZ = room.position.z + room.depth / 2;
+    //     const minY = room.position.y - room.height / 2;
+    //     const maxY = room.position.y + room.height / 2;
 
-        return (
-            pos.x >= minX && pos.x <= maxX &&
-            pos.z >= minZ && pos.z <= maxZ &&
-            pos.y >= minY && pos.y <= maxY
-        );
-    }
+    //     return (
+    //         pos.x >= minX && pos.x <= maxX &&
+    //         pos.z >= minZ && pos.z <= maxZ &&
+    //         pos.y >= minY && pos.y <= maxY
+    //     );
+    // }
 
-    cleanupPickupLightsForRoom(room) {
-        if (this.lightsManager && this.lightsManager.pickableRoots) {
-            this.lightsManager.pickableRoots = this.lightsManager.pickableRoots.filter(lightGroup => {
-                if (this.isLightInRoom(lightGroup, room)) {
-                    return true;
-                } else {
-                    this.scene.remove(lightGroup);
-                    this.lightsManager.colorMixingManager.removeLight(lightGroup);
-                    // Optionally dispose geometry/materials here
-                    // lightGroup.traverse(obj => {
-                    //     if (obj.geometry) obj.geometry.dispose();
-                    //     if (obj.material) obj.material.dispose();
-                    // });
-                    return false;
-                }
-            });
-        }
-    }
+    // cleanupPickupLightsForRoom(room) {
+    //     if (this.lightsManager && this.lightsManager.pickableRoots) {
+    //         this.lightsManager.pickableRoots = this.lightsManager.pickableRoots.filter(lightGroup => {
+    //             if (this.isLightInRoom(lightGroup, room)) {
+    //                 return true;
+    //             } else {
+    //                 this.scene.remove(lightGroup);
+    //                 this.lightsManager.colorMixingManager.removeLight(lightGroup);
+    //                 // Optionally dispose geometry/materials here
+    //                 // lightGroup.traverse(obj => {
+    //                 //     if (obj.geometry) obj.geometry.dispose();
+    //                 //     if (obj.material) obj.material.dispose();
+    //                 // });
+    //                 return false;
+    //             }
+    //         });
+    //     }
+    // }
 
     /**
      * Seals the exit room by adding a hardcoded wall at the opening

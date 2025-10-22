@@ -26,6 +26,7 @@ export const RoomLayouts = {
             [new THREE.Vector3(-2, 0, 2), new THREE.Vector3(-2, 0, 0.5), 1.5],
             [new THREE.Vector3(10, 0, 5), new THREE.Vector3(12, 0, 5), 0.4]
         ],
+        // lights entries: [x, z] or [x, z, flickerFlag]
         lights: [
             [10, 0],
             [-2, -6],
@@ -106,10 +107,11 @@ export const RoomLayouts = {
             // pillar
             [new THREE.Vector3(10.75, 0, 4), new THREE.Vector3(9.25, 0, 4), 1.5]
         ],
+        // middle light ([-1,1]) is set to flicker (third element true)
         lights: [
-            [10, 0],
-            [0, 0],
-            [-10, 0]
+            [9, 1],
+            [-1, 1, true],
+            [-11, 1]
         ],
         zones: [
             [
