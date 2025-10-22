@@ -1,5 +1,15 @@
 import * as THREE from 'three';
 
+// Example password array (fixed)
+export const passwordArray = [1, 3, 5, 2];
+
+// Player’s current input array (starts empty)
+export let playerCodeArray = [null, null, null, null];
+
+// Optional array to store “correctly entered codes”
+export let correctCodesArray = [];
+
+
 export class ModelInteractionManager {
     constructor(scene, camera) {
         this.scene = scene;
@@ -203,14 +213,25 @@ export class ModelInteractionManager {
     onModelInteraction(modelGroup) {
         console.log(`Interacted with model: ${modelGroup.userData.modelPath}`);
 
-        // Model-specific interactions - check for slide
-        if (modelGroup.userData.modelPath.toLowerCase().includes('slide')) {
-            this.handleSlideInteraction(modelGroup);
+        // Check if it's a teleport slide
+        if (modelGroup.userData.isTeleportSlide) {
+            this.handleSlideInteraction(modelGroup); // teleport
+            return; // skip puzzle code
         }
 
-        // Add more model-specific interactions as needed
-    }
+        // Otherwise, handle puzzle code if it has one
+        if (modelGroup.userData.code !== undefined) {
+            this.handleModelClick(modelGroup);
 
+            if (this.checkPasswordComplete()) {
+                console.log('Password complete! Trigger next event...');
+                // Trigger reward, open door, etc.
+            }
+        }
+
+        // You could also have other slide-specific behavior here
+    }
+    
     // Get all interactable models
     getInteractableModels() {
         return this.interactableModels;
@@ -226,5 +247,46 @@ export class ModelInteractionManager {
         this.maxLightInteractionDistance = light;
         this.maxModelInteractionDistance = model;
         this.maxInteractionDistance = general;
+    }
+
+    handleModelClick(model) {
+        const emptyIndex = playerCodeArray.findIndex(slot => slot === null);
+        if (emptyIndex === -1) return; // all slots full
+
+        const modelCode = Number(model.userData.code);
+        console.log(typeof modelCode, typeof passwordArray[emptyIndex]);
+
+
+        playerCodeArray[emptyIndex] = modelCode;
+
+        if (modelCode === passwordArray[emptyIndex]) {
+            correctCodesArray.push(modelCode);
+            //this.playCorrectSound(model);
+            console.log(`Correct code ${modelCode} at slot ${emptyIndex}`);
+        } else {
+            //this.playIncorrectSound(model);
+            console.log(`Incorrect code ${modelCode} at slot ${emptyIndex}`);
+            // Reset everything
+            playerCodeArray.fill(null);
+            correctCodesArray.length = 0;
+        }
+    }
+
+    // Play correct sound (can be generic or per model)
+    playCorrectSound(model) {
+        const audioPath = model.userData.correctSound || '/sounds/correct.mp3';
+        const audio = new Audio(audioPath);
+        audio.play();
+    }
+
+    // Play incorrect sound (specific to the model)
+    playIncorrectSound(model) {
+        const audioPath = model.userData.incorrectSound || '/sounds/incorrect.mp3';
+        const audio = new Audio(audioPath);
+        audio.play();
+    }
+
+    checkPasswordComplete() {
+        return playerCodeArray.every((code, i) => code === passwordArray[i]);
     }
 }

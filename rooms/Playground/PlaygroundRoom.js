@@ -310,8 +310,27 @@ export class PlaygroundRoom {
           modelData.rotation.y,
           modelData.rotation.z
         );
+
+        obj.userData.isInteractableModel = true;
+        obj.userData.modelPath = modelData.type || modelData.path; // type like 'swing' or 'slide'
+        if (modelData.code !== undefined) obj.userData.code = modelData.code;
+
         this.group.add(obj);
         this.models.push(obj);
+
+        // Make all meshes interactable
+        obj.traverse((child) => {
+            if (child.isMesh) {
+                child.userData.isInteractableModel = true;
+                child.userData.modelPath = modelData.type || modelData.path;
+                if (modelData.code !== undefined) child.userData.code = modelData.code;
+            }
+        });
+
+        // Register with RoomManager's modelInteractionManager
+        if (this.modelInteractionManager) {
+            this.modelInteractionManager.addInteractableModel(obj);
+        }
 
         if (!this.world) return;
 

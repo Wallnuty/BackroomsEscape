@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { code } from "three/tsl";
 
 // --- Room definitions ---
 export const PlaygroundLayouts = {
@@ -142,6 +143,8 @@ function createModels() {
       scale: new THREE.Vector3(1.5, 1.5, 1.5),
       rotation: new THREE.Vector3(0, Math.PI / 4, 0),
       type: "slide",
+      code: 1,
+      isTeleportSlide: false,
     },
     {
       path: "/models/swing_set.glb",
@@ -149,6 +152,7 @@ function createModels() {
       scale: new THREE.Vector3(0.008, 0.008, 0.012),
       rotation: new THREE.Vector3(0, 0, 0),
       type: "swing",
+      code: 2,
     },
     {
       path: "/models/old_roundabout_merry_go_round.glb",
@@ -156,6 +160,31 @@ function createModels() {
       scale: new THREE.Vector3(5, 5, 5),
       rotation: new THREE.Vector3(0, 0, 0),
       type: "default",
+      code: 3,
+    },
+    {
+      path: "/models/kid_cycle.glb",
+      position: new THREE.Vector3(14, -6, 0),
+      scale: new THREE.Vector3(6, 6, 6),
+      rotation: new THREE.Vector3(0, 180, 0),
+      type: "default",
+      code: 4,
+    },
+    {
+      path: "/models/see_saw.glb",
+      position: new THREE.Vector3(-10, -6, 12),
+      scale: new THREE.Vector3(4, 4, 4),
+      rotation: new THREE.Vector3(0, 90, 0),
+      type: "default",
+      code: 5,
+    },
+        {
+      path: "/models/toy_giraffe.glb",
+      position: new THREE.Vector3(0, -6, 13),
+      scale: new THREE.Vector3(40, 40, 40),
+      rotation: new THREE.Vector3(0, 90, 0),
+      type: "default",
+      code: 6,
     },
   ];
 

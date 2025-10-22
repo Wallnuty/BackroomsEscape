@@ -179,6 +179,7 @@ export const RoomLayouts = {
         position: new THREE.Vector3(1, -6, 3), // Center of room, on the floor
         scale: new THREE.Vector3(1.5, 1.5, 1.5),
         rotation: new THREE.Vector3(0, 0, 0),
+        isTeleportSlide: true,
       },
     ],
   },

@@ -6,7 +6,6 @@ import { RoomLayouts } from "./RoomLayouts.js";
 import { PickupLightsManager } from "../puzzles/lights.js";
 import { ModelInteractionManager } from "../puzzles/modelInteraction.js"; // Add this import
 import { PlaygroundLayouts } from "./Playground/PlaygroundLayout.js";
-import { Hallway } from "./Playground/Hallway.js";
 import { PlaygroundRoom } from "./Playground/PlaygroundRoom.js";
 import { CSG } from "three-csg-ts";
 import { SignInRoom } from "./Playground/SignInRoom.js";
@@ -109,6 +108,7 @@ export class RoomManager {
         connections,
         corridorWidth
       );
+      room.modelInteractionManager = this.modelInteractionManager;
     } else {
       // Default to BackroomsRoom for generic layouts (main, secondary, etc.)
       console.log(layoutName);
@@ -414,6 +414,19 @@ export class RoomManager {
     const signInRoom = createAndPosition(PlaygroundLayouts.SignIn, "signin");
     const extraRoom = createAndPosition(PlaygroundLayouts.Extra, "extra");
 
+    if (playgroundRoom && playgroundRoom.group) {
+      playgroundRoom.group.traverse((child) => {
+        // Only consider meshes or groups explicitly marked as models
+        if ((child.isMesh || child.isGroup) && child.userData.isModel) {
+          // Avoid double-adding
+          if (!child.userData.isInteractableModel) {
+            child.userData.isInteractableModel = true;
+            this.modelInteractionManager.addInteractableModel(child);
+          }
+        }
+      });
+    }
+
     // Connect rooms with hallways
     const createHallway = (roomA, roomB) => {
       if (!roomA || !roomB) return;
@@ -495,6 +508,7 @@ export class RoomManager {
         // Add to room group
         room.group.add(modelGroup);
 
+        console.log(modelGroup, modelGroup.userData.isInteractableModel);
         // Add to model interaction manager
         this.modelInteractionManager.addInteractableModel(modelGroup);
 
