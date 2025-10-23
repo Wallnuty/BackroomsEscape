@@ -111,43 +111,57 @@ export class RoomManager {
                 (gltf) => {
                     const model = gltf.scene;
 
-                    // Create a group to contain the model and mark it as interactable
-                    const modelGroup = new THREE.Group();
-                    modelGroup.add(model);
-
-                    // Apply scale and rotation to the model group
-                    modelGroup.scale.copy(modelConfig.scale);
-                    modelGroup.rotation.set(
-                        modelConfig.rotation.x,
-                        modelConfig.rotation.y,
-                        modelConfig.rotation.z
-                    );
-
-                    // Check if the room has a rotation (from room generation)
-                    if (room.rotationY !== undefined) {
-                        // For rotated rooms, we need to rotate the model's position
-                        const rotatedPosition = this.rotatePoint(modelConfig.position, room.rotationY);
-                        modelGroup.position.copy(rotatedPosition);
-
-                        // Also rotate the model itself to maintain consistent orientation
-                        modelGroup.rotation.y += room.rotationY;
+                    // Root group holds the translated position (room-local coordinates).
+                    // If the room has a rotationY, rotate the position vector so placement follows room orientation.
+                    const modelRoot = new THREE.Group();
+                    const position = modelConfig.position ? modelConfig.position.clone() : new THREE.Vector3(0, 0, 0);
+                    if (typeof room.rotationY === 'number') {
+                        const rotatedPos = this.rotatePoint(position, room.rotationY);
+                        modelRoot.position.copy(rotatedPos);
                     } else {
-                        // No room rotation - use position as-is
-                        modelGroup.position.copy(modelConfig.position);
+                        modelRoot.position.copy(position);
                     }
+
+                    // Pivot holds the actual model, receives scale & rotation (local transform).
+                    const pivot = new THREE.Group();
+
+                    // Optionally center the model so rotation happens around its visual center
+                    try {
+                        const bbox = new THREE.Box3().setFromObject(model);
+                        if (!bbox.isEmpty()) {
+                            const center = bbox.getCenter(new THREE.Vector3());
+                            // Move model so its center is at origin of pivot
+                            model.position.sub(center);
+                        }
+                    } catch (e) {
+                        // ignore bounding-box errors for non-mesh scenes
+                    }
+
+                    pivot.add(model);
+
+                    // Apply model-local rotation & scale (use defaults if absent)
+                    const rot = modelConfig.rotation || new THREE.Vector3(0, 0, 0);
+                    pivot.rotation.set(rot.x || 0, rot.y || 0, rot.z || 0);
+                    const scale = modelConfig.scale || new THREE.Vector3(1, 1, 1);
+                    pivot.scale.copy(scale);
+
+                    // If you want the model to also yaw with the room orientation, add room.rotationY to pivot.y:
+                    pivot.rotation.y += room.rotationY || 0;
+
+                    modelRoot.add(pivot);
 
                     // Mark as interactable model (only if config allows)
                     const isInteractable = modelConfig.interactable !== false; // default true
-                    modelGroup.userData.isInteractableModel = !!isInteractable;
-                    modelGroup.userData.modelConfig = modelConfig;
-                    modelGroup.userData.modelPath = modelConfig.path;
-                    modelGroup.name = `interactableModel_${index}`;
+                    modelRoot.userData.isInteractableModel = !!isInteractable;
+                    modelRoot.userData.modelConfig = modelConfig;
+                    modelRoot.userData.modelPath = modelConfig.path;
+                    modelRoot.name = `interactableModel_${index}`;
 
-                    // Add to room group
-                    room.group.add(modelGroup);
+                    // Add to room group (room.group already positioned in world)
+                    room.group.add(modelRoot);
 
-                    // Add to model interaction manager
-                    if (isInteractable) this.modelInteractionManager.addInteractableModel(modelGroup);
+                    // Add to model interaction manager only if interactable
+                    if (isInteractable) this.modelInteractionManager.addInteractableModel(modelRoot);
 
                     console.log(`Model ${modelConfig.path} loaded and added to room group`);
                 }

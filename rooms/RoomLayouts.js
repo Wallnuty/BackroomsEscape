@@ -84,13 +84,13 @@ export const RoomLayouts = {
         models: [
             {
                 path: '/models/eight_ball.glb',
-                position: new THREE.Vector3(0, -2.4, 5),
+                position: new THREE.Vector3(0, -2.2, 5),
                 scale: new THREE.Vector3(0.12, 0.12, 0.12),
-                rotation: new THREE.Vector3(-Math.PI / 4, 0, 0),
+                rotation: new THREE.Vector3(Math.PI / 4, 0, 0),
                 // make the 8-ball non-interactable
                 interactable: false
             }
-        ],
+        ]
     }, third: {
         position: new THREE.Vector3(-16, 0, 16),
         width: 40,
@@ -137,7 +137,18 @@ export const RoomLayouts = {
                 'south',
                 new THREE.Vector3(-17, 0, -8)
             ]
-        ]
+        ],
+        // Add the chair model to the third room
+        models: [
+            {
+                path: '/models/7chair.glb',
+                position: new THREE.Vector3(10, -1.25, 2.5),
+                scale: new THREE.Vector3(0.6, 0.6, 0.6),
+                rotation: new THREE.Vector3(0, -Math.PI, 0),
+                // make the chair non-interactable
+                interactable: false
+            }
+        ],
     }, exit: {
         position: new THREE.Vector3(-16, 0, 16),
         width: 10,
@@ -165,7 +176,7 @@ export const RoomLayouts = {
         models: [
             {
                 path: '/models/redSlide.glb',
-                position: new THREE.Vector3(1, -6, 3), // Center of room, on the floor
+                position: new THREE.Vector3(1, 0, 3), // Center of room, on the floor
                 scale: new THREE.Vector3(1.5, 1.5, 1.5),
                 rotation: new THREE.Vector3(0, 0, 0)
             }
