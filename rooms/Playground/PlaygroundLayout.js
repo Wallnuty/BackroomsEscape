@@ -145,6 +145,8 @@ function createModels() {
       type: "slide",
       code: 1,
       isTeleportSlide: false,
+      correctSound: "/audio/sfx/child_laugh.mp3",
+      incorrectSound: "/audio/sfx/old_slide.mp3",
     },
     {
       path: "/models/swing_set.glb",
@@ -153,6 +155,8 @@ function createModels() {
       rotation: new THREE.Vector3(0, 0, 0),
       type: "swing",
       code: 2,
+      correctSound: "/audio/sfx/child_laugh.mp3",
+      incorrectSound: "/audio/sfx/swing_set.mp3",
     },
     {
       path: "/models/old_roundabout_merry_go_round.glb",
@@ -161,6 +165,8 @@ function createModels() {
       rotation: new THREE.Vector3(0, 0, 0),
       type: "default",
       code: 3,
+      correctSound: "/audio/sfx/child_laugh.mp3",
+      incorrectSound: "/audio/sfx/merry_go_round.mp3",
     },
     {
       path: "/models/kid_cycle.glb",
@@ -169,6 +175,8 @@ function createModels() {
       rotation: new THREE.Vector3(0, 180, 0),
       type: "default",
       code: 4,
+      correctSound: "/audio/sfx/child_laugh.mp3",
+      incorrectSound: "/audio/sfx/trike.mp3",
     },
     {
       path: "/models/see_saw.glb",
@@ -177,6 +185,8 @@ function createModels() {
       rotation: new THREE.Vector3(0, 90, 0),
       type: "default",
       code: 5,
+      correctSound: "/audio/sfx/child_laugh.mp3",
+      incorrectSound: "/audio/sfx/see_saw.mp3",
     },
         {
       path: "/models/toy_giraffe.glb",
@@ -185,6 +195,8 @@ function createModels() {
       rotation: new THREE.Vector3(0, 90, 0),
       type: "default",
       code: 6,
+      correctSound: "/audio/sfx/child_laugh.mp3",
+      incorrectSound: "/audio/sfx/wooden_blocks.mp3",
     },
   ];
 

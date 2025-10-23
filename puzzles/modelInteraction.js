@@ -261,10 +261,10 @@ export class ModelInteractionManager {
 
         if (modelCode === passwordArray[emptyIndex]) {
             correctCodesArray.push(modelCode);
-            //this.playCorrectSound(model);
+            this.playCorrectSound(model);
             console.log(`Correct code ${modelCode} at slot ${emptyIndex}`);
         } else {
-            //this.playIncorrectSound(model);
+            this.playIncorrectSound(model);
             console.log(`Incorrect code ${modelCode} at slot ${emptyIndex}`);
             // Reset everything
             playerCodeArray.fill(null);
@@ -272,18 +272,126 @@ export class ModelInteractionManager {
         }
     }
 
-    // Play correct sound (can be generic or per model)
-    playCorrectSound(model) {
-        const audioPath = model.userData.correctSound || '/sounds/correct.mp3';
-        const audio = new Audio(audioPath);
-        audio.play();
+    setAudioListener(listener) {
+    this.audioListener = listener;
+    this.audioLoader = new THREE.AudioLoader();
+    this._audioBufferCache = new Map(); // path -> AudioBuffer
     }
 
-    // Play incorrect sound (specific to the model)
+    // preload a single audio file (returns a Promise)
+    preloadAudio(audioPath) {
+    if (!this.audioLoader) {
+        return Promise.reject(new Error('AudioListener not set. Call setAudioListener(listener) first.'));
+    }
+    if (!audioPath) return Promise.resolve(null);
+    if (this._audioBufferCache.has(audioPath)) return Promise.resolve(this._audioBufferCache.get(audioPath));
+
+    return new Promise((resolve, reject) => {
+        this.audioLoader.load(
+        audioPath,
+        (buffer) => {
+            this._audioBufferCache.set(audioPath, buffer);
+            resolve(buffer);
+        },
+        undefined,
+        (err) => {
+            console.warn('Audio load failed:', audioPath, err);
+            resolve(null); // don't break everything if missing
+        }
+        );
+    });
+    }
+
+    // Preload all sounds referenced by your interactable models (call after models loaded)
+    async preloadModelSounds(models = this.interactableModels) {
+    if (!models || !this.audioLoader) return;
+    const paths = new Set();
+    models.forEach(m => {
+        if (m.userData?.correctSound) paths.add(m.userData.correctSound);
+        if (m.userData?.incorrectSound) paths.add(m.userData.incorrectSound);
+    });
+    await Promise.all(Array.from(paths).map(p => this.preloadAudio(p)));
+    }
+
+    // Attach a positional audio to a model (keeps it in model.children so it's spatialized)
+    attachPositionalAudioToModel(modelGroup, audioPath, { refDistance = 2, maxDistance = 25, rolloff = 2, volume = 0.6 } = {}) {
+    if (!this.audioListener || !audioPath) return null;
+    const buffer = this._audioBufferCache.get(audioPath);
+    if (!buffer) {
+        // If not preloaded, try to load now (async) and then attach when ready.
+        this.preloadAudio(audioPath).then(() => {
+        this.attachPositionalAudioToModel(modelGroup, audioPath, { refDistance, maxDistance, rolloff, volume });
+        });
+        return null;
+    }
+    // Create PositionalAudio and attach to model root (or a specific mesh if you prefer)
+    const pAudio = new THREE.PositionalAudio(this.audioListener);
+    pAudio.setBuffer(buffer);
+    pAudio.setRefDistance(refDistance);
+    pAudio.setMaxDistance(maxDistance);
+    pAudio.setRolloffFactor(rolloff);
+    pAudio.setVolume(volume);
+    pAudio.userData = pAudio.userData || {};
+    pAudio.userData._sourcePath = audioPath;
+
+    // Keep audio node on the model for reuse
+    modelGroup.add(pAudio);
+    // Also store references on userData for convenience
+    if (!modelGroup.userData.audioNodes) modelGroup.userData.audioNodes = {};
+    modelGroup.userData.audioNodes[audioPath] = pAudio;
+    return pAudio;
+    }
+
+    // play a model's sound (uses an existing PositionalAudio if present, else creates a short-lived one)
+    playModelSound(modelGroup, audioPath, opts = {}) {
+    if (!this.audioListener || !audioPath) return;
+    // try find a pre-attached node first
+    const existing = modelGroup.userData?.audioNodes?.[audioPath];
+    if (existing) {
+        try {
+        existing.stop && existing.stop();
+        } catch (e) {}
+        existing.setVolume(typeof opts.volume === 'number' ? opts.volume : existing.getVolume?.() ?? 0.6);
+        existing.play();
+        return;
+    }
+
+    // otherwise create a temporary PositionalAudio, play once, then remove
+    const buffer = this._audioBufferCache.get(audioPath);
+    if (!buffer) {
+        // try preload then retry
+        this.preloadAudio(audioPath).then(() => this.playModelSound(modelGroup, audioPath, opts));
+        return;
+    }
+
+    const tmp = new THREE.PositionalAudio(this.audioListener);
+    tmp.setBuffer(buffer);
+    tmp.setRefDistance(opts.refDistance ?? 2);
+    tmp.setMaxDistance(opts.maxDistance ?? 25);
+    tmp.setRolloffFactor(opts.rolloff ?? 2);
+    tmp.setVolume(opts.volume ?? 0.6);
+
+    modelGroup.add(tmp);
+    tmp.play();
+    // cleanup when finished
+    tmp.onEnded = () => {
+        try { modelGroup.remove(tmp); } catch (e) {}
+        if (tmp.disconnect) tmp.disconnect();
+    };
+    }
+
+    // Update your existing playCorrectSound / playIncorrectSound to use three audio
+    playCorrectSound(model) {
+    const audioPath = model.userData?.correctSound;
+    if (!audioPath) return;
+    // Example: slightly higher volume and shorter maxDistance
+    this.playModelSound(model, audioPath, { volume: 0.85, refDistance: 1.5, maxDistance: 15 });
+    }
+
     playIncorrectSound(model) {
-        const audioPath = model.userData.incorrectSound || '/sounds/incorrect.mp3';
-        const audio = new Audio(audioPath);
-        audio.play();
+    const audioPath = model.userData?.incorrectSound;
+    if (!audioPath) return;
+    this.playModelSound(model, audioPath, { volume: 0.9, refDistance: 1.5, maxDistance: 18 });
     }
 
     checkPasswordComplete() {

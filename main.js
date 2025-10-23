@@ -176,6 +176,7 @@ class BackroomsGame {
   setupAudio() {
     const listener = new THREE.AudioListener();
     this.camera.add(listener);
+    this.audioListener = listener;
 
     // Existing footstep audio
     this.footstepBuffer = null;
@@ -205,7 +206,7 @@ class BackroomsGame {
       console.log("Not A Human music started - fading in...");
 
       // Fade in over 3 seconds
-      this.fadeInMusic(audio, 0.2, 3000); // Target volume 0.2, over 3 seconds
+      this.fadeInMusic(audio, 0.01, 3000); // Target volume 0.2, over 3 seconds
     });
   }
 
@@ -277,6 +278,14 @@ class BackroomsGame {
 
     // Connect the game instance to model interaction manager for reset functionality
     this.roomManager.modelInteractionManager.setGameInstance(this);
+      if (this.audioListener) {
+        this.roomManager.modelInteractionManager.setAudioListener(this.audioListener);
+
+        // Optionally preload sounds for interactables right away (you can also call this later)
+        // await this.roomManager.modelInteractionManager.preloadModelSounds(); // if made async context
+        // or call without await:
+        this.roomManager.modelInteractionManager.preloadModelSounds();
+      }
   }
 
   setupControls() {

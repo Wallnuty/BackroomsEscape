@@ -314,6 +314,18 @@ export class PlaygroundRoom {
         obj.userData.isInteractableModel = true;
         obj.userData.modelPath = modelData.type || modelData.path; // type like 'swing' or 'slide'
         if (modelData.code !== undefined) obj.userData.code = modelData.code;
+        obj.userData.correctSound = modelData.correctSound || "/audio/sfx/child_laugh.mp3";
+        obj.userData.incorrectSound = modelData.incorrectSound || "audio/sfx/see_saw.mp3"; 
+        // Pre-attach positional audio for both sounds
+        this.modelInteractionManager.attachPositionalAudioToModel(
+            obj,
+            obj.userData.correctSound
+        );
+        this.modelInteractionManager.attachPositionalAudioToModel(
+            obj,
+            obj.userData.incorrectSound
+        );
+
 
         this.group.add(obj);
         this.models.push(obj);
@@ -324,6 +336,18 @@ export class PlaygroundRoom {
                 child.userData.isInteractableModel = true;
                 child.userData.modelPath = modelData.type || modelData.path;
                 if (modelData.code !== undefined) child.userData.code = modelData.code;
+                child.userData.correctSound = modelData.correctSound || "/audio/sfx/child_laugh.mp3";
+                child.userData.incorrectSound = modelData.incorrectSound || "audio/sfx/see_saw.mp3";
+                // Pre-attach positional audio for both sounds
+                this.modelInteractionManager.attachPositionalAudioToModel(
+                    obj,
+                    obj.userData.correctSound
+                );
+                this.modelInteractionManager.attachPositionalAudioToModel(
+                    obj,
+                    obj.userData.incorrectSound
+                );
+
             }
         });
 
