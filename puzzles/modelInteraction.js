@@ -70,7 +70,11 @@ export class ModelInteractionManager {
         if (object.userData.isPickupLight) {
             return distance <= this.maxLightInteractionDistance;
         } else if (object.userData.isInteractableModel) {
-            return distance <= this.maxModelInteractionDistance;
+            // If model specifies its own interaction distance, use it; otherwise use global default
+            const modelMax = (typeof object.userData.interactionDistance === 'number')
+                ? object.userData.interactionDistance
+                : this.maxModelInteractionDistance;
+            return distance <= modelMax;
         }
 
         return distance <= this.maxInteractionDistance;
@@ -175,8 +179,20 @@ export class ModelInteractionManager {
         console.log(`Interacted with model: ${modelGroup.userData.modelPath}`);
 
         // Model-specific interactions - check for slide
-        if (modelGroup.userData.modelPath.toLowerCase().includes('slide')) {
+        if (modelGroup.userData.modelPath && modelGroup.userData.modelPath.toLowerCase().includes('slide')) {
             this.handleSlideInteraction(modelGroup);
+            return;
+        }
+
+        // If model has a DisplaySurface attached anywhere under it, draw the code when clicked
+        let displaySurface = null;
+        modelGroup.traverse(o => {
+            if (o.userData && o.userData.displaySurface) displaySurface = o.userData.displaySurface;
+        });
+        if (displaySurface) {
+            // Show the code — replace '827' with game state if needed
+            displaySurface.drawText('827');
+            return;
         }
 
         // Add more model-specific interactions as needed

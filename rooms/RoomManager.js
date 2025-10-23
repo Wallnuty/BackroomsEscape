@@ -5,6 +5,7 @@ import { BackroomsRoom } from './BackroomsRoom.js';
 import { RoomLayouts } from './RoomLayouts.js';
 import { PickupLightsManager } from '../puzzles/lights.js';
 import { ModelInteractionManager } from '../puzzles/modelInteraction.js'; // Add this import
+import { DisplaySurface } from '../puzzles/DisplaySurface.js';
 
 export class RoomManager {
     constructor(scene, world, camera) {
@@ -109,6 +110,8 @@ export class RoomManager {
             loader.load(
                 modelConfig.path,
                 (gltf) => {
+                    // analysis/debug logs removed
+
                     const model = gltf.scene;
 
                     // Root group holds the translated position (room-local coordinates).
@@ -139,6 +142,18 @@ export class RoomManager {
 
                     pivot.add(model);
 
+                    // If this is the whiteboard model, create a DisplaySurface for the backboard mesh
+                    if (modelConfig.path && modelConfig.path.toLowerCase().includes('whiteboard.glb')) {
+                        model.traverse(child => {
+                            if (child.isMesh && child.name === 'Backboard_Material002_0') {
+                                // create the display surface and attach references for interaction code
+                                const displaySurface = new DisplaySurface(child);
+                                modelRoot.userData.displaySurface = displaySurface;
+                                child.userData.displaySurface = displaySurface;
+                            }
+                        });
+                    }
+
                     // Apply model-local rotation & scale (use defaults if absent)
                     const rot = modelConfig.rotation || new THREE.Vector3(0, 0, 0);
                     pivot.rotation.set(rot.x || 0, rot.y || 0, rot.z || 0);
@@ -155,6 +170,10 @@ export class RoomManager {
                     modelRoot.userData.isInteractableModel = !!isInteractable;
                     modelRoot.userData.modelConfig = modelConfig;
                     modelRoot.userData.modelPath = modelConfig.path;
+                    // Optional per-model interaction distance (meters). If absent, fallback to manager default.
+                    if (typeof modelConfig.interactionDistance === 'number') {
+                        modelRoot.userData.interactionDistance = modelConfig.interactionDistance;
+                    }
                     modelRoot.name = `interactableModel_${index}`;
 
                     // Add to room group (room.group already positioned in world)
@@ -163,7 +182,7 @@ export class RoomManager {
                     // Add to model interaction manager only if interactable
                     if (isInteractable) this.modelInteractionManager.addInteractableModel(modelRoot);
 
-                    console.log(`Model ${modelConfig.path} loaded and added to room group`);
+                    // model loaded (log removed)
                 }
             );
         });

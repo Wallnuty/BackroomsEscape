@@ -45,6 +45,15 @@ export const RoomLayouts = {
                 'west',
                 new THREE.Vector3(15, 0, 13)
             ]
+        ],
+        models: [
+            {
+                path: '/models/whiteboard.glb',
+                position: new THREE.Vector3(3, -0.70, 14), // Center of room, on the floor
+                scale: new THREE.Vector3(1, 1, 1),
+                rotation: new THREE.Vector3(0, - Math.PI / 2, 0),
+                interactionDistance: 4
+            }
         ]
     }, secondary: {
         position: new THREE.Vector3(-16, 0, 16),
