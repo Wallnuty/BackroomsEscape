@@ -104,6 +104,16 @@ export class PlaygroundRoom {
 
     const wallNames = ["back", "right", "front", "left"];
 
+    const kidDrawings = [
+      loader.load("textures/walls/PuzzleHintMerry-go-round.png"),
+      loader.load("textures/walls/PuzzleHintSlide.png"),
+      loader.load("textures/walls/PuzzleHintSeeSaw.png"),
+      loader.load("textures/walls/PuzzleHintSwing.png")
+    ];
+
+    // Keep track of all wall meshes to overlay drawings after creation
+    const createdWalls = [];
+
     for (let i = 0; i < 4; i++) {
       const material = new THREE.MeshStandardMaterial({
         map: loader.load(wallPaths[i].base),
@@ -131,6 +141,7 @@ export class PlaygroundRoom {
             wallName === "left" ? Math.PI / 2 : -Math.PI / 2;
         }
         this.group.add(wallMesh);
+        createdWalls.push({ mesh: wallMesh, geo: wallGeo, wallIndex: i });
       } else {
         // Wall with openings
         if (isZWall) {
@@ -148,6 +159,8 @@ export class PlaygroundRoom {
               );
               if (wallName === "front") wallMesh.rotation.y = Math.PI;
               this.group.add(wallMesh);
+              createdWalls.push({ mesh: wallMesh, geo: wallGeo, wallIndex: i });
+
             }
             lastX = o.xMax;
           });
@@ -162,6 +175,7 @@ export class PlaygroundRoom {
             );
             if (wallName === "front") wallMesh.rotation.y = Math.PI;
             this.group.add(wallMesh);
+            createdWalls.push({ mesh: wallMesh, geo: wallGeo, wallIndex: i });
           }
         } else {
           openings.sort((a, b) => a.zMin - b.zMin);
@@ -179,6 +193,7 @@ export class PlaygroundRoom {
               wallMesh.rotation.y =
                 wallName === "left" ? Math.PI / 2 : -Math.PI / 2;
               this.group.add(wallMesh);
+              createdWalls.push({ mesh: wallMesh, geo: wallGeo, wallIndex: i });
             }
             lastZ = o.zMax;
           });
@@ -194,10 +209,34 @@ export class PlaygroundRoom {
             wallMesh.rotation.y =
               wallName === "left" ? Math.PI / 2 : -Math.PI / 2;
             this.group.add(wallMesh);
+            createdWalls.push({ mesh: wallMesh, geo: wallGeo, wallIndex: i });
           }
         }
       }
     }
+  createdWalls.forEach(({ mesh, geo, wallIndex }) => {
+      const overlayMat = new THREE.MeshStandardMaterial({
+          map: kidDrawings[wallIndex],
+          transparent: true,
+      });
+      const overlayMesh = new THREE.Mesh(geo.clone(), overlayMat);
+      overlayMesh.scale.set(0.25, 0.25, 1);
+      overlayMesh.position.copy(mesh.position);
+      overlayMesh.rotation.copy(mesh.rotation);
+
+      // Determine wall normal for correct offset
+      const offset = 0.01;
+      const wallName = wallNames[wallIndex];
+      const normal = new THREE.Vector3();
+      if (wallName === "back") normal.set(0, 0, 1);
+      else if (wallName === "front") normal.set(0, 0, -1);
+      else if (wallName === "left") normal.set(1, 0, 0);
+      else if (wallName === "right") normal.set(-1, 0, 0);
+
+      overlayMesh.position.add(normal.multiplyScalar(offset));
+
+      this.group.add(overlayMesh);
+  });
   }
 
   /** Add static physics walls for collision */

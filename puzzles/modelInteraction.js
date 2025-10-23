@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // Example password array (fixed)
-export const passwordArray = [1, 3, 5, 2];
+export const passwordArray = [1, 5, 3, 2];
 
 // Player’s current input array (starts empty)
 export let playerCodeArray = [null, null, null, null];
