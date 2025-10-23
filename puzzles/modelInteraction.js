@@ -191,7 +191,14 @@ export class ModelInteractionManager {
         });
         if (displaySurface) {
             // Show the code — replace '827' with game state if needed
-            displaySurface.drawText('827');
+            // Let's try rotating the text 90 degrees to counteract the UV distortion.
+            // You can change Math.PI / 2 to other values like -Math.PI / 2 (for -90deg) or Math.PI (for 180deg).
+            displaySurface.drawText('827', {
+                rotation: Math.PI / 2,
+                fontSize: 200, // Doubled to match new canvas resolution
+                y: 640,      // Doubled to match new canvas resolution
+                scaleX: 0.5 // Squish the text horizontally to counteract stretching
+            });
             return;
         }
 
