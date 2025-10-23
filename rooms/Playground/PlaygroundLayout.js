@@ -203,16 +203,16 @@ function createModels() {
   PlaygroundLayouts.SignIn.models = [
     {
       path: "/models/desk.glb",
-      position: new THREE.Vector3(0, -2.5, 0),
-      scale: new THREE.Vector3(1, 1, 1),
+      position: new THREE.Vector3(0, -4, 13),
+      scale: new THREE.Vector3(3, 3, 3),
       rotation: new THREE.Vector3(0, 0, 0),
       type: "default",
     },
     {
       path: "/models/wooden_chair.glb",
-      position: new THREE.Vector3(2, -2.5, 2),
-      scale: new THREE.Vector3(1, 1, 1),
-      rotation: new THREE.Vector3(0, Math.PI / 2, 0),
+      position: new THREE.Vector3(-1, -4, 14),
+      scale: new THREE.Vector3(3, 3, 3),
+      rotation: new THREE.Vector3(0, 0, 0),
       type: "default",
     },
   ];
