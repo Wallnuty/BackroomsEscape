@@ -166,13 +166,12 @@ export class RoomManager {
 
                     // Apply model-local rotation & scale (use defaults if absent)
                     const rot = modelConfig.rotation || new THREE.Vector3(0, 0, 0);
+                    pivot.rotation.set(rot.x || 0, rot.y || 0, rot.z || 0);
                     const scale = modelConfig.scale || new THREE.Vector3(1, 1, 1);
                     pivot.scale.copy(scale);
 
-                    // Correct quaternion multiplication order
-                    const roomQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, room.rotationY || 0, 0));
-                    const modelQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(rot.x || 0, rot.y || 0, rot.z || 0));
-                    pivot.quaternion.copy(modelQuat.multiply(roomQuat));
+                    // If you want the model to also yaw with the room orientation, add room.rotationY to pivot.y:
+                    pivot.rotation.y += room.rotationY || 0;
 
                     modelRoot.add(pivot);
 
