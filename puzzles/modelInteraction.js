@@ -249,8 +249,8 @@ export class ModelInteractionManager {
             this.played67Sound = true;
         }
 
-        // If text is "827", mark puzzle as completed and disable further typing
-        if (this.whiteboardText === '827' && this.gameInstance && this.gameInstance.roomManager) {
+        // If text is "213", mark puzzle as completed and disable further typing
+        if (this.whiteboardText === '213' && this.gameInstance && this.gameInstance.roomManager) {
             this.gameInstance.roomManager.puzzleCompleted = true;
             console.log('Whiteboard puzzle completed!');
             this.gameInstance.roomManager.turnOffAllLights();

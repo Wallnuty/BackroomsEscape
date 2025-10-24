@@ -96,17 +96,17 @@ export const RoomLayouts = {
                 new THREE.Vector3(-12, 0, 4)
             ]
         ],
-        // Add the 8-ball model to the secondary room
-        models: [
-            {
-                path: '/models/eight_ball.glb',
-                position: new THREE.Vector3(0, -2.25, 5),
-                scale: new THREE.Vector3(0.12, 0.12, 0.12),
-                rotation: new THREE.Vector3(Math.PI / 4, 0, 0),
-                // make the 8-ball non-interactable
-                interactable: false
-            }
-        ]
+        // // Add the 8-ball model to the secondary room
+        // models: [
+        //     {
+        //         path: '/models/eight_ball.glb',
+        //         position: new THREE.Vector3(0, -2.25, 5),
+        //         scale: new THREE.Vector3(0.12, 0.12, 0.12),
+        //         rotation: new THREE.Vector3(Math.PI / 4, 0, 0),
+        //         // make the 8-ball non-interactable
+        //         interactable: false
+        //     }
+        // ]
     }, third: {
         position: new THREE.Vector3(-16, 0, 16),
         width: 40,
@@ -155,16 +155,16 @@ export const RoomLayouts = {
             ]
         ],
         // Add the chair model to the third room
-        models: [
-            {
-                path: '/models/7chair.glb',
-                position: new THREE.Vector3(10, -1.25, 2.5),
-                scale: new THREE.Vector3(0.6, 0.6, 0.6),
-                rotation: new THREE.Vector3(0, -Math.PI, 0),
-                // make the chair non-interactable
-                interactable: false
-            }
-        ],
+        // models: [
+        //     {
+        //         path: '/models/7chair.glb',
+        //         position: new THREE.Vector3(10, -1.25, 2.5),
+        //         scale: new THREE.Vector3(0.6, 0.6, 0.6),
+        //         rotation: new THREE.Vector3(0, -Math.PI, 0),
+        //         // make the chair non-interactable
+        //         interactable: false
+        //     }
+        // ],
     }, exit: {
         position: new THREE.Vector3(-16, 0, 16),
         width: 10,

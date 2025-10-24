@@ -68,10 +68,6 @@ export class BackroomsRoom extends BaseRoom {
         this.lightPanels = this.lightPanels || [];
         this.lightPanels.push(lightPanel);
 
-        // If the layout requested flicker, start the periodic blackout immediately.
-        if (flicker && typeof lightPanel.startPeriodicBlackout === 'function') {
-            lightPanel.startPeriodicBlackout(); // uses defaults: every 3000ms blackout for 300ms
-        }
         return lightPanel;
     }
 }

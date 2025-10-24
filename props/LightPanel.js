@@ -43,6 +43,11 @@ export class LightPanel {
         // track periodic blackout timers
         this._blackoutInterval = null;
         this._blackoutTimeouts = []; // store multiple timeout ids for double-flicker sequence
+
+        // --- NEW: Use 2-1-3 blink pattern if flicker is true ---
+        if (this.flicker) {
+            this.startBlinkPattern_213();
+        }
     }
 
     /**
@@ -118,6 +123,9 @@ export class LightPanel {
             this._blackoutTimeouts.length = 0;
         }
 
+        // Also stop the 2-1-3 pattern if running
+        this.stopBlinkPattern_213 && this.stopBlinkPattern_213();
+
         // restore
         if (this.rectLight) this.rectLight.intensity = this.baseIntensity;
         if (this.mesh && this.mesh.material) this.mesh.material.emissiveIntensity = 1;
@@ -129,5 +137,63 @@ export class LightPanel {
     turnOff() {
         if (this.rectLight) this.rectLight.intensity = 0;
         if (this.mesh && this.mesh.material) this.mesh.material.emissiveIntensity = 0;
+    }
+
+    /**
+     * Start a 2-1-3 blink pattern if flicker is true.
+     * Each blink is blackoutMs ms off, gapMs ms on between blinks, then patternPauseMs between patterns.
+     * Example: blink-blink-(pause)-blink-(pause)-blink-blink-blink-(long pause)-repeat
+     */
+    startBlinkPattern_213(blackoutMs = 160, gapMs = 120, patternPauseMs = 700, longPauseMs = 2000) {
+        if (this._blinkPatternInterval) return;
+        if (typeof this.baseIntensity !== 'number') this.baseIntensity = this.rectLight?.intensity || 0;
+
+        const blink = (count, cb) => {
+            let i = 0;
+            const doBlink = () => {
+                if (i >= count) {
+                    if (cb) cb();
+                    return;
+                }
+                // Off
+                if (this.rectLight) this.rectLight.intensity = 0;
+                if (this.mesh && this.mesh.material) this.mesh.material.emissiveIntensity = 0;
+                setTimeout(() => {
+                    // On
+                    if (this.rectLight) this.rectLight.intensity = this.baseIntensity;
+                    if (this.mesh && this.mesh.material) this.mesh.material.emissiveIntensity = 1;
+                    i++;
+                    setTimeout(doBlink, gapMs);
+                }, blackoutMs);
+            };
+            doBlink();
+        };
+
+        const pattern = () => {
+            blink(2, () => {
+                setTimeout(() => {
+                    blink(1, () => {
+                        setTimeout(() => {
+                            blink(3, () => {
+                                setTimeout(pattern, longPauseMs); // <-- Use long pause here
+                            });
+                        }, patternPauseMs);
+                    });
+                }, patternPauseMs);
+            });
+        };
+
+        pattern();
+        this._blinkPatternInterval = true; // just a flag to prevent re-entry
+    }
+
+    /**
+     * Stop the 2-1-3 blink pattern.
+     */
+    stopBlinkPattern_213() {
+        this._blinkPatternInterval = false;
+        // Restore light immediately
+        if (this.rectLight) this.rectLight.intensity = this.baseIntensity;
+        if (this.mesh && this.mesh.material) this.mesh.material.emissiveIntensity = 1;
     }
 }
