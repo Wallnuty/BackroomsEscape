@@ -122,4 +122,12 @@ export class LightPanel {
         if (this.rectLight) this.rectLight.intensity = this.baseIntensity;
         if (this.mesh && this.mesh.material) this.mesh.material.emissiveIntensity = 1;
     }
+
+    /**
+     * Turns off the light and its emissive panel.
+     */
+    turnOff() {
+        if (this.rectLight) this.rectLight.intensity = 0;
+        if (this.mesh && this.mesh.material) this.mesh.material.emissiveIntensity = 0;
+    }
 }

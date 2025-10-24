@@ -49,10 +49,17 @@ export const RoomLayouts = {
         models: [
             {
                 path: '/models/whiteboard.glb',
-                position: new THREE.Vector3(3, -0.70, 14), // Center of room, on the floor
+                position: new THREE.Vector3(3, -0.70, 14),
                 scale: new THREE.Vector3(1, 1, 1),
                 rotation: new THREE.Vector3(0, - Math.PI / 2, 0),
                 interactionDistance: 4
+            },
+            {
+                path: '/models/note.glb',
+                position: new THREE.Vector3(9.65, -0.20, 12),
+                scale: new THREE.Vector3(10, 10, 10),
+                rotation: new THREE.Vector3(Math.PI / 2, 0, Math.PI / 2),
+                interactable: false
             }
         ]
     }, secondary: {
@@ -93,7 +100,7 @@ export const RoomLayouts = {
         models: [
             {
                 path: '/models/eight_ball.glb',
-                position: new THREE.Vector3(0, -2.2, 5),
+                position: new THREE.Vector3(0, -2.25, 5),
                 scale: new THREE.Vector3(0.12, 0.12, 0.12),
                 rotation: new THREE.Vector3(Math.PI / 4, 0, 0),
                 // make the 8-ball non-interactable
@@ -185,10 +192,61 @@ export const RoomLayouts = {
         models: [
             {
                 path: '/models/redSlide.glb',
-                position: new THREE.Vector3(1, 0, 3), // Center of room, on the floor
+                position: new THREE.Vector3(1, 0, 3),
                 scale: new THREE.Vector3(1.5, 1.5, 1.5),
                 rotation: new THREE.Vector3(0, 0, 0)
             }
+        ]
+    }, fourth: {
+        position: new THREE.Vector3(0, 0, 0),
+        width: 34,
+        height: 5,
+        depth: 20,
+        walls: [
+            // Outer walls
+            [new THREE.Vector3(-5, 0, 10), new THREE.Vector3(17, 0, 10), 0.4], // top
+            [new THREE.Vector3(-9, 0, 10), new THREE.Vector3(-17, 0, 10), 0.4], // top
+            [new THREE.Vector3(-17, 0, -10), new THREE.Vector3(-17, 0, 10), 0.4], // right
+            [new THREE.Vector3(-17, 0, -10), new THREE.Vector3(-4, 0, -10), 0.4], // bottom
+            [new THREE.Vector3(17, 0, -10), new THREE.Vector3(0, 0, -10), 0.4], // bottom
+            [new THREE.Vector3(17, 0, 10), new THREE.Vector3(17, 0, 0), 0.4], // left
+            [new THREE.Vector3(17, 0, -10), new THREE.Vector3(17, 0, -4), 0.4], // left
+
+            [new THREE.Vector3(17, 0, 0), new THREE.Vector3(7, 0, 0), 0.4],
+            [new THREE.Vector3(7, 0, -8), new THREE.Vector3(7, 0, 0), 0.4],
+
+            [new THREE.Vector3(0, 0, -6), new THREE.Vector3(0, 0, -10), 0.4],
+            [new THREE.Vector3(0, 0, -6), new THREE.Vector3(-12, 0, -6), 0.4],
+
+            [new THREE.Vector3(0, 0, 2), new THREE.Vector3(-17, 0, 2), 0.4],
+            [new THREE.Vector3(-3, 0, 17), new THREE.Vector3(-3, 0, 16), 0.4],
+            [new THREE.Vector3(-3, 0, 12), new THREE.Vector3(-3, 0, 13), 0.4],
+
+            [new THREE.Vector3(3, 0, 5), new THREE.Vector3(3, 0, 5.4), 0.4] // pillar
+        ],
+        lights: [
+            [10, 5],
+            [-10, -1],
+        ],
+        zones: [
+            [
+                new THREE.Vector3(-17, 0, 10),
+                new THREE.Vector3(5, 0, 4),
+                'north',
+                new THREE.Vector3(-7, 0, 10)
+            ],
+            [
+                new THREE.Vector3(17, 0, 0),
+                new THREE.Vector3(0, 0, -10),
+                'west',
+                new THREE.Vector3(17, 0, -2)
+            ],
+            [
+                new THREE.Vector3(0, 0, -5),
+                new THREE.Vector3(-17, 0, -10),
+                'south',
+                new THREE.Vector3(-2, 0, -10)
+            ]
         ]
     }
 };

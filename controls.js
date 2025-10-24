@@ -135,8 +135,8 @@ export function createFirstPersonControls(playerBody, camera, domElement) {
             playerBody.velocity.x = moveDir.x * currentSpeed;
             playerBody.velocity.z = moveDir.z * currentSpeed;
         } else {
-            playerBody.velocity.x *= 0.9;
-            playerBody.velocity.z *= 0.9;
+            playerBody.velocity.x *= 0.5;
+            playerBody.velocity.z *= 0.5;
         }
     }
 

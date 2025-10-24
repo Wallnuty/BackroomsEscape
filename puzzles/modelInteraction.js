@@ -14,6 +14,15 @@ export class ModelInteractionManager {
 
         // Add reference to main game for reset functionality
         this.gameInstance = null;
+
+        this.editingWhiteboard = false;
+        this.whiteboardText = '';
+        this.activeWhiteboardSurface = null;
+
+        this.played67Sound = false; // Add this flag
+
+        // Listen for keyboard input
+        window.addEventListener('keydown', (e) => this.handleWhiteboardInput(e));
     }
 
     // Set reference to main game instance
@@ -174,8 +183,94 @@ export class ModelInteractionManager {
         }
     }
 
+    // Call this when the user interacts with the whiteboard
+    async startWhiteboardEditing(displaySurface) {
+        this.editingWhiteboard = true;
+        this.activeWhiteboardSurface = displaySurface;
+        // Optionally reset text or keep previous
+        await displaySurface.drawText(this.whiteboardText, {
+            rotation: Math.PI / 2,
+            fontSize: 200,
+            y: 640,
+            scaleX: 0.5
+        });
+    }
+
+    stopWhiteboardEditing() {
+        this.editingWhiteboard = false;
+        this.activeWhiteboardSurface = null;
+    }
+
+    async handleWhiteboardInput(e) {
+        // Only allow typing if looking at whiteboard and in range
+        const focusedSurface = this.getActiveWhiteboardSurface();
+        if (!focusedSurface) {
+            this.editingWhiteboard = false;
+            this.activeWhiteboardSurface = null;
+            return;
+        }
+
+        // If puzzle is completed, ignore further typing
+        if (this.gameInstance && this.gameInstance.roomManager && this.gameInstance.roomManager.puzzleCompleted) {
+            return;
+        }
+
+        // If not already editing, start now
+        if (!this.editingWhiteboard || this.activeWhiteboardSurface !== focusedSurface) {
+            this.editingWhiteboard = true;
+            this.activeWhiteboardSurface = focusedSurface;
+        }
+
+        let previousText = this.whiteboardText;
+
+        // Only allow digits, max 3 chars
+        if (e.key.length === 1 && this.whiteboardText.length < 3 && /^[0-9]$/.test(e.key)) {
+            this.whiteboardText += e.key;
+        } else if (e.key === 'Backspace') {
+            this.whiteboardText = this.whiteboardText.slice(0, -1);
+        }
+
+        // Reset sound flag if text changed
+        if (this.whiteboardText !== previousText) {
+            this.played67Sound = false;
+        }
+
+        await this.activeWhiteboardSurface.drawText(this.whiteboardText, {
+            rotation: Math.PI / 2,
+            fontSize: 200,
+            y: 640,
+            scaleX: 0.5
+        });
+
+        // Play sound if text is "67" and hasn't played yet
+        if (this.whiteboardText === '67' && !this.played67Sound) {
+            const audio = new Audio('/audio/sfx/67.mp3');
+            audio.play();
+            this.played67Sound = true;
+        }
+
+        // If text is "827", mark puzzle as completed and disable further typing
+        if (this.whiteboardText === '827' && this.gameInstance && this.gameInstance.roomManager) {
+            this.gameInstance.roomManager.puzzleCompleted = true;
+            console.log('Whiteboard puzzle completed!');
+            this.gameInstance.roomManager.turnOffAllLights();
+
+            // --- Cut the THREE.js music ---
+            if (this.gameInstance.inGameMusic) {
+                this.gameInstance.inGameMusic.stop();
+            }
+
+            // --- Play powerCut.mp3 sound effect ---
+            const audio = new Audio('/audio/sfx/powerCut.mp3');
+            audio.play();
+
+            this.editingWhiteboard = false;
+            this.activeWhiteboardSurface = null;
+        }
+    }
+
     // Handle model interactions
-    onModelInteraction(modelGroup) {
+    async onModelInteraction(modelGroup) {
         console.log(`Interacted with model: ${modelGroup.userData.modelPath}`);
 
         // Model-specific interactions - check for slide
@@ -190,15 +285,7 @@ export class ModelInteractionManager {
             if (o.userData && o.userData.displaySurface) displaySurface = o.userData.displaySurface;
         });
         if (displaySurface) {
-            // Show the code — replace '827' with game state if needed
-            // Let's try rotating the text 90 degrees to counteract the UV distortion.
-            // You can change Math.PI / 2 to other values like -Math.PI / 2 (for -90deg) or Math.PI (for 180deg).
-            displaySurface.drawText('827', {
-                rotation: Math.PI / 2,
-                fontSize: 200, // Doubled to match new canvas resolution
-                y: 640,      // Doubled to match new canvas resolution
-                scaleX: 0.5 // Squish the text horizontally to counteract stretching
-            });
+            showTemporaryMessage("Use your number keys");
             return;
         }
 
@@ -221,4 +308,58 @@ export class ModelInteractionManager {
         this.maxModelInteractionDistance = model;
         this.maxInteractionDistance = general;
     }
+
+    getActiveWhiteboardSurface() {
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera({ x: 0, y: 0 }, this.camera);
+
+        const allInteractables = this.getAllInteractableObjects();
+        const intersects = raycaster.intersectObjects(allInteractables, true);
+
+        if (intersects.length > 0) {
+            let obj = intersects[0].object;
+            while (obj && !obj.userData.isInteractableModel && !obj.userData.isPickupLight) {
+                obj = obj.parent;
+            }
+            if (
+                obj &&
+                obj.userData.isInteractableModel &&
+                obj.userData.modelPath &&
+                obj.userData.modelPath.toLowerCase().includes('whiteboard.glb') &&
+                this.isWithinInteractionDistance(obj)
+            ) {
+                let displaySurface = null;
+                obj.traverse(o => {
+                    if (o.userData && o.userData.displaySurface) displaySurface = o.userData.displaySurface;
+                });
+                return displaySurface;
+            }
+        }
+        return null;
+    }
+}
+
+// Show temporary message on the screen
+function showTemporaryMessage(msg, duration = 2000) {
+    let messageDiv = document.getElementById('whiteboardMessage');
+    if (!messageDiv) {
+        messageDiv = document.createElement('div');
+        messageDiv.id = 'whiteboardMessage';
+        messageDiv.style.position = 'fixed';
+        messageDiv.style.bottom = '5%';
+        messageDiv.style.left = '50%';
+        messageDiv.style.transform = 'translateX(-50%)';
+        messageDiv.style.background = 'rgba(0,0,0,0.7)';
+        messageDiv.style.color = '#fff';
+        messageDiv.style.padding = '12px 24px';
+        messageDiv.style.borderRadius = '8px';
+        messageDiv.style.fontSize = '1.2em';
+        messageDiv.style.zIndex = '1000';
+        document.body.appendChild(messageDiv);
+    }
+    messageDiv.textContent = msg;
+    messageDiv.style.display = 'block';
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+    }, duration);
 }

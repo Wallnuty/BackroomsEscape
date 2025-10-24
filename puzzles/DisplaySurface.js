@@ -83,9 +83,9 @@ export class DisplaySurface {
         this.context.save();
         this.context.font = `bold ${fontSize}px "DryWhiteboardMarker", Arial`;
         this.context.fillStyle = 'black';
-        this.context.textAlign = 'center';
+        this.context.textAlign = 'left';
         this.context.textBaseline = 'middle';
-        this.context.translate(x, y);
+        this.context.translate(x, y - 80);
         this.context.rotate(rotation);
         this.context.scale(scaleX, scaleY);
         this.context.fillText(text, 0, 0);

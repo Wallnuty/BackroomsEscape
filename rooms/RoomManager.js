@@ -12,9 +12,10 @@ export class RoomManager {
         this.scene = scene;
         this.world = world;
         this.rooms = [];
+        this.puzzleCompleted = false;
 
-        const ambient = new THREE.AmbientLight(0xded18a, 0.4);
-        scene.add(ambient);
+        this.ambient = new THREE.AmbientLight(0xded18a, 0.4);
+        scene.add(this.ambient);
 
         this._createGlobalFloorAndCeiling();
 
@@ -150,18 +151,28 @@ export class RoomManager {
                                 const displaySurface = new DisplaySurface(child);
                                 modelRoot.userData.displaySurface = displaySurface;
                                 child.userData.displaySurface = displaySurface;
+
+                                // Draw persisted text from ModelInteractionManager
+                                const savedText = this.modelInteractionManager.whiteboardText || '';
+                                displaySurface.drawText(savedText, {
+                                    rotation: Math.PI / 2,
+                                    fontSize: 200,
+                                    y: 640,
+                                    scaleX: 0.5
+                                });
                             }
                         });
                     }
 
                     // Apply model-local rotation & scale (use defaults if absent)
                     const rot = modelConfig.rotation || new THREE.Vector3(0, 0, 0);
-                    pivot.rotation.set(rot.x || 0, rot.y || 0, rot.z || 0);
                     const scale = modelConfig.scale || new THREE.Vector3(1, 1, 1);
                     pivot.scale.copy(scale);
 
-                    // If you want the model to also yaw with the room orientation, add room.rotationY to pivot.y:
-                    pivot.rotation.y += room.rotationY || 0;
+                    // Correct quaternion multiplication order
+                    const roomQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, room.rotationY || 0, 0));
+                    const modelQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(rot.x || 0, rot.y || 0, rot.z || 0));
+                    pivot.quaternion.copy(modelQuat.multiply(roomQuat));
 
                     modelRoot.add(pivot);
 
@@ -222,10 +233,20 @@ export class RoomManager {
      */
     handleTriggeredZones(triggeredZones) {
         triggeredZones.forEach(zone => {
-            // Exclude the current room type
-            const layoutNames = Object.keys(RoomLayouts).filter(
-                name => name !== this.currentLayoutName
-            );
+            let layoutNames;
+            if (this.puzzleCompleted) {
+                // Only allow exit room to spawn
+                layoutNames = ['exit'];
+            } else {
+                // Exclude exit room from possible layouts
+                layoutNames = Object.keys(RoomLayouts).filter(
+                    name => name !== 'exit' && name !== this.currentLayoutName
+                );
+            }
+
+            // If no layouts are available, do nothing
+            if (layoutNames.length === 0) return;
+
             const randomLayoutName = layoutNames[Math.floor(Math.random() * layoutNames.length)];
             const randomLayout = RoomLayouts[randomLayoutName];
 
@@ -467,10 +488,13 @@ export class RoomManager {
             const children = [...room.group.children];
 
             children.forEach(child => {
-                // Remove from model interaction manager if it's an interactable model
                 if (child.userData.isInteractableModel) {
                     this.modelInteractionManager.removeInteractableModel(child);
-                    console.log(`Removed model from interaction manager: ${child.userData.modelPath}`);
+                    // If this is the whiteboard being removed, stop editing
+                    if (child.userData.displaySurface &&
+                        this.modelInteractionManager.activeWhiteboardSurface === child.userData.displaySurface) {
+                        this.modelInteractionManager.stopWhiteboardEditing();
+                    }
                 }
             });
 
@@ -596,5 +620,19 @@ export class RoomManager {
         this.currentRoom.addWall(wallStart, wallEnd, wallThickness);
 
         console.log(`Exit room sealed with wall from ${wallStart.x}, ${wallStart.z} to ${wallEnd.x}, ${wallEnd.z}`);
+    }
+
+    turnOffAllLights() {
+        this.rooms.forEach(room => {
+            if (room.lightPanels) {
+                room.lightPanels.forEach(panel => {
+                    if (typeof panel.turnOff === 'function') panel.turnOff();
+                });
+            }
+        });
+        // Lower ambient light intensity
+        if (this.ambient) {
+            this.ambient.intensity = 0.2; // Or 0 for total darkness
+        }
     }
 }
