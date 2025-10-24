@@ -119,11 +119,15 @@ export class RoomManager {
                     // If the room has a rotationY, rotate the position vector so placement follows room orientation.
                     const modelRoot = new THREE.Group();
                     const position = modelConfig.position ? modelConfig.position.clone() : new THREE.Vector3(0, 0, 0);
-                    if (typeof room.rotationY === 'number') {
-                        const rotatedPos = this.rotatePoint(position, room.rotationY);
-                        modelRoot.position.copy(rotatedPos);
-                    } else {
-                        modelRoot.position.copy(position);
+                    modelRoot.position.copy(position);
+
+                    // IMPORTANT: apply room yaw on the root so model rotates around WORLD Y at modelRoot.position
+                    // If room.rotationY is present, use it. Default to 0.
+                    modelRoot.rotation.y = typeof room.rotationY === 'number' ? room.rotationY : 0;
+
+                    // Optional per-model yaw offset to correct model authoring orientation (use if an asset faces -Z instead of +Z)
+                    if (typeof modelConfig.yawWorldOffset === 'number') {
+                        modelRoot.rotation.y += modelConfig.yawWorldOffset;
                     }
 
                     // Pivot holds the actual model, receives scale & rotation (local transform).
@@ -169,9 +173,6 @@ export class RoomManager {
                     pivot.rotation.set(rot.x || 0, rot.y || 0, rot.z || 0);
                     const scale = modelConfig.scale || new THREE.Vector3(1, 1, 1);
                     pivot.scale.copy(scale);
-
-                    // If you want the model to also yaw with the room orientation, add room.rotationY to pivot.y:
-                    pivot.rotation.y += room.rotationY || 0;
 
                     modelRoot.add(pivot);
 
@@ -368,6 +369,16 @@ export class RoomManager {
             rotateVec(center)
         ]);
 
+        // Rotate models (position + add yaw to model rotation.y)
+        const rotatedModels = (layout.models || []).map(model => {
+            const newPos = rotateVec(model.position ? model.position.clone() : new THREE.Vector3(0, 0, 0));
+            return {
+                ...model,
+                position: newPos,
+                rotation: model.rotation ? model.rotation.clone() : new THREE.Vector3(0, 0, 0)
+            };
+        });
+
         // Adjust width and depth by rotating the original width/depth vector
         // Use a vector from (0,0,0) to (width, 0, depth), rotate it, and take abs values
         const sizeVec = rotateVec(new THREE.Vector3(layout.width, 0, layout.depth));
@@ -379,6 +390,7 @@ export class RoomManager {
             walls: rotatedWalls,
             lights: rotatedLights,
             zones: rotatedZones,
+            models: rotatedModels,
             width,
             depth
         };
