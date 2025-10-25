@@ -413,7 +413,7 @@ export class ModelInteractionManager {
         // Animation timing
         const now = performance.now();
         const anim = this.markerAnimState;
-        const ANIM_DURATION = 0.22; // seconds for each half
+        const ANIM_DURATION = 0.44; // seconds for each half
         const ACTIVE_TIMEOUT = 400; // ms
 
         let verticalOffset = baseVertical;
