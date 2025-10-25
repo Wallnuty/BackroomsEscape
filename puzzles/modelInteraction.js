@@ -23,6 +23,14 @@ export class ModelInteractionManager {
 
         // Listen for keyboard input
         window.addEventListener('keydown', (e) => this.handleWhiteboardInput(e));
+
+        this.markerAnimState = {
+            isAnimating: false,
+            lastTypedTime: 0,
+            phase: 0, // 0 = up-right, 1 = down-left
+            t: 0,     // animation progress (0 to 1)
+            direction: 1 // 1 = forward, -1 = backward
+        };
     }
 
     // Set reference to main game instance
@@ -233,6 +241,9 @@ export class ModelInteractionManager {
         // Reset sound flag if text changed
         if (this.whiteboardText !== previousText) {
             this.played67Sound = false;
+            // --- Start marker animation ---
+            this.markerAnimState.lastTypedTime = performance.now();
+            this.markerAnimState.isAnimating = true;
         }
 
         await this.activeWhiteboardSurface.drawText(this.whiteboardText, {
@@ -391,36 +402,65 @@ export class ModelInteractionManager {
         if (!this.heldMarkerObject || !this.camera) return;
 
         const holdDistance = 1.1;
-        const verticalOffset = -0.5;   // positive = up in camera space
-        const horizontalOffset = 0.9; // right is positive
+        // Default (rest) position
+        const baseVertical = -0.5;
+        const baseHorizontal = 0.9;
 
-        // Get camera world transform (works even if camera is parented)
+        // Animation endpoints
+        const upright = { vertical: 0.1, horizontal: 0.4 };  // up, right
+        const downleft = { vertical: -0.3, horizontal: -0.3 };  // down, left
+
+        // Animation timing
+        const now = performance.now();
+        const anim = this.markerAnimState;
+        const ANIM_DURATION = 0.22; // seconds for each half
+        const ACTIVE_TIMEOUT = 400; // ms
+
+        let verticalOffset = baseVertical;
+        let horizontalOffset = baseHorizontal;
+
+        if (anim.isAnimating && now - anim.lastTypedTime < ACTIVE_TIMEOUT) {
+            // Animate between upright and downleft
+            anim.t += (1 / 60) / ANIM_DURATION * anim.direction; // assuming ~60fps
+
+            if (anim.t > 1) {
+                anim.t = 1;
+                anim.direction = -1;
+            } else if (anim.t < 0) {
+                anim.t = 0;
+                anim.direction = 1;
+            }
+
+            verticalOffset = THREE.MathUtils.lerp(upright.vertical, downleft.vertical, anim.t);
+            horizontalOffset = THREE.MathUtils.lerp(upright.horizontal, downleft.horizontal, anim.t);
+        } else {
+            // Not animating, reset to default
+            anim.isAnimating = false;
+            anim.t = 0;
+            anim.direction = 1;
+        }
+
+        // --- Position and rotation logic (unchanged) ---
         const camPos = new THREE.Vector3();
         const camQuat = new THREE.Quaternion();
         this.camera.getWorldPosition(camPos);
         this.camera.getWorldQuaternion(camQuat);
 
-        // Build camera-space basis vectors from camera quaternion (non-mutating)
-        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camQuat).normalize(); // camera looks -Z in local space
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camQuat).normalize();
         const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camQuat).normalize();
         const right = new THREE.Vector3().crossVectors(forward, up).normalize();
 
-        // Compose world-space hold position
         const holdPosition = camPos.clone()
             .add(forward.clone().multiplyScalar(holdDistance))
             .add(right.clone().multiplyScalar(horizontalOffset))
             .add(up.clone().multiplyScalar(verticalOffset));
 
-        // Apply position
         this.heldMarkerObject.position.copy(holdPosition);
-
-        // Apply rotation: match camera world rotation, then apply local tilt
         this.heldMarkerObject.quaternion.copy(camQuat);
 
         const tilt = new THREE.Quaternion();
-        // tilt angles are local: adjust to taste (radians)
         tilt.setFromEuler(new THREE.Euler(0.2, 3, -0.5, 'XYZ'));
-        this.heldMarkerObject.quaternion.multiply(tilt); // camera-local tilt
+        this.heldMarkerObject.quaternion.multiply(tilt);
     }
 }
 
