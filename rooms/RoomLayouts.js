@@ -108,7 +108,7 @@ export const RoomLayouts = {
             // },
             {
                 path: '/models/marker.glb',
-                position: new THREE.Vector3(1.5, -2.45, 3),
+                position: new THREE.Vector3(-1, -2.45, 5.2),
                 scale: new THREE.Vector3(0.6, 0.6, 0.6),
                 rotation: new THREE.Vector3(0, 0, 0),
                 interactable: true
