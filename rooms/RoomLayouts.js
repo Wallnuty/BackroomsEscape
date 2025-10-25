@@ -67,6 +67,13 @@ export const RoomLayouts = {
                 scale: new THREE.Vector3(10, 10, 10),
                 rotation: new THREE.Vector3(Math.PI / 2, 0, Math.PI / 2),
                 interactable: false
+            },
+            {
+                path: '/models/marks.glb',
+                position: new THREE.Vector3(5, -0.60, 14.75),
+                scale: new THREE.Vector3(0.7, 0.7, 0.7),
+                rotation: new THREE.Vector3(0, Math.PI / 2, 0),
+                interactable: false
             }
         ]
     }, secondary: {
