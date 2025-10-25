@@ -218,6 +218,11 @@ export class ModelInteractionManager {
             return;
         }
 
+        // --- Prevent writing if player doesn't have the marker ---
+        if (!this.hasMarker) {
+            return;
+        }
+
         // If puzzle is completed, ignore further typing
         if (this.gameInstance && this.gameInstance.roomManager && this.gameInstance.roomManager.puzzleCompleted) {
             return;
@@ -273,6 +278,7 @@ export class ModelInteractionManager {
 
             // --- Play powerCut.mp3 sound effect ---
             const audio = new Audio('/audio/sfx/powerCut.mp3');
+            audio.volume = 0.6;
             audio.play();
 
             // --- Remove held marker ---
