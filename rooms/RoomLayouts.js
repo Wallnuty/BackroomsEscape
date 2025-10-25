@@ -60,6 +60,13 @@ export const RoomLayouts = {
                 scale: new THREE.Vector3(10, 10, 10),
                 rotation: new THREE.Vector3(Math.PI / 2, 0, Math.PI / 2),
                 interactable: false
+            },
+            {
+                path: '/models/marker.glb',
+                position: new THREE.Vector3(5, -2.45, 13),
+                scale: new THREE.Vector3(0.6, 0.6, 0.6),
+                rotation: new THREE.Vector3(0, 0, 0),
+                interactable: true
             }
         ]
     }, secondary: {
@@ -252,3 +259,24 @@ export const RoomLayouts = {
 //             ]
 //         ]
 //     }
+
+
+
+// // Add the 8-ball model to the secondary room
+// models: [
+//     // {
+//     //     path: '/models/eight_ball.glb',
+//     //     position: new THREE.Vector3(0, -2.25, 5),
+//     //     scale: new THREE.Vector3(0.12, 0.12, 0.12),
+//     //     rotation: new THREE.Vector3(Math.PI / 4, 0, 0),
+//     //     // make the 8-ball non-interactable
+//     //     interactable: false
+//     // },
+//     {
+//         path: '/models/marker.glb',
+//         position: new THREE.Vector3(1.5, -2.45, 3),
+//         scale: new THREE.Vector3(0.6, 0.6, 0.6),
+//         rotation: new THREE.Vector3(0, 0, 0),
+//         interactable: true
+//     }
+// ]

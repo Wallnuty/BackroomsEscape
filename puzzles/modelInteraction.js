@@ -264,6 +264,9 @@ export class ModelInteractionManager {
             const audio = new Audio('/audio/sfx/powerCut.mp3');
             audio.play();
 
+            // --- Remove held marker ---
+            this.removeHeldMarker();
+
             this.editingWhiteboard = false;
             this.activeWhiteboardSurface = null;
         }
@@ -272,6 +275,12 @@ export class ModelInteractionManager {
     // Handle model interactions
     async onModelInteraction(modelGroup) {
         console.log(`Interacted with model: ${modelGroup.userData.modelPath}`);
+
+        // Marker pickup logic
+        if (modelGroup.userData.modelPath && modelGroup.userData.modelPath.toLowerCase().includes('marker')) {
+            this.pickupMarker(modelGroup);
+            return;
+        }
 
         // Model-specific interactions - check for slide
         if (modelGroup.userData.modelPath && modelGroup.userData.modelPath.toLowerCase().includes('slide')) {
@@ -285,11 +294,50 @@ export class ModelInteractionManager {
             if (o.userData && o.userData.displaySurface) displaySurface = o.userData.displaySurface;
         });
         if (displaySurface) {
+            // --- NEW LOGIC: Require marker to write ---
+            if (!this.hasMarker) {
+                showTemporaryMessage("Nothing to write with");
+                return;
+            }
             showTemporaryMessage("Use your number keys");
             return;
         }
 
         // Add more model-specific interactions as needed
+    }
+
+    // Add this new method:
+    pickupMarker(modelGroup) {
+        // Remove from scene and interactables
+        if (modelGroup.parent) modelGroup.parent.remove(modelGroup);
+        this.removeInteractableModel(modelGroup);
+
+        this.hasMarker = true;
+        this.heldMarker = modelGroup;
+
+        // --- Add held marker to camera ---
+        if (!this.heldMarkerObject && this.camera) {
+            // Clone the marker model for the HUD
+            const heldMarker = modelGroup.clone(true);
+            heldMarker.traverse(obj => {
+                if (obj.material) obj.material = obj.material.clone();
+            });
+            heldMarker.position.set(0, 0, -1); // Adjust for bottom left
+            heldMarker.scale.set(0.8, 0.8, 0.8); // Adjust size as needed
+            heldMarker.rotation.set(0.2, 0, -0.5); // Adjust for a natural look
+
+            this.scene.add(heldMarker);
+            this.heldMarkerObject = heldMarker;
+        }
+    }
+
+    removeHeldMarker() {
+        if (this.heldMarkerObject && this.scene) {
+            this.scene.remove(this.heldMarkerObject);
+            this.heldMarkerObject = null;
+            this.hasMarker = false;
+            this.heldMarker = null;
+        }
     }
 
     // Get all interactable models
@@ -336,6 +384,43 @@ export class ModelInteractionManager {
             }
         }
         return null;
+    }
+
+    // Robust held-marker update — use camera world position & quaternion, non-mutating vectors
+    updateHeldMarker() {
+        if (!this.heldMarkerObject || !this.camera) return;
+
+        const holdDistance = 1.1;
+        const verticalOffset = -0.5;   // positive = up in camera space
+        const horizontalOffset = 0.9; // right is positive
+
+        // Get camera world transform (works even if camera is parented)
+        const camPos = new THREE.Vector3();
+        const camQuat = new THREE.Quaternion();
+        this.camera.getWorldPosition(camPos);
+        this.camera.getWorldQuaternion(camQuat);
+
+        // Build camera-space basis vectors from camera quaternion (non-mutating)
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camQuat).normalize(); // camera looks -Z in local space
+        const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camQuat).normalize();
+        const right = new THREE.Vector3().crossVectors(forward, up).normalize();
+
+        // Compose world-space hold position
+        const holdPosition = camPos.clone()
+            .add(forward.clone().multiplyScalar(holdDistance))
+            .add(right.clone().multiplyScalar(horizontalOffset))
+            .add(up.clone().multiplyScalar(verticalOffset));
+
+        // Apply position
+        this.heldMarkerObject.position.copy(holdPosition);
+
+        // Apply rotation: match camera world rotation, then apply local tilt
+        this.heldMarkerObject.quaternion.copy(camQuat);
+
+        const tilt = new THREE.Quaternion();
+        // tilt angles are local: adjust to taste (radians)
+        tilt.setFromEuler(new THREE.Euler(0.2, 3, -0.5, 'XYZ'));
+        this.heldMarkerObject.quaternion.multiply(tilt); // camera-local tilt
     }
 }
 

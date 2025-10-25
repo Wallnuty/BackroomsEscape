@@ -510,6 +510,9 @@ class BackroomsGame {
         this.roomManager.lightsManager.colorMixingManager.updateColorMixing();
         this.roomManager.lightsManager.checkPuzzles();
       }
+      if (this.roomManager?.modelInteractionManager) {
+        this.roomManager.modelInteractionManager.updateHeldMarker();
+      }
       const playerPos =
         this.activeCameraIndex === 0
           ? this.camera.position

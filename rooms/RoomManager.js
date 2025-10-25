@@ -108,6 +108,16 @@ export class RoomManager {
         const loader = new GLTFLoader();
 
         models.forEach((modelConfig, index) => {
+            // --- Prevent spawning marker if already picked up ---
+            if (
+                modelConfig.path &&
+                modelConfig.path.toLowerCase().includes('marker') &&
+                this.modelInteractionManager.hasMarker
+            ) {
+                // Skip spawning this marker
+                return;
+            }
+
             loader.load(
                 modelConfig.path,
                 (gltf) => {
