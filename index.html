@@ -390,15 +390,18 @@
       height: 100vh;
       background-color: rgba(0, 0, 0, 0.8);
       z-index: 9999;
+      display: none;
+      /* Hide by default */
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      padding-top: 0px;
     }
 
     /* "Paused" label near top */
     .pauseLabel {
-      position: absolute;
-      top: 20vh;
-      /* Changed from 10vh to give more space from top */
-      left: 50%;
-      transform: translateX(-50%);
+      position: static;
+      margin-bottom: 20px;
       font-family: "CoralineCat", "VT323", monospace;
       font-size: clamp(3rem, 8vw, 5rem);
       color: #f5e6d3;
@@ -409,11 +412,8 @@
 
     /* Container to center the buttons */
     .pauseContent {
-      position: absolute;
-      top: 55%;
-      /* Moved down slightly from 50% */
-      left: 50%;
-      transform: translate(-50%, -50%);
+      position: static;
+      transform: none;
       text-align: center;
     }
 
@@ -421,8 +421,6 @@
     #resumeBtn {
       width: 200px;
       height: 40px;
-      font-family: "CoralineCat", "VT323", monospace;
-      font-size: 2rem;
       color: #2c1810;
       background: #f5e6d3;
       border: 3px solid #f5e6d3;
@@ -436,7 +434,7 @@
       justify-content: center;
       line-height: 1;
       padding: 0;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       /* Increased from 20px for more space */
     }
 
@@ -455,9 +453,6 @@
     #cameraToggleBtn {
       width: 200px;
       height: 40px;
-      /* fixed height ensures vertical centering works */
-      font-family: "CoralineCat", "VT323", monospace;
-      font-size: 2rem;
       color: #2c1810;
       background: #f5e6d3;
       border: 3px solid #f5e6d3;
@@ -479,6 +474,142 @@
 
 
     #cameraToggleBtn:hover {
+      background: #ff0e6a;
+      color: #f5e6d3;
+      transform: scale(1.05);
+    }
+
+    #mainMenuBtn {
+      width: 200px;
+      height: 40px;
+      color: #2c1810;
+      background: #f5e6d3;
+      border: 3px solid #f5e6d3;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
+      transition: transform 0.2s, background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      padding: 0;
+      margin-top: 20px;
+      /* Prevent text wrapping */
+      white-space: nowrap;
+      /* Reduce font size if needed for fit */
+      font-size: 1.5rem;
+    }
+
+    #mainMenuBtn:hover {
+      background: #ff0e6a;
+      color: #f5e6d3;
+      transform: scale(1.05);
+    }
+
+    #controlsBtn {
+      width: 200px;
+      height: 40px;
+      color: #2c1810;
+      background: #f5e6d3;
+      border: 3px solid #f5e6d3;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
+      transition: transform 0.2s, background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      padding: 0;
+      margin-top: 20px;
+      white-space: nowrap;
+      font-size: 1.5rem;
+    }
+
+    #controlsBtn:hover {
+      background: #ff0e6a;
+      color: #f5e6d3;
+      transform: scale(1.05);
+    }
+
+    #resumeBtn,
+    #cameraToggleBtn,
+    #controlsBtn,
+    #mainMenuBtn {
+      font-family: "VT323", monospace;
+      font-size: 1.5rem;
+    }
+
+    /* Controls Overlay */
+    #controlsOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(20, 20, 20, 0.95);
+      z-index: 10001;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .controlsContent {
+      background: #222;
+      color: #f5e6d3;
+      border: 3px solid #f5e6d3;
+      border-radius: 16px;
+      padding: 40px 60px;
+      box-shadow: 0 0 40px #000a;
+      text-align: center;
+      font-family: "VT323", monospace;
+      font-size: 1.5rem;
+      min-width: 320px;
+      max-width: 90vw;
+    }
+
+    .controlsContent h2 {
+      margin-top: 0;
+      font-size: 2.2rem;
+      letter-spacing: 0.1em;
+      color: #ff0e6a;
+      text-shadow: 2px 2px 0px rgba(255, 0, 0, 0.2);
+    }
+
+    .controlsContent ul {
+      list-style: none;
+      padding: 0;
+      margin: 30px 0 30px 0;
+      font-size: 1.3rem;
+      text-align: left;
+      display: inline-block;
+    }
+
+    .controlsContent li {
+      margin-bottom: 12px;
+      letter-spacing: 0.05em;
+    }
+
+    #closeControlsBtn {
+      margin-top: 20px;
+      width: 160px;
+      height: 40px;
+      font-family: "VT323", monospace;
+      font-size: 1.2rem;
+      color: #2c1810;
+      background: #f5e6d3;
+      border: 3px solid #f5e6d3;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    #closeControlsBtn:hover {
       background: #ff0e6a;
       color: #f5e6d3;
       transform: scale(1.05);
@@ -517,24 +648,27 @@
       <div class="pupil"></div>
     </div>
   </div>
-  <div id="pauseMenu" style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        display: none;
-        justify-content: center;
-        align-items: center;
-        font-size: 2em;
-        z-index: 9999;
-      ">
+  <div id="pauseMenu"
+    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.8); color: white; display: none; justify-content: flex-start; align-items: center; font-size: 2em; z-index: 9999; padding-top: 80px;">
     <p class="pauseLabel">Paused</p>
     <div class="pauseContent">
       <button id="resumeBtn">Resume</button>
-      <button id="cameraToggleBtn">Map</button>
+      <button id="cameraToggleBtn">Map View</button>
+      <button id="controlsBtn">Controls</button>
+      <button id="mainMenuBtn">Main Menu</button>
+    </div>
+  </div>
+
+  <!-- Controls Overlay -->
+  <div id="controlsOverlay" style="display:none;">
+    <div class="controlsContent">
+      <h2>Controls</h2>
+      <ul>
+        <li><b>Shift</b> – Run</li>
+        <li><b>Left CLick</b> – Interact</li>
+        <!-- Add more controls as needed -->
+      </ul>
+      <button id="closeControlsBtn">Close</button>
     </div>
   </div>
   <script type="module" src="/main.js"></script>
@@ -609,6 +743,34 @@
     }
     updateTimestamp();
     setInterval(updateTimestamp, 1000);
+
+    // Main Menu button logic
+    const mainMenuBtn = document.getElementById("mainMenuBtn");
+    if (mainMenuBtn) {
+      mainMenuBtn.addEventListener("click", () => {
+        location.reload();
+      });
+    }
+
+    // Controls overlay logic
+    const controlsBtn = document.getElementById("controlsBtn");
+    const controlsOverlay = document.getElementById("controlsOverlay");
+    const closeControlsBtn = document.getElementById("closeControlsBtn");
+
+    if (controlsBtn && controlsOverlay && closeControlsBtn) {
+      controlsBtn.addEventListener("click", () => {
+        controlsOverlay.style.display = "flex";
+      });
+      closeControlsBtn.addEventListener("click", () => {
+        controlsOverlay.style.display = "none";
+      });
+      // Optional: Close overlay with Escape key
+      controlsOverlay.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          controlsOverlay.style.display = "none";
+        }
+      });
+    }
   </script>
 </body>
 
