@@ -30,8 +30,7 @@ export class ColorPuzzleManager {
         this.createPuzzleDoors();
         this.createColorSensors();
         this.setupInitialLights();
-        
-        console.log("🔧 DEBUG: Puzzle initialized - starting sensor monitoring");
+
     
         this.spawnLightInRoom('red', new THREE.Vector3(18, 0, -8));
         this.spawnLightInRoom('blue', new THREE.Vector3(-55, 0, -8));
@@ -70,14 +69,12 @@ export class ColorPuzzleManager {
         const finalDoor = new PuzzleDoor(
             this.scene,
             this.world, // PASS the physics world
-            new THREE.Vector3(0, 2.5, 20),
-            new THREE.Vector3(0, 2.5, 25),
+            new THREE.Vector3(-15, -5, -20),
+            new THREE.Vector3(-15, -20, -20),
             WHITE,
             'final'
         );
         this.doors.push(finalDoor);
-
-        console.log("🎯 Puzzle doors created");
     }
 
     // ... REST OF YOUR EXISTING CODE REMAINS EXACTLY THE SAME ...
@@ -109,7 +106,7 @@ export class ColorPuzzleManager {
         // Sensor for Final Door
         const finalSensor = new ColorSensor(
             this.scene,
-            new THREE.Vector3(-18, 0, -20),
+            new THREE.Vector3(-18, 0, -19.8),
             WHITE,
             6.0,
             'final'
