@@ -9,12 +9,15 @@ import { PlaygroundLayouts } from "./Playground/PlaygroundLayout.js";
 import { PlaygroundRoom } from "./Playground/PlaygroundRoom.js";
 import { CSG } from "three-csg-ts";
 import { SignInRoom } from "./Playground/SignInRoom.js";
+import { ExtraRoom } from "./Playground/ExtraRoom.js";
+import { KeypadUI } from "../props/keypadUI.js";
 
 export class RoomManager {
   constructor(scene, world, camera, player) {
     this.scene = scene;
     this.world = world;
     this.player = player;
+    this.camera = camera;
     this.rooms = [];
     this.hallways = []; // <--- initialize here
     this.lastZone = null;
@@ -97,6 +100,18 @@ export class RoomManager {
         connections,
         corridorWidth
       );
+    } else if (layoutName === "extra") {
+      const connections = { right: "Playground" }; // tell the room to leave the right wall open
+      const corridorWidth = 8; // match your hallway width
+      room = new ExtraRoom(
+        this.scene,
+        this.world,
+        position.clone(),
+        connections,
+        corridorWidth,
+        this.camera
+      );
+      room.modelInteractionManager = this.modelInteractionManager;
     } else if (layoutName === "playground" || layoutName === "Playground") {
       const connections = { left: "SignIn" }; // tell the room to leave the right wall open
       const corridorWidth = 8; // match your hallway width

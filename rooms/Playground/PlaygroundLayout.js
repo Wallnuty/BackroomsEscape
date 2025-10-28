@@ -22,6 +22,15 @@ export const PlaygroundLayouts = {
     width: 40,
     height: 8,
     depth: 40,
+
+    // Chalkboard
+    chalkboards: [
+      {
+        position: new THREE.Vector3(0, 2, 19.9),
+        rotationY: Math.PI,
+        phrase: "OBSERVATION",
+      },
+    ],
   },
 };
 
@@ -188,7 +197,7 @@ function createModels() {
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/see_saw.mp3",
     },
-        {
+    {
       path: "/models/toy_giraffe.glb",
       position: new THREE.Vector3(0, -6, 13),
       scale: new THREE.Vector3(40, 40, 40),
@@ -217,7 +226,93 @@ function createModels() {
     },
   ];
 
-  PlaygroundLayouts.Extra.models = [];
+  PlaygroundLayouts.Extra.models = [
+    {
+      path: "/models/victorian_bookshelf.glb",
+      position: new THREE.Vector3(
+        -20 + 2, // left wall (-20) + half bookshelf width (1)
+        -4, // floor height
+        0 // center along wall
+      ),
+      scale: new THREE.Vector3(3, 3, 3),
+      rotation: new THREE.Vector3(0, 0, 0), // face into room
+      type: "numberDisplay", // Change from "default" to "numberDisplay"
+      displayNumber: 9, // Add the number you want to display
+    },
+    {
+      path: "/models/keypad.glb",
+      position: new THREE.Vector3(19.9, -1, 7),
+      scale: new THREE.Vector3(6, 6, 6),
+      rotation: new THREE.Vector3(0, Math.PI / 2, 0),
+      type: "keypad", // tag it so we know it opens popup
+      code: "4705", // store code here for popup
+    },
+    {
+      path: "/models/creepy_doll_character.glb",
+      position: new THREE.Vector3(-10, -3, 10),
+      scale: new THREE.Vector3(1, 1, 1),
+      rotation: new THREE.Vector3(0, Math.PI / 6, 0),
+      type: "numberDisplay", // tag it so we know it opens popup
+      displayNumber: 4, // store code here for popup
+    },
+    {
+      path: "/models/vintage_wall_clock.glb",
+      position: new THREE.Vector3(10, -2, -20),
+      scale: new THREE.Vector3(0.04, 0.04, 0.04),
+      rotation: new THREE.Vector3(0, 0, 0),
+      type: "numberDisplay", // tag it so we know it opens popup
+      displayNumber: 3, // store code here for popup
+    },
+    {
+      path: "/models/painting_of_a_clown.glb",
+      position: new THREE.Vector3(-10, 0, -20),
+      scale: new THREE.Vector3(5, 5, 5),
+      rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
+      type: "numberDisplay", // tag it so we know it opens popup
+      displayNumber: 7, // store code here for popup
+    },
+    {
+      path: "/models/student_desk.glb",
+      position: new THREE.Vector3(6, -2.5, -10),
+      scale: new THREE.Vector3(2, 2, 2),
+      rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
+      type: "numberDisplay", // tag it so we know it opens popup
+      displayNumber: 0,
+    },
+    {
+      path: "/models/student_desk.glb",
+      position: new THREE.Vector3(-8, -2.5, -10),
+      scale: new THREE.Vector3(2, 2, 2),
+      rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
+      type: "numberDisplay", // tag it so we know it opens popup
+      displayNumber: 0,
+    },
+    {
+      path: "/models/student_desk.glb",
+      position: new THREE.Vector3(6, -2.5, 5),
+      scale: new THREE.Vector3(2, 2, 2),
+      rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
+      type: "numberDisplay", // tag it so we know it opens popup
+      displayNumber: 0,
+    },
+    {
+      path: "/models/student_desk.glb",
+      position: new THREE.Vector3(-8, -2.5, 5),
+      scale: new THREE.Vector3(2, 2, 2),
+      rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
+      type: "numberDisplay", // tag it so we know it opens popup
+      displayNumber: 0,
+    },
+    {
+      path: "/models/face.glb",
+      position: new THREE.Vector3(19.9, -1, -10),
+      scale: new THREE.Vector3(3, 3, 3),
+      rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
+      type: "numberDisplay", // tag it so we know it opens popup
+      displayNumber: 5,
+    },
+  ];
+
   console.log(
     "Models created:",
     PlaygroundLayouts.Playground.models,

@@ -65,44 +65,43 @@ class BackroomsGame {
   }
 
   loadPlayground() {
-      console.log("Loading playground...");
+    console.log("Loading playground...");
 
-      // 1. Reset the current world/scene
-      this.clearScene();
+    // 1. Reset the current world/scene
+    this.clearScene();
 
-      // 2. Destroy old RoomManager and create a new one
-      this.destroyRoomManager();
-      this.setupRoomManager();
+    // 2. Destroy old RoomManager and create a new one
+    this.destroyRoomManager();
+    this.setupRoomManager();
 
-      // 3. Load connected rooms including the Playground
-      if (this.roomManager) {
-          this.roomManager.loadConnectedRooms();
-      }
+    // 3. Load connected rooms including the Playground
+    if (this.roomManager) {
+      this.roomManager.loadConnectedRooms();
+    }
 
-      // 4. Reset player position to Playground spawn
-      const playgroundRoom = this.roomManager?.currentRoom;
-      if (playgroundRoom) {
-          const floorY = -playgroundRoom.height / 2;
-          const offsetAboveFloor = 1.0;
-          this.playerBody.position.set(
-              playgroundRoom.position.x,
-              floorY + offsetAboveFloor,
-              playgroundRoom.position.z
-          );
-          this.playerBody.velocity.set(0, 0, 0);
-          this.syncCamera();
-      }
+    // 4. Reset player position to Playground spawn
+    const playgroundRoom = this.roomManager?.currentRoom;
+    if (playgroundRoom) {
+      const floorY = -playgroundRoom.height / 2;
+      const offsetAboveFloor = 1.0;
+      this.playerBody.position.set(
+        playgroundRoom.position.x,
+        floorY + offsetAboveFloor,
+        playgroundRoom.position.z
+      );
+      this.playerBody.velocity.set(0, 0, 0);
+      this.syncCamera();
+    }
 
-      console.log("Playground loaded successfully.");
+    console.log("Playground loaded successfully.");
   }
-
 
   startGame() {
     this.setupThreeJS();
     this.setupPhysics();
     this.setupAudio();
-    this.setupRoomManager();
     this.setupControls();
+    this.setupRoomManager();
     this.requestPointerLock();
     this.setupEventListeners();
 
@@ -274,18 +273,41 @@ class BackroomsGame {
   }
 
   setupRoomManager() {
-    this.roomManager = new RoomManager(this.scene, this.world, this.camera,{ body: this.playerBody, syncCamera: this.syncCamera });
+    this.roomManager = new RoomManager(this.scene, this.world, this.camera, {
+      body: this.playerBody,
+      syncCamera: this.syncCamera,
+    });
 
     // Connect the game instance to model interaction manager for reset functionality
     this.roomManager.modelInteractionManager.setGameInstance(this);
-      if (this.audioListener) {
-        this.roomManager.modelInteractionManager.setAudioListener(this.audioListener);
+    if (this.audioListener) {
+      this.roomManager.modelInteractionManager.setAudioListener(
+        this.audioListener
+      );
 
-        // Optionally preload sounds for interactables right away (you can also call this later)
-        // await this.roomManager.modelInteractionManager.preloadModelSounds(); // if made async context
-        // or call without await:
-        this.roomManager.modelInteractionManager.preloadModelSounds();
+      // Optionally preload sounds for interactables right away (you can also call this later)
+      // await this.roomManager.modelInteractionManager.preloadModelSounds(); // if made async context
+      // or call without await:
+      this.roomManager.modelInteractionManager.preloadModelSounds();
+    }
+    if (this.controls) {
+      this.roomManager.modelInteractionManager.setPointerLockControls(
+        this.controls.controls
+      );
+      this.roomManager.modelInteractionManager.setControlsWrapper(
+        this.controls
+      ); // NEW LINE
+      if (this.roomManager.modelInteractionManager.numberDisplayUI) {
+        console.log("entered");
+        this.roomManager.modelInteractionManager.numberDisplayUI.pointerLockControls =
+          this.controls.controls;
+        this.roomManager.modelInteractionManager.numberDisplayUI.controlsWrapper =
+          this.controls;
       }
+      console.log(
+        "✅ Pointer lock controls connected to ModelInteractionManager"
+      );
+    }
   }
 
   setupControls() {
@@ -294,13 +316,34 @@ class BackroomsGame {
       this.camera,
       this.renderer.domElement
     );
+    // CRITICAL FIX: Pass the actual PointerLockControls instance (not the wrapper)
+    // Pass both the PointerLockControls AND the wrapper
+    if (this.roomManager?.modelInteractionManager) {
+      this.roomManager.modelInteractionManager.setPointerLockControls(
+        this.controls.controls
+      );
+      this.roomManager.modelInteractionManager.setControlsWrapper(
+        this.controls
+      ); // NEW LINE
+      if (this.roomManager.modelInteractionManager.numberDisplayUI) {
+        this.roomManager.modelInteractionManager.numberDisplayUI.pointerLockControls =
+          this.controls.controls;
+        this.roomManager.modelInteractionManager.numberDisplayUI.controlsWrapper =
+          this.controls;
+      }
+      console.log(
+        "✅ Pointer lock controls connected to ModelInteractionManager"
+      );
+    }
   }
 
   setupEventListeners() {
     window.addEventListener("pointerdown", (event) => {
       if (!this.isPaused && this.mouseMovedSinceResume) {
         // Use only the model interaction manager (which now handles both models and lights)
-        this.roomManager.modelInteractionManager.handlePointerInteraction(event);
+        this.roomManager.modelInteractionManager.handlePointerInteraction(
+          event
+        );
       }
     });
     const cameraToggleBtn = document.getElementById("cameraToggleBtn");
@@ -513,7 +556,7 @@ class BackroomsGame {
       // Dispose materials
       if (object.material) {
         if (Array.isArray(object.material)) {
-          object.material.forEach(mat => mat.dispose());
+          object.material.forEach((mat) => mat.dispose());
         } else {
           object.material.dispose();
         }
@@ -526,8 +569,10 @@ class BackroomsGame {
     });
 
     // Clear all physics bodies except player
-    const bodiesToRemove = this.world.bodies.filter(body => body !== this.playerBody);
-    bodiesToRemove.forEach(body => {
+    const bodiesToRemove = this.world.bodies.filter(
+      (body) => body !== this.playerBody
+    );
+    bodiesToRemove.forEach((body) => {
       this.world.removeBody(body);
     });
 
@@ -577,7 +622,8 @@ class BackroomsGame {
         // First-person: show crosshair normally
         if (this.mouseMovedSinceResume) {
           // Use the unified hover check
-          const isHovering = this.roomManager?.modelInteractionManager?.checkInteractableHover();
+          const isHovering =
+            this.roomManager?.modelInteractionManager?.checkInteractableHover();
 
           if (isHovering) {
             crosshair.classList.add("hovering");

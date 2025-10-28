@@ -1,515 +1,521 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>A Familiar Place</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
 
-<head>
-  <meta charset="utf-8" />
-  <title>A Familiar Place</title>
-  <style>
-    @import url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
-
-    /* Self-hosted font: Coraline's Cat */
-    @font-face {
-      font-family: "CoralineCat";
-      src: url("/fonts/SpecialElite-Regular.woff2") format("woff2");
-      font-weight: normal;
-      font-style: normal;
-      font-display: swap;
-    }
-
-    body {
-      margin: 0;
-      overflow: hidden;
-    }
-
-    #startScreen {
-      position: fixed;
-      inset: 0;
-      background: url("./pictures/VHS.gif") center/cover no-repeat;
-      display: grid;
-      place-items: center;
-      font-family: "VT323", monospace;
-      color: #ffffff;
-      z-index: 1000;
-    }
-
-    /* VHS overlay effects */
-    #startScreen::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: repeating-linear-gradient(0deg,
-          transparent,
-          transparent 2px,
-          rgba(0, 0, 0, 0.1) 2px,
-          rgba(0, 0, 0, 0.1) 4px),
-        radial-gradient(ellipse at center,
-          rgba(0, 0, 0, 0.3) 0%,
-          rgba(0, 0, 0, 0.7) 100%);
-      pointer-events: none;
-      animation: scanlines 0.1s linear infinite;
-    }
-
-    /* Static noise overlay */
-    #startScreen::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><filter id="noise"><feTurbulence baseFrequency="0.9"/></filter></defs><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.1"/></svg>');
-      animation: static 0.2s infinite;
-      pointer-events: none;
-      mix-blend-mode: multiply;
-    }
-
-    .content {
-      text-align: center;
-      z-index: 10;
-      position: relative;
-      text-shadow: 2px 2px 0px rgba(255, 0, 0, 0.3),
-        -2px -2px 0px rgba(0, 255, 255, 0.3);
-    }
-
-    .content h1 {
-      margin: -50px 0 60px;
-      font-size: clamp(3rem, 8vw, 4rem);
-      font-weight: normal;
-      letter-spacing: 0.1em;
-      /*animation: glitch 2s infinite;*/
-      text-transform: uppercase;
-      color: #f5e6d3;
-      font-family: "CoralineCat", "VT323", monospace;
-      filter: drop-shadow(0 0 10px rgba(245, 230, 211, 0.5));
-      line-height: 1.5;
-      position: relative;
-      white-space: pre-line;
-    }
-
-    .timestamp {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 1.2rem;
-      color: #c6fff7;
-      animation: blink 1.5s infinite;
-    }
-
-    .rec-indicator {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 1.2rem;
-      color: #f5e6d3;
-    }
-
-    .rec-dot {
-      width: 12px;
-      height: 12px;
-      background: #ff92b1;
-      border-radius: 50%;
-      animation: blink 1.5s infinite;
-    }
-
-    #playButton {
-      padding: 15px 30px;
-      margin-top: 0px;
-      font-size: 1.5rem;
-      font-family: "VT323", monospace;
-      color: #2c1810;
-      background: #f5e6d3;
-      border: 3px solid #f5e6d3;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      transition: all 0.2s;
-      box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
-    }
-
-    #playButton:hover {
-      background: #ff0e6a;
-      color: #f5e6d3;
-      box-shadow: 0 0 30px rgba(245, 230, 211, 0.6);
-      transform: scale(1.05);
-    }
-
-    #playButton:active {
-      transform: scale(0.95);
-    }
-
-    @keyframes scanlines {
-      0% {
-        transform: translateY(0);
+      /* Self-hosted font: Coraline's Cat */
+      @font-face {
+        font-family: "CoralineCat";
+        src: url("/fonts/SpecialElite-Regular.woff2") format("woff2");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
       }
 
-      100% {
-        transform: translateY(4px);
-      }
-    }
-
-    @keyframes static {
-      0% {
-        opacity: 0.03;
+      body {
+        margin: 0;
+        overflow: hidden;
       }
 
-      50% {
-        opacity: 0.08;
+      #startScreen {
+        position: fixed;
+        inset: 0;
+        background: url("./pictures/VHS.gif") center/cover no-repeat;
+        display: grid;
+        place-items: center;
+        font-family: "VT323", monospace;
+        color: #ffffff;
+        z-index: 1000;
       }
 
-      100% {
-        opacity: 0.03;
-      }
-    }
-
-    @keyframes glitch {
-
-      0%,
-      100% {
-        transform: translateX(0);
-        filter: hue-rotate(0deg);
-      }
-
-      10% {
-        transform: translateX(-2px) skew(-0.1deg);
-        filter: hue-rotate(90deg);
-      }
-
-      20% {
-        transform: translateX(2px);
-        filter: hue-rotate(180deg);
+      /* VHS overlay effects */
+      #startScreen::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 0, 0, 0.1) 2px,
+            rgba(0, 0, 0, 0.1) 4px
+          ),
+          radial-gradient(
+            ellipse at center,
+            rgba(0, 0, 0, 0.3) 0%,
+            rgba(0, 0, 0, 0.7) 100%
+          );
+        pointer-events: none;
+        animation: scanlines 0.1s linear infinite;
       }
 
-      30% {
-        transform: translateX(-1px) skew(0.1deg);
-        filter: hue-rotate(270deg);
+      /* Static noise overlay */
+      #startScreen::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><filter id="noise"><feTurbulence baseFrequency="0.9"/></filter></defs><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.1"/></svg>');
+        animation: static 0.2s infinite;
+        pointer-events: none;
+        mix-blend-mode: multiply;
       }
 
-      40% {
-        transform: translateX(1px);
+      .content {
+        text-align: center;
+        z-index: 10;
+        position: relative;
+        text-shadow: 2px 2px 0px rgba(255, 0, 0, 0.3),
+          -2px -2px 0px rgba(0, 255, 255, 0.3);
       }
 
-      50% {
-        transform: translateX(-1px) skew(-0.05deg);
-        filter: hue-rotate(45deg);
+      .content h1 {
+        margin: -50px 0 60px;
+        font-size: clamp(3rem, 8vw, 4rem);
+        font-weight: normal;
+        letter-spacing: 0.1em;
+        /*animation: glitch 2s infinite;*/
+        text-transform: uppercase;
+        color: #f5e6d3;
+        font-family: "CoralineCat", "VT323", monospace;
+        filter: drop-shadow(0 0 10px rgba(245, 230, 211, 0.5));
+        line-height: 1.5;
+        position: relative;
+        white-space: pre-line;
       }
 
-      60% {
-        transform: translateX(0);
+      .timestamp {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 1.2rem;
+        color: #c6fff7;
+        animation: blink 1.5s infinite;
       }
-    }
 
-    @keyframes blink {
+      .rec-indicator {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1.2rem;
+        color: #f5e6d3;
+      }
 
-      0%,
-      50% {
+      .rec-dot {
+        width: 12px;
+        height: 12px;
+        background: #ff92b1;
+        border-radius: 50%;
+        animation: blink 1.5s infinite;
+      }
+
+      #playButton {
+        padding: 15px 30px;
+        margin-top: 0px;
+        font-size: 1.5rem;
+        font-family: "VT323", monospace;
+        color: #2c1810;
+        background: #f5e6d3;
+        border: 3px solid #f5e6d3;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        transition: all 0.2s;
+        box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
+      }
+
+      #playButton:hover {
+        background: #ff0e6a;
+        color: #f5e6d3;
+        box-shadow: 0 0 30px rgba(245, 230, 211, 0.6);
+        transform: scale(1.05);
+      }
+
+      #playButton:active {
+        transform: scale(0.95);
+      }
+
+      @keyframes scanlines {
+        0% {
+          transform: translateY(0);
+        }
+
+        100% {
+          transform: translateY(4px);
+        }
+      }
+
+      @keyframes static {
+        0% {
+          opacity: 0.03;
+        }
+
+        50% {
+          opacity: 0.08;
+        }
+
+        100% {
+          opacity: 0.03;
+        }
+      }
+
+      @keyframes glitch {
+        0%,
+        100% {
+          transform: translateX(0);
+          filter: hue-rotate(0deg);
+        }
+
+        10% {
+          transform: translateX(-2px) skew(-0.1deg);
+          filter: hue-rotate(90deg);
+        }
+
+        20% {
+          transform: translateX(2px);
+          filter: hue-rotate(180deg);
+        }
+
+        30% {
+          transform: translateX(-1px) skew(0.1deg);
+          filter: hue-rotate(270deg);
+        }
+
+        40% {
+          transform: translateX(1px);
+        }
+
+        50% {
+          transform: translateX(-1px) skew(-0.05deg);
+          filter: hue-rotate(45deg);
+        }
+
+        60% {
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes blink {
+        0%,
+        50% {
+          opacity: 1;
+        }
+
+        51%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      /* GitHub icon link */
+      .github-link {
+        position: absolute;
+        left: 16px;
+        bottom: 16px;
+        z-index: 20;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: #f5e6d3;
+        text-decoration: none;
+        opacity: 0.95;
+        transition: transform 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+        filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
+      }
+
+      .github-link img {
+        width: 28px;
+        height: 28px;
+        display: block;
+        image-rendering: -webkit-optimize-contrast;
+      }
+
+      .github-link span {
+        font-size: 1.1rem;
+        letter-spacing: 0.06em;
+      }
+
+      .github-link:hover {
+        transform: translateY(-2px) scale(1.03);
+        opacity: 1;
+        filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.7));
+      }
+
+      /* Title grain overlay */
+      .content h1 .label {
+        display: inline-block;
+        white-space: pre-line;
+      }
+
+      .content h1 .grain {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        color: transparent;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><defs><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" stitchTiles="stitch"/></filter></defs><rect width="100%" height="100%" filter="url(%23n)"/></svg>');
+        background-size: 180px 180px;
+        -webkit-background-clip: text;
+        background-clip: text;
+        opacity: 0.9;
+        mix-blend-mode: overlay;
+        animation: grainShift 0.8s steps(2) infinite;
+        white-space: pre-line;
+      }
+
+      @keyframes grainShift {
+        0% {
+          background-position: 0 0;
+        }
+
+        25% {
+          background-position: 40px -30px;
+        }
+
+        50% {
+          background-position: -20px 50px;
+        }
+
+        75% {
+          background-position: 60px 20px;
+        }
+
+        100% {
+          background-position: 0 0;
+        }
+      }
+
+      #crosshair {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 40px;
+        height: 40px;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        z-index: 2000;
+      }
+
+      /* Eye starts as horizontal bar like the bar above */
+      .eye {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 0.5px;
+        /* Changed from 1px - thinner line */
+        border-radius: 1px;
+        /* horizontal bar shape */
+        border: 2px solid #fff;
+        /* Changed from 2px - thinner border */
+        background: #fff;
+        transform: translate(-50%, -50%);
+        opacity: 0.5;
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .eye .pupil {
+        width: 6px;
+        height: 6px;
+        background: #fff;
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0;
+        /* hide initially */
+      }
+
+      #crosshair.hovering .eye {
+        animation: slowFullBlink 4.5s infinite ease-in-out;
+        background: transparent;
+      }
+
+      #crosshair.hovering .eye .pupil {
         opacity: 1;
       }
 
-      51%,
-      100% {
-        opacity: 0;
-      }
-    }
+      @keyframes slowFullBlink {
+        0%,
+        80%,
+        100% {
+          width: 20px;
+          height: 12px;
+          border-radius: 50%;
+          /* fully open eye */
+          background: transparent;
+        }
 
-    /* GitHub icon link */
-    .github-link {
-      position: absolute;
-      left: 16px;
-      bottom: 16px;
-      z-index: 20;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      color: #f5e6d3;
-      text-decoration: none;
-      opacity: 0.95;
-      transition: transform 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
-      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
-    }
+        81%,
+        90% {
+          width: 20px;
+          height: 0.5px;
+          /* collapse vertically */
+          border-radius: 1px;
+          /* horizontal line */
+          background: #fff;
+        }
 
-    .github-link img {
-      width: 28px;
-      height: 28px;
-      display: block;
-      image-rendering: -webkit-optimize-contrast;
-    }
-
-    .github-link span {
-      font-size: 1.1rem;
-      letter-spacing: 0.06em;
-    }
-
-    .github-link:hover {
-      transform: translateY(-2px) scale(1.03);
-      opacity: 1;
-      filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.7));
-    }
-
-    /* Title grain overlay */
-    .content h1 .label {
-      display: inline-block;
-      white-space: pre-line;
-    }
-
-    .content h1 .grain {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      color: transparent;
-      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><defs><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" stitchTiles="stitch"/></filter></defs><rect width="100%" height="100%" filter="url(%23n)"/></svg>');
-      background-size: 180px 180px;
-      -webkit-background-clip: text;
-      background-clip: text;
-      opacity: 0.9;
-      mix-blend-mode: overlay;
-      animation: grainShift 0.8s steps(2) infinite;
-      white-space: pre-line;
-    }
-
-    @keyframes grainShift {
-      0% {
-        background-position: 0 0;
+        91%,
+        95% {
+          width: 20px;
+          height: 12px;
+          /* reopen */
+          border-radius: 50%;
+          background: transparent;
+        }
       }
 
-      25% {
-        background-position: 40px -30px;
+      /* Fullscreen overlay */
+      #pauseMenu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 9999;
       }
 
-      50% {
-        background-position: -20px 50px;
+      /* "Paused" label near top */
+      .pauseLabel {
+        position: absolute;
+        top: 20vh;
+        /* Changed from 10vh to give more space from top */
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: "CoralineCat", "VT323", monospace;
+        font-size: clamp(3rem, 8vw, 5rem);
+        color: #f5e6d3;
+        text-shadow: 2px 2px 0px rgba(255, 0, 0, 0.3),
+          -2px -2px 0px rgba(0, 255, 255, 0.3);
+        text-align: center;
       }
 
-      75% {
-        background-position: 60px 20px;
+      /* Container to center the buttons */
+      .pauseContent {
+        position: absolute;
+        top: 55%;
+        /* Moved down slightly from 50% */
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
       }
 
-      100% {
-        background-position: 0 0;
-      }
-    }
-
-    #crosshair {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      width: 40px;
-      height: 40px;
-      pointer-events: none;
-      transform: translate(-50%, -50%);
-      z-index: 2000;
-    }
-
-    /* Eye starts as horizontal bar like the bar above */
-    .eye {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 20px;
-      height: 0.5px;
-      /* Changed from 1px - thinner line */
-      border-radius: 1px;
-      /* horizontal bar shape */
-      border: 2px solid #fff;
-      /* Changed from 2px - thinner border */
-      background: #fff;
-      transform: translate(-50%, -50%);
-      opacity: 0.5;
-      transition: all 0.3s ease;
-      overflow: hidden;
-    }
-
-    .eye .pupil {
-      width: 6px;
-      height: 6px;
-      background: #fff;
-      border-radius: 50%;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      opacity: 0;
-      /* hide initially */
-    }
-
-    #crosshair.hovering .eye {
-      animation: slowFullBlink 4.5s infinite ease-in-out;
-      background: transparent;
-    }
-
-    #crosshair.hovering .eye .pupil {
-      opacity: 1;
-    }
-
-    @keyframes slowFullBlink {
-
-      0%,
-      80%,
-      100% {
-        width: 20px;
-        height: 12px;
-        border-radius: 50%;
-        /* fully open eye */
-        background: transparent;
+      /* Resume button */
+      #resumeBtn {
+        width: 200px;
+        height: 40px;
+        font-family: "CoralineCat", "VT323", monospace;
+        font-size: 2rem;
+        color: #2c1810;
+        background: #f5e6d3;
+        border: 3px solid #f5e6d3;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
+        transition: transform 0.2s, background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        padding: 0;
+        margin-bottom: 30px;
+        /* Increased from 20px for more space */
       }
 
-      81%,
-      90% {
-        width: 20px;
-        height: 0.5px;
-        /* collapse vertically */
-        border-radius: 1px;
-        /* horizontal line */
-        background: #fff;
+      #resumeBtn:hover {
+        background: #ff0e6a;
+        color: #f5e6d3;
+        transform: scale(1.05);
       }
 
-      91%,
-      95% {
-        width: 20px;
-        height: 12px;
-        /* reopen */
-        border-radius: 50%;
-        background: transparent;
+      /* Remove the old image styles */
+      #resumeBtn img {
+        display: none;
+        /* Hide the image */
       }
-    }
 
-    /* Fullscreen overlay */
-    #pauseMenu {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 0, 0, 0.8);
-      z-index: 9999;
-    }
+      #cameraToggleBtn {
+        width: 200px;
+        height: 40px;
+        /* fixed height ensures vertical centering works */
+        font-family: "CoralineCat", "VT323", monospace;
+        font-size: 2rem;
+        color: #2c1810;
+        background: #f5e6d3;
+        border: 3px solid #f5e6d3;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
+        transition: transform 0.2s, background 0.2s;
+        display: flex;
+        align-items: center;
+        /* centers vertically */
+        justify-content: center;
+        /* centers horizontally */
+        line-height: 1;
+        /* ensures no extra vertical padding from text */
+        padding: 0;
+        /* remove default padding */
+      }
 
-    /* "Paused" label near top */
-    .pauseLabel {
-      position: absolute;
-      top: 20vh;
-      /* Changed from 10vh to give more space from top */
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: "CoralineCat", "VT323", monospace;
-      font-size: clamp(3rem, 8vw, 5rem);
-      color: #f5e6d3;
-      text-shadow: 2px 2px 0px rgba(255, 0, 0, 0.3),
-        -2px -2px 0px rgba(0, 255, 255, 0.3);
-      text-align: center;
-    }
+      #cameraToggleBtn:hover {
+        background: #ff0e6a;
+        color: #f5e6d3;
+        transform: scale(1.05);
+      }
+    </style>
+  </head>
 
-    /* Container to center the buttons */
-    .pauseContent {
-      position: absolute;
-      top: 55%;
-      /* Moved down slightly from 50% */
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-    }
+  <body>
+    <!-- Add audio element for background music -->
+    <audio id="backgroundMusic" loop muted autoplay>
+      <source src="/audio/music/THIFMdesolation.mp3" type="audio/mpeg" />
+      Your browser does not support the audio element.
+    </audio>
 
-    /* Resume button */
-    #resumeBtn {
-      width: 200px;
-      height: 40px;
-      font-family: "CoralineCat", "VT323", monospace;
-      font-size: 2rem;
-      color: #2c1810;
-      background: #f5e6d3;
-      border: 3px solid #f5e6d3;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
-      transition: transform 0.2s, background 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-      padding: 0;
-      margin-bottom: 30px;
-      /* Increased from 20px for more space */
-    }
-
-    #resumeBtn:hover {
-      background: #ff0e6a;
-      color: #f5e6d3;
-      transform: scale(1.05);
-    }
-
-    /* Remove the old image styles */
-    #resumeBtn img {
-      display: none;
-      /* Hide the image */
-    }
-
-    #cameraToggleBtn {
-      width: 200px;
-      height: 40px;
-      /* fixed height ensures vertical centering works */
-      font-family: "CoralineCat", "VT323", monospace;
-      font-size: 2rem;
-      color: #2c1810;
-      background: #f5e6d3;
-      border: 3px solid #f5e6d3;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
-      transition: transform 0.2s, background 0.2s;
-      display: flex;
-      align-items: center;
-      /* centers vertically */
-      justify-content: center;
-      /* centers horizontally */
-      line-height: 1;
-      /* ensures no extra vertical padding from text */
-      padding: 0;
-      /* remove default padding */
-    }
-
-
-    #cameraToggleBtn:hover {
-      background: #ff0e6a;
-      color: #f5e6d3;
-      transform: scale(1.05);
-    }
-  </style>
-</head>
-
-<body>
-  <!-- Add audio element for background music -->
-  <audio id="backgroundMusic" loop muted autoplay>
-    <source src="/audio/music/THIFMdesolation.mp3" type="audio/mpeg" />
-    Your browser does not support the audio element.
-  </audio>
-
-  <div id="startScreen">
-    <div class="timestamp" id="timestamp">12:03:47 AM</div>
-    <div class="rec-indicator">
-      <div class="rec-dot"></div>
-      <span>REC</span>
+    <div id="startScreen">
+      <div class="timestamp" id="timestamp">12:03:47 AM</div>
+      <div class="rec-indicator">
+        <div class="rec-dot"></div>
+        <span>REC</span>
+      </div>
+      <a
+        class="github-link"
+        href="https://github.com/Wallnuty/BackroomsEscape"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="View source on GitHub"
+      >
+        <img src="/pictures/github.png" alt="GitHub" />
+        <span>GitHub</span>
+      </a>
+      <div class="content">
+        <h1 data-text="A Familiar\nPlace">
+          <span class="label">A Familiar<br />Place</span>
+          <span class="grain" data-text="A Familiar\nPlace"></span>
+        </h1>
+        <button id="playButton">▶ Play</button>
+      </div>
     </div>
-    <a class="github-link" href="https://github.com/Wallnuty/BackroomsEscape" target="_blank" rel="noopener noreferrer"
-      aria-label="View source on GitHub">
-      <img src="/pictures/github.png" alt="GitHub" />
-      <span>GitHub</span>
-    </a>
-    <div class="content">
-      <h1 data-text="A Familiar\nPlace">
-        <span class="label">A Familiar<br />Place</span>
-        <span class="grain" data-text="A Familiar\nPlace"></span>
-      </h1>
-      <button id="playButton">▶ Play</button>
+    <div id="crosshair">
+      <div class="eye opening">
+        <div class="pupil"></div>
+      </div>
     </div>
-  </div>
-  <div id="crosshair">
-    <div class="eye opening">
-      <div class="pupil"></div>
-    </div>
-  </div>
-  <div id="pauseMenu" style="
+    <div
+      id="pauseMenu"
+      style="
         position: fixed;
         top: 0;
         left: 0;
@@ -522,86 +528,87 @@
         align-items: center;
         font-size: 2em;
         z-index: 9999;
-      ">
-    <p class="pauseLabel">Paused</p>
-    <div class="pauseContent">
-      <button id="resumeBtn">Resume</button>
-      <button id="cameraToggleBtn">Map</button>
+      "
+    >
+      <p class="pauseLabel">Paused</p>
+      <div class="pauseContent">
+        <button id="resumeBtn">Resume</button>
+        <button id="cameraToggleBtn">Map</button>
+      </div>
     </div>
-  </div>
-  <script type="module" src="/main.js"></script>
-  <script>
-    // Background music setup
-    const backgroundMusic = document.getElementById("backgroundMusic");
-    const playButton = document.getElementById("playButton");
-    let musicStarted = false;
 
-    // Function to start music
-    function startMusic() {
-      if (!musicStarted) {
-        try {
-          backgroundMusic.muted = false;
-          backgroundMusic.volume = 0.1; // Set volume to 30%
-          backgroundMusic.play();
-          musicStarted = true;
-          console.log("Start screen music started");
-        } catch (error) {
-          console.log("Music autoplay failed:", error);
+    <script type="module" src="/main.js"></script>
+    <script>
+      // Background music setup
+      const backgroundMusic = document.getElementById("backgroundMusic");
+      const playButton = document.getElementById("playButton");
+      let musicStarted = false;
+
+      // Function to start music
+      function startMusic() {
+        if (!musicStarted) {
+          try {
+            backgroundMusic.muted = false;
+            backgroundMusic.volume = 0.1; // Set volume to 30%
+            backgroundMusic.play();
+            musicStarted = true;
+            console.log("Start screen music started");
+          } catch (error) {
+            console.log("Music autoplay failed:", error);
+          }
         }
       }
-    }
 
-    // Function to fade out start screen music
-    function stopStartScreenMusic() {
-      if (backgroundMusic && !backgroundMusic.paused) {
-        const fadeOutDuration = 1000; // 1 second fade
-        const fadeStep = 0.05; // Volume reduction per step
-        const fadeInterval =
-          fadeOutDuration / (backgroundMusic.volume / fadeStep);
+      // Function to fade out start screen music
+      function stopStartScreenMusic() {
+        if (backgroundMusic && !backgroundMusic.paused) {
+          const fadeOutDuration = 1000; // 1 second fade
+          const fadeStep = 0.05; // Volume reduction per step
+          const fadeInterval =
+            fadeOutDuration / (backgroundMusic.volume / fadeStep);
 
-        const fade = setInterval(() => {
-          if (backgroundMusic.volume > fadeStep) {
-            backgroundMusic.volume -= fadeStep;
-          } else {
-            backgroundMusic.volume = 0;
-            backgroundMusic.pause();
-            backgroundMusic.currentTime = 0; // Reset to beginning
-            clearInterval(fade);
-            console.log("Start screen music faded out");
-          }
-        }, fadeInterval);
+          const fade = setInterval(() => {
+            if (backgroundMusic.volume > fadeStep) {
+              backgroundMusic.volume -= fadeStep;
+            } else {
+              backgroundMusic.volume = 0;
+              backgroundMusic.pause();
+              backgroundMusic.currentTime = 0; // Reset to beginning
+              clearInterval(fade);
+              console.log("Start screen music faded out");
+            }
+          }, fadeInterval);
+        }
       }
-    }
 
-    // Make stopStartScreenMusic globally accessible
-    window.stopStartScreenMusic = stopStartScreenMusic;
+      // Make stopStartScreenMusic globally accessible
+      window.stopStartScreenMusic = stopStartScreenMusic;
 
-    // Try multiple trigger events to start music
-    document.addEventListener("click", startMusic, { once: true });
-    document.addEventListener("keydown", startMusic, { once: true });
-    document.addEventListener("mouseover", startMusic, { once: true });
+      // Try multiple trigger events to start music
+      document.addEventListener("click", startMusic, { once: true });
+      document.addEventListener("keydown", startMusic, { once: true });
+      document.addEventListener("mouseover", startMusic, { once: true });
 
-    // Also try when page loads
-    window.addEventListener("load", () => {
-      setTimeout(() => {
-        startMusic();
-      }, 500);
-    });
-
-    // Update timestamp every second for authenticity
-    function updateTimestamp() {
-      const now = new Date();
-      const timestamp = now.toLocaleTimeString("en-US", {
-        hour12: true,
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
+      // Also try when page loads
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          startMusic();
+        }, 500);
       });
-      document.getElementById("timestamp").textContent = timestamp;
-    }
-    updateTimestamp();
-    setInterval(updateTimestamp, 1000);
-  </script>
-</body>
 
+      // Update timestamp every second for authenticity
+      function updateTimestamp() {
+        const now = new Date();
+        const timestamp = now.toLocaleTimeString("en-US", {
+          hour12: true,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+        document.getElementById("timestamp").textContent = timestamp;
+      }
+      updateTimestamp();
+      setInterval(updateTimestamp, 1000);
+    </script>
+  </body>
 </html>
