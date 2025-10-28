@@ -34,8 +34,8 @@ export class ColorSensor {
         // Sensor base
         const baseGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 16);
         const baseMaterial = new THREE.MeshStandardMaterial({
-            color: 0x333333,
-            metalness: 0.8,
+            color: this.targetColor,
+            metalness: 0.1,
             roughness: 0.2
         });
         this.base = new THREE.Mesh(baseGeometry, baseMaterial);
@@ -43,33 +43,33 @@ export class ColorSensor {
         this.group.add(this.base);
 
         // Color indicator (shows target color)
-        const indicatorGeometry = new THREE.CircleGeometry(0.25, 16);
-        this.indicatorMaterial = new THREE.MeshBasicMaterial({
-            color: this.targetColor,
-            transparent: true,
-            opacity: 0.3
-        });
-        this.indicator = new THREE.Mesh(indicatorGeometry, this.indicatorMaterial);
-        this.indicator.position.y += 0.06;
-        this.indicator.rotation.x = -Math.PI / 2;
-        this.group.add(this.indicator);
+        // const indicatorGeometry = new THREE.CircleGeometry(0.25, 16);
+        // this.indicatorMaterial = new THREE.MeshBasicMaterial({
+        //     color: this.targetColor,
+        //     transparent: true,
+        //     opacity: 0.3
+        // });
+        // this.indicator = new THREE.Mesh(indicatorGeometry, this.indicatorMaterial);
+        // this.indicator.position.y += 0.06;
+        // this.indicator.rotation.x = -Math.PI / 2;
+        // this.group.add(this.indicator);
 
         // Detection radius visualization (smaller now)
-        const ringGeometry = new THREE.RingGeometry(this.detectionRadius - 0.5, this.detectionRadius, 32);
-        const ringMaterial = new THREE.MeshBasicMaterial({
-            color: this.targetColor,
-            transparent: true,
-            opacity: 0.05,
-            side: THREE.DoubleSide,
-            wireframe: true
-        });
-        this.ring = new THREE.Mesh(ringGeometry, ringMaterial);
-        this.ring.position.y += 0.05;
-        this.ring.rotation.x = -Math.PI / 2;
-        this.group.add(this.ring);
+        // const ringGeometry = new THREE.RingGeometry(this.detectionRadius - 0.5, this.detectionRadius, 32);
+        // const ringMaterial = new THREE.MeshBasicMaterial({
+        //     color: this.targetColor,
+        //     transparent: true,
+        //     opacity: 0.05,
+        //     side: THREE.DoubleSide,
+        //     wireframe: true
+        // });
+        // this.ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        // this.ring.position.y += 0.05;
+        // this.ring.rotation.x = -Math.PI / 2;
+        // this.group.add(this.ring);
 
-        // Direction indicator (cone showing detection direction)
-        this.createDirectionIndicator();
+        // // Direction indicator (cone showing detection direction)
+        // this.createDirectionIndicator();
     }
 
     createDirectionIndicator() {
@@ -132,9 +132,6 @@ export class ColorSensor {
         const reasonableDistance = distance <= 10.0; // Max 10m for spotlight effectiveness
         
         // Debug logging for spotlight detection
-        if (distance < 15.0) { // Only log when somewhat close
-            console.log(`      🎯 Spotlight check: angle=${(angle * 180/Math.PI).toFixed(1)}°, dist=${distance.toFixed(1)}m, inCone=${withinSpotlightCone}`);
-        }
 
         return withinSpotlightCone && reasonableDistance;
     }
@@ -201,18 +198,19 @@ export class ColorSensor {
 
     solve() {
         this.isSolved = true;
-        this.indicatorMaterial.opacity = 1.0;
-        this.indicatorMaterial.color = this.targetColor;
-        
-        // Make the ring more visible when solved
-        this.ring.material.opacity = 0.3;
-        this.ring.material.color = this.targetColor;
-        
-        // Make direction indicator brighter
-        this.directionIndicator.material.opacity = 0.8;
         
         this.createSolveEffect();
         console.log(`🎯 SENSOR SOLVED: ${this.id}`);
+    }
+    // Add this method to the ColorSensor class
+    deactivate() {
+        if (this.isSolved) {
+            this.isSolved = false;
+            
+            console.log(`🔴 SENSOR DEACTIVATED: ${this.id}`);
+            return true; // Return true if was previously solved
+        }
+        return false; // Return false if wasn't solved
     }
 
     createSolveEffect() {

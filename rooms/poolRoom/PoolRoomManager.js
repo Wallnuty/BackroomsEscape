@@ -30,7 +30,7 @@ export class PoolRoomManager {
         this.createPoolRoom(PoolRoomLayouts.poolroom, this.currentLayoutName);
 
         // Initialize color puzzle system
-        this.colorPuzzleManager = new ColorPuzzleManager(this.scene, this.lightsManager);
+        this.colorPuzzleManager = new ColorPuzzleManager(this.scene, this.lightsManager, this.world);
 
         // DEBUG: Add debug helper
         this.debugHelper = new PuzzleDebugHelper(this.scene);

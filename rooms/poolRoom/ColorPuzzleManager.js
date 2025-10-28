@@ -4,9 +4,10 @@ import { ColorSensor } from './ColorSensor.js';
 import { PuzzleDoor } from './PuzzleDoor.js';
 
 export class ColorPuzzleManager {
-    constructor(scene, lightsManager) {
+    constructor(scene, lightsManager, world) { // ADD world parameter here
         this.scene = scene;
         this.lightsManager = lightsManager;
+        this.world = world; // STORE the physics world
         this.sensors = [];
         this.doors = [];
         
@@ -20,7 +21,7 @@ export class ColorPuzzleManager {
         };
 
         this.frameCount = 0;
-        this.debugFrameInterval = 60; // Log every 60 frames (~1 second)
+        this.debugFrameInterval = 60;
 
         this.initPuzzle();
     }
@@ -31,16 +32,11 @@ export class ColorPuzzleManager {
         this.setupInitialLights();
         
         console.log("🔧 DEBUG: Puzzle initialized - starting sensor monitoring");
-        
-        // DEBUG: Test sensor setup
-        setTimeout(() => this.testSensorDetection(), 1000);
-        
-        // TEMPORARY: Spawn all lights for testing
-        setTimeout(() => {
-            console.log("🔧 TEMPORARY: Spawning all lights for testing");
-            this.spawnLightInRoom('blue', new THREE.Vector3(8, 1, 0));
-            this.spawnLightInRoom('green', new THREE.Vector3(-8, 1, 0));
-        }, 3000);
+    
+        this.spawnLightInRoom('red', new THREE.Vector3(18, 0, -8));
+        this.spawnLightInRoom('blue', new THREE.Vector3(-55, 0, -8));
+        this.spawnLightInRoom('green', new THREE.Vector3(15, 0, -16));
+
     }
 
     createPuzzleDoors() {
@@ -51,8 +47,9 @@ export class ColorPuzzleManager {
         // Purple Door (requires purple light)
         const purpleDoor = new PuzzleDoor(
             this.scene,
-            new THREE.Vector3(-20, 2.5, 0),
-            new THREE.Vector3(-20, 2.5, 5),
+            this.world, // PASS the physics world
+            new THREE.Vector3(15, -5, -12),
+            new THREE.Vector3(15, -20, -12),
             BRIGHT_PURPLE,
             'purple'
         );
@@ -61,8 +58,9 @@ export class ColorPuzzleManager {
         // Red Door (requires red light)
         const redDoor = new PuzzleDoor(
             this.scene,
-            new THREE.Vector3(20, 2.5, 0),
-            new THREE.Vector3(20, 2.5, 5),
+            this.world, // PASS the physics world
+            new THREE.Vector3(-55, -5, 0),
+            new THREE.Vector3(-55, -20, 0),
             BRIGHT_RED,
             'red'
         );
@@ -71,6 +69,7 @@ export class ColorPuzzleManager {
         // Final Exit Door (requires white light)
         const finalDoor = new PuzzleDoor(
             this.scene,
+            this.world, // PASS the physics world
             new THREE.Vector3(0, 2.5, 20),
             new THREE.Vector3(0, 2.5, 25),
             WHITE,
@@ -81,6 +80,7 @@ export class ColorPuzzleManager {
         console.log("🎯 Puzzle doors created");
     }
 
+    // ... REST OF YOUR EXISTING CODE REMAINS EXACTLY THE SAME ...
     createColorSensors() {
         const BRIGHT_PURPLE = 0xFF00FF;
         const BRIGHT_RED = 0xFF0000;
@@ -89,7 +89,7 @@ export class ColorPuzzleManager {
         // Sensor for Purple Door
         const purpleSensor = new ColorSensor(
             this.scene,
-            new THREE.Vector3(-20, 1.5, -1),
+            new THREE.Vector3(18, 0, -11.8),
             BRIGHT_PURPLE,
             6.0,
             'purple'
@@ -99,7 +99,7 @@ export class ColorPuzzleManager {
         // Sensor for Red Door
         const redSensor = new ColorSensor(
             this.scene,
-            new THREE.Vector3(20, 1.5, -1),
+            new THREE.Vector3(-58, 0, 0.2),
             BRIGHT_RED,
             6.0,
             'red'
@@ -109,22 +109,12 @@ export class ColorPuzzleManager {
         // Sensor for Final Door
         const finalSensor = new ColorSensor(
             this.scene,
-            new THREE.Vector3(0, 1.5, 19),
+            new THREE.Vector3(-18, 0, -20),
             WHITE,
             6.0,
             'final'
         );
         this.sensors.push(finalSensor);
-
-        // Demo sensor showing purple requirement
-        const demoSensor = new ColorSensor(
-            this.scene,
-            new THREE.Vector3(0, 1.5, -15),
-            BRIGHT_PURPLE,
-            8.0,
-            'demo'
-        );
-        this.sensors.push(demoSensor);
 
         console.log("🔦 Color sensors created with directional detection");
     }
@@ -317,7 +307,6 @@ export class ColorPuzzleManager {
             case 'red':
                 console.log(`   🚀 ACTION: Opening red door and spawning blue light`);
                 this.openDoor('red');
-                this.spawnLightInRoom('blue', new THREE.Vector3(25, 1, 0));
                 this.puzzleState.hasBlueLight = true;
                 this.puzzleState.redRoomOpen = true;
                 console.log("🔵 Blue light spawned in red room");
@@ -326,7 +315,6 @@ export class ColorPuzzleManager {
             case 'purple':
                 console.log(`   🚀 ACTION: Opening purple door and spawning green light`);
                 this.openDoor('purple');
-                this.spawnLightInRoom('green', new THREE.Vector3(-25, 1, 0));
                 this.puzzleState.hasGreenLight = true;
                 this.puzzleState.purpleRoomOpen = true;
                 console.log("🟢 Green light spawned in purple room");
@@ -337,12 +325,6 @@ export class ColorPuzzleManager {
                 this.openDoor('final');
                 this.puzzleState.finalExitOpen = true;
                 this.onPuzzleComplete();
-                break;
-                
-            case 'demo':
-                console.log(`   🚀 ACTION: Demo sensor activated (visual feedback only)`);
-                sensor.createSolveEffect();
-                console.log("💡 Demo sensor activated - teaching mechanic");
                 break;
         }
         
@@ -525,9 +507,90 @@ export class ColorPuzzleManager {
             animate();
         });
     }
+    checkSensorDeactivation() {
+    let anySensorDeactivated = false;
+
+    this.sensors.forEach(sensor => {
+        if (sensor.isSolved) {
+            // Get all light data with positions
+            const lightData = this.lightsManager.pickableRoots.map(light => {
+                const pos = new THREE.Vector3();
+                light.getWorldPosition(pos);
+                return { light, position: pos };
+            });
+
+            // Check if sensor should still be activated
+            let shouldRemainActive = false;
+            
+            // Check combined color first
+            if (this.checkCombinedColorForSensor(sensor, lightData, false)) {
+                shouldRemainActive = true;
+            } else {
+                // Check individual lights
+                lightData.forEach(lightInfo => {
+                    const currentColor = this.lightsManager.colorMixingManager.getCurrentMixedColor(lightInfo.light);
+                    if (sensor.checkColorWithDirection(currentColor, lightInfo.position, lightInfo.light)) {
+                        shouldRemainActive = true;
+                    }
+                });
+            }
+
+            // If sensor should no longer be active, deactivate it
+            if (!shouldRemainActive) {
+                if (sensor.deactivate()) {
+                    anySensorDeactivated = true;
+                    this.onSensorDeactivated(sensor);
+                }
+            }
+        }
+    });
+
+    return anySensorDeactivated;
+    }
+
+    // Add this method to handle sensor deactivation consequences
+    onSensorDeactivated(sensor) {
+        console.log(`\n🔴 SENSOR DEACTIVATED: ${sensor.id}`);
+        
+        switch(sensor.id) {
+            case 'red':
+                console.log(`   🚀 ACTION: Closing red door`);
+                this.closeDoor('red');
+                this.puzzleState.redRoomOpen = false;
+                break;
+                
+            case 'purple':
+                console.log(`   🚀 ACTION: Closing purple door`);
+                this.closeDoor('purple');
+                this.puzzleState.purpleRoomOpen = false;
+                break;
+                
+            case 'final':
+                console.log(`   🚀 ACTION: Closing final door`);
+                this.closeDoor('final');
+                this.puzzleState.finalExitOpen = false;
+                break;
+                
+            case 'demo':
+                console.log(`   🚀 ACTION: Demo sensor deactivated`);
+                break;
+        }
+        
+        console.log(`🔴 SENSOR ${sensor.id} DEACTIVATION COMPLETE\n`);
+    }
+
+    // Add door closing method
+    closeDoor(doorId) {
+        const door = this.doors.find(d => d.id === doorId);
+        if (door && door.isOpen) {
+            console.log(`🚪 CLOSING DOOR: ${doorId}`);
+            door.close();
+        }
+    }
 
     update() {
         this.checkSensors();
+        this.checkSensorDeactivation(); // NEW: Check for deactivation
         this.doors.forEach(door => door.update());
     }
 
@@ -572,65 +635,4 @@ export class ColorPuzzleManager {
     }
 
     // Debug methods for manual testing
-    debugSpawnBlueLight() {
-        console.log("🔧 Debug: Spawning blue light");
-        this.spawnLightInRoom('blue', new THREE.Vector3(5, 1, 5));
-    }
-
-    debugSpawnGreenLight() {
-        console.log("🔧 Debug: Spawning green light");
-        this.spawnLightInRoom('green', new THREE.Vector3(-5, 1, 5));
-    }
-
-    debugSpawnRedLight() {
-        console.log("🔧 Debug: Spawning red light");
-        this.spawnLightInRoom('red', new THREE.Vector3(0, 1, 5));
-    }
-
-    debugSolveAllSensors() {
-        console.log("🔧 TEST MODE: Solving all sensors");
-        this.sensors.forEach(sensor => {
-            if (!sensor.isSolved) {
-                sensor.solve();
-                console.log(`   ✅ Solved sensor: ${sensor.id}`);
-            }
-        });
-        
-        this.doors.forEach(door => {
-            if (!door.isOpen) {
-                door.open();
-                console.log(`   🚪 Opened door: ${door.id}`);
-            }
-        });
-    }
-
-    debugResetPuzzle() {
-        console.log("🔧 Debug: Resetting puzzle");
-        
-        this.sensors.forEach(sensor => {
-            sensor.isSolved = false;
-            sensor.indicatorMaterial.opacity = 0.3;
-            console.log(`   🔄 Reset sensor: ${sensor.id}`);
-        });
-        
-        this.doors.forEach(door => {
-            door.isOpen = false;
-            door.isAnimating = false;
-            door.animationProgress = 0;
-            door.group.position.copy(door.position);
-            door.doorMaterial.emissiveIntensity = 0.1;
-            console.log(`   🔄 Closed door: ${door.id}`);
-        });
-        
-        this.puzzleState = {
-            redRoomOpen: false,
-            purpleRoomOpen: false,
-            finalExitOpen: false,
-            hasRedLight: true,
-            hasBlueLight: false,
-            hasGreenLight: false
-        };
-        
-        console.log("🔄 Puzzle reset complete");
-    }
 }

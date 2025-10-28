@@ -1,16 +1,22 @@
 import * as THREE from 'three';
+import * as CANNON from 'cannon-es'; // ADD THIS IMPORT
 
 export class PuzzleDoor {
-    constructor(scene, position, openPosition, color, id) {
+    constructor(scene, world, position, openPosition, color, id) {
         this.scene = scene;
-        this.position = position.clone();
-        this.openPosition = openPosition.clone();
+        this.world = world; // Cannon.js world for physics
+        this.position = new THREE.Vector3().copy(position);
+        this.openPosition = new THREE.Vector3().copy(openPosition);
         this.color = color;
         this.id = id;
         this.isOpen = false;
         this.isAnimating = false;
         this.animationProgress = 0;
         this.animationSpeed = 0.02;
+        
+        // Physics bodies
+        this.bodies = [];
+        this.doorBody = null;
 
         this.group = new THREE.Group();
         this.group.position.copy(this.position);
@@ -18,6 +24,13 @@ export class PuzzleDoor {
 
         this.createDoor();
         this.createIndicator();
+        
+        // Only create collision if world is provided
+        if (this.world) {
+            this.createCollision();
+        } else {
+            console.warn(`⚠️ No physics world provided for door ${this.id}, collision disabled`);
+        }
 
         console.log(`🚪 Created door ${id} at:`, position);
     }
@@ -69,17 +82,68 @@ export class PuzzleDoor {
         this.pulseSpeed = 0.02;
     }
 
+    createCollision() {
+        if (!this.world) {
+            console.warn(`⚠️ No physics world provided for door ${this.id}, collision disabled`);
+            return;
+        }
+
+        // Create collision body for the door
+        const doorThickness = 0.2;
+        const doorWidth = 3;
+        const doorHeight = 5;
+        
+        // Calculate world position for physics
+        const worldPosition = this.position.clone();
+        
+        // Create door collision shape (box)
+        const doorShape = new CANNON.Box(new CANNON.Vec3(doorWidth / 2, doorHeight / 2, doorThickness / 2));
+        this.doorBody = new CANNON.Body({ 
+            mass: 0, // Static body
+            position: new CANNON.Vec3(worldPosition.x, worldPosition.y + 2.5, worldPosition.z)
+        });
+        this.doorBody.addShape(doorShape);
+        
+        // Store reference to the door object for easy identification
+        this.doorBody.door = this;
+        
+        this.world.addBody(this.doorBody);
+        this.bodies.push(this.doorBody);
+        
+        console.log(`🔒 Added collision for door ${this.id}`);
+    }
+
     open() {
         if (this.isOpen || this.isAnimating) return;
         
         this.isAnimating = true;
         this.animationProgress = 0;
+        
+        // Remove collision when door starts opening
+        this.removeCollision();
+        
         console.log(`🚪 Opening door: ${this.id}`);
     }
 
+    removeCollision() {
+        // Remove door body from physics world
+        if (this.doorBody && this.doorBody.world) {
+            this.world.removeBody(this.doorBody);
+            console.log(`🔓 Removed collision for door ${this.id}`);
+        }
+    }
+
+    addCollision() {
+        // Re-add collision body (for closing door)
+        if (this.doorBody && !this.doorBody.world) {
+            this.world.addBody(this.doorBody);
+            console.log(`🔒 Re-added collision for door ${this.id}`);
+        }
+    }
+
     update() {
-        // Update indicator pulsing effect
-        if (!this.isOpen) {
+        // Update indicator pulsing effect (only when closed)
+        if (!this.isOpen && !this.isAnimating) {
             this.indicatorMaterial.opacity += this.pulseSpeed * this.pulseDirection;
             if (this.indicatorMaterial.opacity >= 0.8 || this.indicatorMaterial.opacity <= 0.3) {
                 this.pulseDirection *= -1;
@@ -87,26 +151,44 @@ export class PuzzleDoor {
         }
 
         // Handle door opening animation
-        if (this.isAnimating) {
+        if (this.isAnimating && this.animationProgress < 1) {
             this.animationProgress += this.animationSpeed;
             
             if (this.animationProgress >= 1) {
                 this.animationProgress = 1;
                 this.isAnimating = false;
                 this.isOpen = true;
-                this.doorMaterial.emissiveIntensity = 0.8; // Bright when fully open
+                this.doorMaterial.emissiveIntensity = 0.8;
                 console.log(`✅ Door fully opened: ${this.id}`);
             }
-
-            // Smooth interpolation
-            const smoothProgress = this.easeOutCubic(this.animationProgress);
-            const currentPos = new THREE.Vector3();
-            currentPos.lerpVectors(this.position, this.openPosition, smoothProgress);
+        }
+        // Handle door closing animation
+        else if (this.isAnimating && this.animationProgress > 0) {
+            this.animationProgress -= this.animationSpeed;
             
-            this.group.position.copy(currentPos);
+            if (this.animationProgress <= 0) {
+                this.animationProgress = 0;
+                this.isAnimating = false;
+                this.isOpen = false;
+                this.doorMaterial.emissiveIntensity = 0.1;
+                console.log(`❌ Door fully closed: ${this.id}`);
+            }
+        }
 
-            // Increase emissive intensity as door opens
-            this.doorMaterial.emissiveIntensity = 0.1 + (0.7 * smoothProgress);
+        // Smooth interpolation for both opening and closing
+        const smoothProgress = this.easeOutCubic(this.animationProgress);
+        const currentPos = new THREE.Vector3();
+        currentPos.lerpVectors(this.position, this.openPosition, smoothProgress);
+        
+        this.group.position.copy(currentPos);
+
+        // Adjust emissive intensity based on open/close state
+        if (this.isAnimating) {
+            if (this.animationProgress < 1) { // Opening
+                this.doorMaterial.emissiveIntensity = 0.1 + (0.7 * smoothProgress);
+            } else { // Closing
+                this.doorMaterial.emissiveIntensity = 0.1 + (0.7 * smoothProgress);
+            }
         }
     }
 
@@ -116,16 +198,24 @@ export class PuzzleDoor {
 
     // Optional: Close door method if needed
     close() {
-        if (!this.isOpen || this.isAnimating) return;
-        
-        this.isAnimating = true;
-        this.animationProgress = 1;
-        console.log(`🚪 Closing door: ${this.id}`);
+        if (this.isOpen && !this.isAnimating) {
+            this.isAnimating = true;
+            this.animationProgress = 1; // Start from open position
+            this.animationSpeed = 0.02; // Same speed as opening
+            console.log(`🚪 Closing door: ${this.id}`);
+            return true;
+        }
+        return false;
     }
 
     // Method to check if door is fully open
     isFullyOpen() {
         return this.isOpen && !this.isAnimating;
+    }
+
+    // Method to check if door is fully closed
+    isFullyClosed() {
+        return !this.isOpen && !this.isAnimating;
     }
 
     // Method to get current state for debugging
@@ -134,7 +224,33 @@ export class PuzzleDoor {
             id: this.id,
             isOpen: this.isOpen,
             isAnimating: this.isAnimating,
-            animationProgress: this.animationProgress
+            animationProgress: this.animationProgress,
+            hasCollision: this.doorBody ? !!this.doorBody.world : false
         };
+    }
+
+    // Clean up method to remove door completely
+    dispose() {
+        // Remove from scene
+        this.scene.remove(this.group);
+        
+        // Remove from physics world
+        this.removeCollision();
+        
+        // Dispose of geometries and materials
+        if (this.door) {
+            this.door.geometry.dispose();
+            this.door.material.dispose();
+        }
+        if (this.frame) {
+            this.frame.geometry.dispose();
+            this.frame.material.dispose();
+        }
+        if (this.indicator) {
+            this.indicator.geometry.dispose();
+            this.indicator.material.dispose();
+        }
+        
+        console.log(`🗑️ Disposed door: ${this.id}`);
     }
 }
