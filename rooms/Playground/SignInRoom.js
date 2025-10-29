@@ -3,18 +3,21 @@ import * as CANNON from "cannon-es";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { PlaygroundLayouts } from "./PlaygroundLayout.js";
 import { LightPanel } from "../../props/LightPanel.js";
+import { ImageObject } from "../../props/blackboard.js";
 console.log("✅ SignInRoom.js is being imported and executed");
 
 export class SignInRoom {
   constructor(
     scene,
     world,
+    modelInteractionManager,
     position = new THREE.Vector3(0, 0, 0),
     connections = {},
     corridorWidth = 6
   ) {
     this.scene = scene;
     this.world = world;
+    this.modelInteractionManager = modelInteractionManager;
     this.position = position;
     this.corridorWidth = corridorWidth;
 
@@ -47,6 +50,16 @@ export class SignInRoom {
     //this._createPhysicsWalls();
     this._loadModels();
     this._setupLights();
+        // --- ADD IMAGE OBJECT HERE ---
+    this.imageObj = new ImageObject(4, 4, 0.1, "textures/walls/UnhappyFace.png");
+    this.imageObj.setPosition(10, 0, -20); // position in room
+    this.group.add(this.imageObj.group);
+    modelInteractionManager.setPuzzleImage("puzzle1", this.imageObj);
+
+    this.imageObj2 = new ImageObject(4, 4, 0.1, "textures/walls/UnhappyFace.png");
+    this.imageObj2.setPosition(-10, 0, -20); // different position
+    this.group.add(this.imageObj2.group);
+     modelInteractionManager.setPuzzleImage("puzzle2", this.imageObj2);
     this.addRenderingZone(
       new THREE.Vector3(-this.width / 2, 0, -this.depth / 2), // from
       new THREE.Vector3(this.width / 2, 0, this.depth / 2), // to
@@ -269,6 +282,7 @@ export class SignInRoom {
           modelData.rotation.y,
           modelData.rotation.z
         );
+
         this.group.add(obj);
         this.models.push(obj);
 

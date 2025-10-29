@@ -11,14 +11,14 @@ export const PlaygroundLayouts = {
   },
 
   SignIn: {
-    position: new THREE.Vector3(-50, 0, 0),
+    position: new THREE.Vector3(-50, -2, 0),
     width: 40,
     height: 8,
     depth: 40,
   },
 
   Extra: {
-    position: new THREE.Vector3(-100, 0, 0),
+    position: new THREE.Vector3(-100, -2, 0),
     width: 40,
     height: 8,
     depth: 40,
@@ -222,6 +222,13 @@ function createModels() {
       position: new THREE.Vector3(-1, -4, 14),
       scale: new THREE.Vector3(3, 3, 3),
       rotation: new THREE.Vector3(0, 0, 0),
+      type: "default",
+    },
+    {
+      path: "/models/damage_door.glb",
+      position: new THREE.Vector3(0, -4, -20),
+      scale: new THREE.Vector3(0.04, 0.04, 0.04),
+      rotation: new THREE.Vector3(0, Math.PI/2, 0),
       type: "default",
     },
   ];

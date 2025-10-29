@@ -15,6 +15,11 @@ export class ModelInteractionManager {
   constructor(scene, camera) {
     this.scene = scene;
     this.camera = camera;
+    this.puzzleImages = {
+      puzzle1: null,
+      puzzle2: null,
+    };
+
     this.interactableModels = [];
     this.pickupLightsManager = null;
     this.pointerLockControls = null; // store PointerLockControls instance
@@ -29,6 +34,8 @@ export class ModelInteractionManager {
 
     // Add reference to main game for reset functionality
     this.gameInstance = null;
+
+    this.puzzle1Completed = false;
   }
   setKeypadUI(keypadUI) {
     this.keypadUI = keypadUI;
@@ -261,6 +268,7 @@ export class ModelInteractionManager {
   // Handle model interactions
   onModelInteraction(modelGroup) {
     console.log(`Interacted with model: ${modelGroup.userData.modelPath}`);
+    console.log("Current puzzle1Completed:", this.puzzle1Completed);
     if (modelGroup.userData.type === "numberDisplay" && this.numberDisplayUI) {
       const number = modelGroup.userData.displayNumber || 0;
       console.log("📊 Number display clicked! Number:", number);
@@ -313,7 +321,17 @@ export class ModelInteractionManager {
 
       if (this.checkPasswordComplete()) {
         console.log("Password complete! Trigger next event...");
-        // Trigger reward, open door, etc.
+        this.puzzle1Completed = true;
+        if (this.puzzleImages.puzzle1) {
+          this.puzzleImages.puzzle1.setImage("textures/walls/HappyFace.png");
+        }
+      }
+
+      if (this.checkAnotherPuzzleComplete()) {
+        console.log("Puzzle 2 complete!");
+        if (this.puzzleImages.puzzle2) {
+          this.puzzleImages.puzzle2.setImage("textures/puzzle2_solved.png");
+        }
       }
     }
 
@@ -339,13 +357,19 @@ export class ModelInteractionManager {
 
   handleModelClick(model) {
     const emptyIndex = playerCodeArray.findIndex((slot) => slot === null);
+    const modelCode = Number(model.userData.code);
+    
+    if (this.puzzle1Completed) {
+        console.log(`Puzzle solved → forced incorrect sound for model ${modelCode}`);
+      this.playIncorrectSound(model);
+      return;
+    }
     if (emptyIndex === -1) return; // all slots full
 
-    const modelCode = Number(model.userData.code);
     console.log(typeof modelCode, typeof passwordArray[emptyIndex]);
 
     playerCodeArray[emptyIndex] = modelCode;
-
+    
     if (modelCode === passwordArray[emptyIndex]) {
       correctCodesArray.push(modelCode);
       this.playCorrectSound(model);
@@ -513,5 +537,9 @@ export class ModelInteractionManager {
 
   checkPasswordComplete() {
     return playerCodeArray.every((code, i) => code === passwordArray[i]);
+  }
+
+  setPuzzleImage(puzzleKey, imageObject) {
+    this.puzzleImages[puzzleKey] = imageObject;
   }
 }
