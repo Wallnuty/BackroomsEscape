@@ -229,7 +229,10 @@ function createModels() {
       position: new THREE.Vector3(0, -4, -20),
       scale: new THREE.Vector3(0.04, 0.04, 0.04),
       rotation: new THREE.Vector3(0, Math.PI/2, 0),
-      type: "default",
+      type: "door",
+      code: null,
+      correctSound: "/audio/sfx/door_opening.mp3",
+      incorrectSound: "/audio/sfx/locked_door.mp3",
     },
   ];
 

@@ -335,6 +335,21 @@ export class ModelInteractionManager {
       }
     }
 
+    if (modelGroup.userData.type === "door") {
+      // If either puzzle is incomplete, force incorrect sound
+      if (!this.puzzle1Completed || !this.checkAnotherPuzzleComplete()) {
+        console.log("🔒 Door clicked but puzzles not complete → playing incorrect sound");
+        this.playIncorrectSound(modelGroup);
+        return; // skip any door-opening logic
+      }
+
+      // Otherwise, handle door normally (e.g., open it)
+      console.log("Door clicked and puzzles complete → normal behavior here");
+      // … your existing door logic …
+      return;
+    }
+
+
     // You could also have other slide-specific behavior here
   }
 
@@ -358,7 +373,7 @@ export class ModelInteractionManager {
   handleModelClick(model) {
     const emptyIndex = playerCodeArray.findIndex((slot) => slot === null);
     const modelCode = Number(model.userData.code);
-    
+
     if (this.puzzle1Completed) {
         console.log(`Puzzle solved → forced incorrect sound for model ${modelCode}`);
       this.playIncorrectSound(model);

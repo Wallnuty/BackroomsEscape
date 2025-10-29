@@ -282,6 +282,17 @@ export class SignInRoom {
           modelData.rotation.y,
           modelData.rotation.z
         );
+        if (modelData.type === "door") {
+          obj.userData.isInteractableModel = true;
+          obj.userData.modelPath = "door";
+          obj.userData.type = "door";
+          obj.userData.correctSound = modelData.correctSound;
+          obj.userData.incorrectSound = modelData.incorrectSound;
+        }
+
+        if (this.modelInteractionManager && obj.userData.isInteractableModel) {
+          this.modelInteractionManager.addInteractableModel(obj);
+        }
 
         this.group.add(obj);
         this.models.push(obj);
