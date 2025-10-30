@@ -27,8 +27,8 @@ export class RoomManager {
     this.renderZonesDisabled = false;
 
     // lighting
-    const ambient = new THREE.AmbientLight(0xded18a, 0.4);
-    scene.add(ambient);
+    this.ambient = new THREE.AmbientLight(0xded18a, 0.4);
+    scene.add(this.ambient);
 
     this._createGlobalFloorAndCeiling();
 
@@ -101,6 +101,7 @@ export class RoomManager {
         connections,
         corridorWidth
       );
+      this.ambient.intensity = 0.2;
     } else if (layoutName === "extra") {
       const connections = { right: "Playground" }; // tell the room to leave the right wall open
       const corridorWidth = 8; // match your hallway width
@@ -124,6 +125,7 @@ export class RoomManager {
         connections,
         corridorWidth
       );
+      this.ambient.intensity = 0.1;
       room.modelInteractionManager = this.modelInteractionManager;
     } else {
       // Default to BackroomsRoom for generic layouts (main, secondary, etc.)
@@ -232,15 +234,21 @@ createHallwayBetweenRooms(
   roomA,
   roomB,
   width = 8,
-  height = 10,
+  height = 12,
   doorWidth = 4,
   doorHeight = 5
 ) {
-  const start = roomA.position.clone();
-  const end = roomB.position.clone();
+  const direction = new THREE.Vector3().subVectors(roomB.position, roomA.position).normalize();
+
+  // Get half-extents of each room along the hallway axis
+  const halfA = (roomA.width || 40) / 2;
+  const halfB = (roomB.width || 40) / 2;
+
+  // Compute offset points that align with each room's outer wall
+  const start = roomA.position.clone().add(direction.clone().multiplyScalar(halfA));
+  const end = roomB.position.clone().add(direction.clone().multiplyScalar(-halfB));
   const midpoint = start.clone().add(end).multiplyScalar(0.5);
-  const distance = 8.4;
-  const direction = new THREE.Vector3().subVectors(end, start).normalize();
+  const distance = start.distanceTo(end);
   const angleY = Math.atan2(direction.z, direction.x);
 
   // --- Floor ---
@@ -466,7 +474,7 @@ createHallwayBetweenRooms(
       const start = roomA.position.clone();
       const end = roomB.position.clone();
       start.z = end.z = roomA.position.z;
-      this.createHallwayBetweenRooms(roomA, roomB, 8, 10);
+      this.createHallwayBetweenRooms(roomA, roomB, 8, 12);
     };
 
     if (playgroundRoom && signInRoom) createHallway(playgroundRoom, signInRoom);
@@ -479,9 +487,9 @@ createHallwayBetweenRooms(
       const floorY =
         -(playgroundRoom.height || PlaygroundLayouts.Playground.height) / 2;
       this.player.body.position.set(
-        playgroundRoom.position.x,
+        -12,
         floorY + 1,
-        playgroundRoom.position.z
+        0
       );
       this.player.body.velocity.set(0, 0, 0);
       this.player.syncCamera?.();

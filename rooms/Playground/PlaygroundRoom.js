@@ -453,7 +453,7 @@ export class PlaygroundRoom {
     const ceilingY = this.height / 2 - 0.1;
     PlaygroundLayouts.Playground.lights.forEach(([x, z]) => {
       const panel = new LightPanel({
-        intensity: 13,
+        intensity: 8,
         width: 2,
         height: 2,
         color: 0xffffff,
@@ -474,6 +474,6 @@ export class PlaygroundRoom {
   }
 
   getSpawnPosition() {
-    return new THREE.Vector3(0, -1.8, 0);
+    return new THREE.Vector3(-10, -1.8, 0);
   }
 }

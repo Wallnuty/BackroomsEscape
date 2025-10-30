@@ -82,13 +82,8 @@ class BackroomsGame {
     // 4. Reset player position to Playground spawn
     const playgroundRoom = this.roomManager?.currentRoom;
     if (playgroundRoom) {
-      const floorY = -playgroundRoom.height / 2;
-      const offsetAboveFloor = 1.0;
-      this.playerBody.position.set(
-        playgroundRoom.position.x,
-        floorY + offsetAboveFloor,
-        playgroundRoom.position.z
-      );
+      const spawnPos = new THREE.Vector3(-10, 2.8, 0);// <-- use your custom spawn
+      this.playerBody.position.copy(spawnPos);
       this.playerBody.velocity.set(0, 0, 0);
       this.syncCamera();
     }

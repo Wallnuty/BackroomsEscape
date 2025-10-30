@@ -5,22 +5,22 @@ import { code } from "three/tsl";
 export const PlaygroundLayouts = {
   Playground: {
     position: new THREE.Vector3(0, 0, 0),
+    width: 60,
+    height: 12,
+    depth: 60,
+  },
+
+  SignIn: {
+    position: new THREE.Vector3(-50, 0, 0),
     width: 40,
     height: 12,
     depth: 40,
   },
 
-  SignIn: {
-    position: new THREE.Vector3(-50, -2, 0),
-    width: 40,
-    height: 8,
-    depth: 40,
-  },
-
   Extra: {
-    position: new THREE.Vector3(-100, -2, 0),
+    position: new THREE.Vector3(-100, 0, 0),
     width: 40,
-    height: 8,
+    height: 12,
     depth: 40,
 
     // Chalkboard
@@ -148,9 +148,9 @@ function createModels() {
   PlaygroundLayouts.Playground.models = [
     {
       path: "/models/old_playground_slide.glb",
-      position: new THREE.Vector3(14, -6, 14),
-      scale: new THREE.Vector3(1.5, 1.5, 1.5),
-      rotation: new THREE.Vector3(0, Math.PI / 4, 0),
+      position: new THREE.Vector3(20, -6, 20),
+      scale: new THREE.Vector3(1.5, 1.3, 1.5),
+      rotation: new THREE.Vector3(0, 0, 0),
       type: "slide",
       code: 1,
       isTeleportSlide: false,
@@ -159,7 +159,7 @@ function createModels() {
     },
     {
       path: "/models/swing_set.glb",
-      position: new THREE.Vector3(-11, -6, -12),
+      position: new THREE.Vector3(0, -6, -20),
       scale: new THREE.Vector3(0.008, 0.008, 0.012),
       rotation: new THREE.Vector3(0, 0, 0),
       type: "swing",
@@ -169,8 +169,8 @@ function createModels() {
     },
     {
       path: "/models/old_roundabout_merry_go_round.glb",
-      position: new THREE.Vector3(14, -6, -14),
-      scale: new THREE.Vector3(5, 5, 5),
+      position: new THREE.Vector3(0, -6, 0),
+      scale: new THREE.Vector3(6, 6, 6),
       rotation: new THREE.Vector3(0, 0, 0),
       type: "default",
       code: 3,
@@ -179,7 +179,17 @@ function createModels() {
     },
     {
       path: "/models/kid_cycle.glb",
-      position: new THREE.Vector3(14, -6, 0),
+      position: new THREE.Vector3(-20, -6, -10),
+      scale: new THREE.Vector3(6, 6, 6),
+      rotation: new THREE.Vector3(0, 180, 0),
+      type: "default",
+      code: 4,
+      correctSound: "/audio/sfx/child_laugh.mp3",
+      incorrectSound: "/audio/sfx/trike.mp3",
+    },
+    {
+      path: "/models/kid_cycle.glb",
+      position: new THREE.Vector3(8, -6, 20),
       scale: new THREE.Vector3(6, 6, 6),
       rotation: new THREE.Vector3(0, 180, 0),
       type: "default",
@@ -189,9 +199,9 @@ function createModels() {
     },
     {
       path: "/models/see_saw.glb",
-      position: new THREE.Vector3(-10, -6, 12),
-      scale: new THREE.Vector3(4, 4, 4),
-      rotation: new THREE.Vector3(0, 90, 0),
+      position: new THREE.Vector3(-10, -6, 20),
+      scale: new THREE.Vector3(5, 5, 5),
+      rotation: new THREE.Vector3(0, Math.PI/2, 0),
       type: "default",
       code: 5,
       correctSound: "/audio/sfx/child_laugh.mp3",
@@ -199,7 +209,7 @@ function createModels() {
     },
     {
       path: "/models/toy_giraffe.glb",
-      position: new THREE.Vector3(0, -6, 13),
+      position: new THREE.Vector3(-20, -6, 10),
       scale: new THREE.Vector3(40, 40, 40),
       rotation: new THREE.Vector3(0, 90, 0),
       type: "default",
@@ -207,32 +217,78 @@ function createModels() {
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/wooden_blocks.mp3",
     },
+    {
+      path: "/models/ball_pit.glb",
+      position: new THREE.Vector3(20, -5, 8),
+      scale: new THREE.Vector3(0.3, 0.14, 0.3),
+      rotation: new THREE.Vector3(0, 0, 0),
+      type: "default",
+      code: 1,
+      correctSound: "/audio/sfx/child_laugh.mp3",
+      incorrectSound: "/audio/sfx/old_slide.mp3",
+    },
+    {
+      path: "/models/wooden_playground.glb",
+      position: new THREE.Vector3(-20, -6, -20),
+      scale: new THREE.Vector3(0.06, 0.06, 0.06),
+      rotation: new THREE.Vector3(0, 0, 0),
+      type: "default",
+      code: 7,
+      correctSound: "/audio/sfx/child_laugh.mp3",
+      incorrectSound: "/audio/sfx/wooden_playground.mp3",
+    },
+    {
+      path: "/models/trampoline.glb",
+      position: new THREE.Vector3(21, -5.8, -13),
+      scale: new THREE.Vector3(0.05, 0.05, 0.05),
+      rotation: new THREE.Vector3(0, 0, 0),
+      type: "default",
+      code: 8,
+      correctSound: "/audio/sfx/child_laugh.mp3",
+      incorrectSound: "/audio/sfx/trampoline.mp3",
+    },
+
+
   ];
 
   PlaygroundLayouts.SignIn.models = [
     {
       path: "/models/desk.glb",
-      position: new THREE.Vector3(0, -4, 13),
-      scale: new THREE.Vector3(3, 3, 3),
-      rotation: new THREE.Vector3(0, 0, 0),
+      position: new THREE.Vector3(0, -6, -13),
+      scale: new THREE.Vector3(3.5, 3.5, 3.5),
+      rotation: new THREE.Vector3(0, Math.PI, 0),
       type: "default",
     },
     {
       path: "/models/wooden_chair.glb",
-      position: new THREE.Vector3(-1, -4, 14),
-      scale: new THREE.Vector3(3, 3, 3),
-      rotation: new THREE.Vector3(0, 0, 0),
+      position: new THREE.Vector3(1, -6, -14),
+      scale: new THREE.Vector3(3.5, 3.5, 3.5),
+      rotation: new THREE.Vector3(0, Math.PI, 0),
+      type: "default",
+    },
+    {
+      path: "/models/clipboard.glb",
+      position: new THREE.Vector3(-1, -2.6, -13),
+      scale: new THREE.Vector3(2, 2, 2),
+      rotation: new THREE.Vector3(0, Math.PI, 0),
       type: "default",
     },
     {
       path: "/models/damage_door.glb",
-      position: new THREE.Vector3(0, -4, -20),
+      position: new THREE.Vector3(0, -6, 20),
       scale: new THREE.Vector3(0.04, 0.04, 0.04),
-      rotation: new THREE.Vector3(0, Math.PI/2, 0),
+      rotation: new THREE.Vector3(0, Math.PI + Math.PI/2, 0),
       type: "door",
       code: null,
       correctSound: "/audio/sfx/door_opening.mp3",
       incorrectSound: "/audio/sfx/locked_door.mp3",
+    },
+    {
+      path: "/models/filling_cabinets.glb",
+      position: new THREE.Vector3(-17, -6, -19.7),
+      scale: new THREE.Vector3(3.5, 3.5, 3.5),
+      rotation: new THREE.Vector3(0, Math.PI+ Math.PI/2, 0),
+      type: "default",
     },
   ];
 

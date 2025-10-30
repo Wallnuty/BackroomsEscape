@@ -39,4 +39,9 @@ export class ImageObject {
   setScale(x, y, z) {
     this.group.scale.set(x, y, z);
   }
+
+    // rotation in radians
+  setRotation(x = 0, y = 0, z = 0) {
+    this.group.rotation.set(x, y, z);
+  }
 }

@@ -52,12 +52,14 @@ export class SignInRoom {
     this._setupLights();
         // --- ADD IMAGE OBJECT HERE ---
     this.imageObj = new ImageObject(4, 4, 0.1, "textures/walls/UnhappyFace.png");
-    this.imageObj.setPosition(10, 0, -20); // position in room
+    this.imageObj.setPosition(20, 0, 10); // position in room
+    this.imageObj.setRotation(0, Math.PI / 2, 0); // rotate to face inward
     this.group.add(this.imageObj.group);
     modelInteractionManager.setPuzzleImage("puzzle1", this.imageObj);
 
     this.imageObj2 = new ImageObject(4, 4, 0.1, "textures/walls/UnhappyFace.png");
-    this.imageObj2.setPosition(-10, 0, -20); // different position
+    this.imageObj2.setPosition(-20, 0, 10); // different position
+    this.imageObj2.setRotation(0, Math.PI / 2, 0); // rotate to face inward
     this.group.add(this.imageObj2.group);
      modelInteractionManager.setPuzzleImage("puzzle2", this.imageObj2);
     this.addRenderingZone(
@@ -125,24 +127,24 @@ export class SignInRoom {
     const wallNames = ["back", "right", "front", "left"];
     const wallTextures = [
       {
-        base: "textures/walls/wall1_basecolor.png",
-        normal: "textures/walls/wall1_normalgl.png",
-        rough: "textures/walls/wall1_roughness.png",
+        base: "textures/walls/SignInWall_basecolor.png",
+        normal: "textures/walls/SignInWall_normalgl.png",
+        rough: "textures/walls/SignInWall_roughness.png",
       },
       {
-        base: "textures/walls/wall2_basecolor.png",
-        normal: "textures/walls/wall2_normalgl.png",
-        rough: "textures/walls/wall2_roughness.png",
+        base: "textures/walls/SignInWall_basecolor.png",
+        normal: "textures/walls/SignInWall_normalgl.png",
+        rough: "textures/walls/SignInWall_roughness.png",
       },
       {
-        base: "textures/walls/wall3_basecolor.png",
-        normal: "textures/walls/wall3_normalgl.png",
-        rough: "textures/walls/wall3_roughness.png",
+        base: "textures/walls/SignInWall_basecolor.png",
+        normal: "textures/walls/SignInWall_normalgl.png",
+        rough: "textures/walls/SignInWall_roughness.png",
       },
       {
-        base: "textures/walls/wall4_basecolor.png",
-        normal: "textures/walls/wall4_normalgl.png",
-        rough: "textures/walls/wall4_roughness.png",
+        base: "textures/walls/SignInWall_basecolor.png",
+        normal: "textures/walls/SignInWall_normalgl.png",
+        rough: "textures/walls/SignInWall_roughness.png",
       },
     ];
 
@@ -170,7 +172,7 @@ export class SignInRoom {
       this.world.addBody(body);
       this.bodies.push(body);
     };
-
+    let backwall = null;
     // Create walls
     wallNames.forEach((wallName, i) => {
       const mat = new THREE.MeshStandardMaterial({
@@ -241,6 +243,22 @@ export class SignInRoom {
             addWallSegment(geo, x, 0, z, mat);
           }
         }
+      }
+    });
+    
+    const overlayTex = loader.load("textures/walls/Daycare_sign3.png");
+    const overlayMat = new THREE.MeshStandardMaterial({ map: overlayTex, transparent: true });
+
+    this.wallMeshes.forEach(mesh => {
+      // Only back wall segments
+      if (mesh.position.z < 0) { 
+        const overlayMesh = new THREE.Mesh(mesh.geometry.clone(), overlayMat);
+        overlayMesh.position.copy(mesh.position);
+        overlayMesh.rotation.copy(mesh.rotation);
+        overlayMesh.scale.set(0.5, 0.5, 1); // adjust size
+        // offset slightly along z to avoid z-fighting
+        overlayMesh.position.z += 0.01;
+        this.group.add(overlayMesh);
       }
     });
   }
