@@ -202,7 +202,7 @@ function createModels() {
       position: new THREE.Vector3(-10, -6, 20),
       scale: new THREE.Vector3(5, 5, 5),
       rotation: new THREE.Vector3(0, Math.PI/2, 0),
-      type: "default",
+      type: "see-saw",
       code: 5,
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/see_saw.mp3",

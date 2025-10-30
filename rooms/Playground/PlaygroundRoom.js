@@ -338,6 +338,7 @@ export class PlaygroundRoom {
   }
 
   /** Load GLB models defined in PlaygroundLayout */
+/** Load GLB models defined in PlaygroundLayout */
 _loadModels() {
   PlaygroundLayouts.Playground.models.forEach((modelData) => {
     this.loader.load(modelData.path, (gltf) => {
@@ -358,7 +359,7 @@ _loadModels() {
         this.modelInteractionManager.addInteractableModel(obj);
       }
 
-      // Mark child meshes as interactable, but do not add physics yet
+      // Mark child meshes as interactable
       obj.traverse((child) => {
         if (child.isMesh) {
           child.userData.isInteractableModel = true;
@@ -376,42 +377,63 @@ _loadModels() {
       if (!this.world) return;
       if (modelData.type === "merry-go-round") return; // skip
 
-      const compoundBody = new CANNON.Body({ mass: 0 });
-
-      // Only create physics for the main object
       const bbox = new THREE.Box3().setFromObject(obj);
       const size = new THREE.Vector3();
       bbox.getSize(size);
       const center = new THREE.Vector3();
       bbox.getCenter(center);
 
-      // If slide or swing, use custom physics
+      // Create a custom physics body for specific models
       if (modelData.type === "slide") {
+        const compoundBody = new CANNON.Body({ mass: 0 });
         const mainBox = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 4, size.z / 4));
         compoundBody.addShape(mainBox, new CANNON.Vec3(0, size.y / 4, 0), new CANNON.Quaternion().setFromEuler(-Math.PI/6,0,0));
         const baseBox = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 8, size.z / 8));
         compoundBody.addShape(baseBox, new CANNON.Vec3(0, -size.y / 8, size.z / 4));
-      } else if (modelData.type === "swing") {
+        compoundBody.position.copy(obj.position);
+        this.world.addBody(compoundBody);
+        this.bodies.push(compoundBody);
+      } 
+      else if (modelData.type === "swing") {
+        const compoundBody = new CANNON.Body({ mass: 0 });
         const postLeft = new CANNON.Box(new CANNON.Vec3(size.x / 16, size.y / 2, size.z / 16));
         compoundBody.addShape(postLeft, new CANNON.Vec3(-size.x / 4, 0, 0));
         const postRight = new CANNON.Box(new CANNON.Vec3(size.x / 16, size.y / 2, size.z / 16));
         compoundBody.addShape(postRight, new CANNON.Vec3(size.x / 4, 0, 0));
         const seat = new CANNON.Box(new CANNON.Vec3(size.x / 4, size.y / 16, size.z / 8));
         compoundBody.addShape(seat, new CANNON.Vec3(0, -size.y / 2 + size.y / 16, 0));
-      } else {
-        // Default physics: just one box for main object
-        const halfExtents = new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2);
-        const offset = new CANNON.Vec3(center.x - obj.position.x, center.y - obj.position.y, center.z - obj.position.z);
-        const box = new CANNON.Box(halfExtents);
-        compoundBody.addShape(box, offset);
-      }
+        compoundBody.position.copy(obj.position);
+        this.world.addBody(compoundBody);
+        this.bodies.push(compoundBody);
+      } 
+      else if (modelData.type === "see-saw") {
+        const body = new CANNON.Body({ mass: 0 });
 
-      compoundBody.position.copy(obj.position);
-      this.world.addBody(compoundBody);
-      this.bodies.push(compoundBody);
+        // main plank
+        body.addShape(new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 4, size.z / 4)));
+
+        // pivot supports
+        body.addShape(new CANNON.Box(new CANNON.Vec3(size.x / 16, size.y / 2, size.z / 8)), new CANNON.Vec3(-size.x / 4, -size.y / 2, 0));
+        body.addShape(new CANNON.Box(new CANNON.Vec3(size.x / 16, size.y / 2, size.z / 8)), new CANNON.Vec3(size.x / 4, -size.y / 2, 0));
+
+        body.position.copy(obj.position);
+        this.world.addBody(body);
+        this.bodies.push(body);
+      } 
+      else {
+        // Default physics for any other model
+        const offset = new CANNON.Vec3(center.x - obj.position.x, center.y - obj.position.y, center.z - obj.position.z);
+        const halfExtents = new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2);
+        const compoundBody = new CANNON.Body({ mass: 0 });
+        compoundBody.addShape(new CANNON.Box(halfExtents), offset);
+        compoundBody.position.copy(obj.position);
+        this.world.addBody(compoundBody);
+        this.bodies.push(compoundBody);
+      }
     });
   });
 }
+
 
   _setupLights() {
     const ceilingY = this.height / 2 - 0.1;

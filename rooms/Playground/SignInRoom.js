@@ -311,7 +311,7 @@ _loadModels() {
         obj.userData.incorrectSound = modelData.incorrectSound;
       }
 
-      // Add interactable models to manager
+      // Add interactable models to manager (traverse children)
       obj.traverse((child) => {
         if (child.isMesh) {
           if (!child.userData.isInteractableModel && obj.userData.isInteractableModel) {
@@ -331,20 +331,35 @@ _loadModels() {
 
       // --- Physics setup ---
       if (!this.world) return;
-      if (modelData.type === "door") return; // skip physics for doors if needed
 
       const compoundBody = new CANNON.Body({ mass: 0 });
 
-      // Create one box per model
-      const bbox = new THREE.Box3().setFromObject(obj);
-      const size = new THREE.Vector3();
-      bbox.getSize(size);
-      const center = new THREE.Vector3();
-      bbox.getCenter(center);
+      // Doors may skip physics if desired
+      if (modelData.type !== "door") {
+        // Compute combined bounding box for all child meshes
+        let combinedBox = new THREE.Box3();
+        obj.updateWorldMatrix(true, true); // update world matrices
+        obj.traverse((child) => {
+          if (child.isMesh) {
+            const childBox = new THREE.Box3().setFromObject(child);
+            combinedBox.union(childBox);
+          }
+        });
 
-      const offset = new CANNON.Vec3(center.x - obj.position.x, center.y - obj.position.y, center.z - obj.position.z);
-      const box = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2));
-      compoundBody.addShape(box, offset);
+        const size = new THREE.Vector3();
+        combinedBox.getSize(size);
+        const center = new THREE.Vector3();
+        combinedBox.getCenter(center);
+
+        const offset = new CANNON.Vec3(
+          center.x - obj.position.x,
+          center.y - obj.position.y,
+          center.z - obj.position.z
+        );
+
+        const box = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2));
+        compoundBody.addShape(box, offset);
+      }
 
       compoundBody.position.copy(obj.position);
       this.world.addBody(compoundBody);
@@ -352,6 +367,7 @@ _loadModels() {
     });
   });
 }
+
 
 
   _setupLights() {
