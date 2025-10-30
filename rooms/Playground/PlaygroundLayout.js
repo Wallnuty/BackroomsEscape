@@ -172,7 +172,7 @@ function createModels() {
       position: new THREE.Vector3(0, -6, 0),
       scale: new THREE.Vector3(6, 6, 6),
       rotation: new THREE.Vector3(0, 0, 0),
-      type: "default",
+      type: "merry-go-round",
       code: 3,
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/merry_go_round.mp3",
