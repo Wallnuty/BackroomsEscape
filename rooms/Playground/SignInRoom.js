@@ -287,53 +287,72 @@ export class SignInRoom {
     });
   }
 
-  _loadModels() {
-    const layout = PlaygroundLayouts.SignIn;
-    if (!layout.models) return;
-    layout.models.forEach((modelData) => {
-      this.loader.load(modelData.path, (gltf) => {
-        const obj = gltf.scene;
-        obj.position.copy(modelData.position);
-        obj.scale.copy(modelData.scale);
-        obj.rotation.set(
-          modelData.rotation.x,
-          modelData.rotation.y,
-          modelData.rotation.z
-        );
-        if (modelData.type === "door") {
-          obj.userData.isInteractableModel = true;
-          obj.userData.modelPath = "door";
-          obj.userData.type = "door";
-          obj.userData.correctSound = modelData.correctSound;
-          obj.userData.incorrectSound = modelData.incorrectSound;
+_loadModels() {
+  const layout = PlaygroundLayouts.SignIn;
+  if (!layout.models) return;
+
+  layout.models.forEach((modelData) => {
+    this.loader.load(modelData.path, (gltf) => {
+      const obj = gltf.scene;
+      obj.position.copy(modelData.position);
+      obj.scale.copy(modelData.scale);
+      obj.rotation.set(
+        modelData.rotation.x,
+        modelData.rotation.y,
+        modelData.rotation.z
+      );
+
+      // --- Interaction setup ---
+      if (modelData.type === "door") {
+        obj.userData.isInteractableModel = true;
+        obj.userData.modelPath = "door";
+        obj.userData.type = "door";
+        obj.userData.correctSound = modelData.correctSound;
+        obj.userData.incorrectSound = modelData.incorrectSound;
+      }
+
+      // Add interactable models to manager
+      obj.traverse((child) => {
+        if (child.isMesh) {
+          if (!child.userData.isInteractableModel && obj.userData.isInteractableModel) {
+            child.userData.isInteractableModel = true;
+            child.userData.modelPath = obj.userData.modelPath;
+            child.userData.correctSound = obj.userData.correctSound;
+            child.userData.incorrectSound = obj.userData.incorrectSound;
+          }
+          if (this.modelInteractionManager && child.userData.isInteractableModel) {
+            this.modelInteractionManager.addInteractableModel(child);
+          }
         }
-
-        if (this.modelInteractionManager && obj.userData.isInteractableModel) {
-          this.modelInteractionManager.addInteractableModel(obj);
-        }
-
-        this.group.add(obj);
-        this.models.push(obj);
-
-        if (!this.world) return;
-        const compoundBody = new CANNON.Body({ mass: 0 });
-        const bbox = new THREE.Box3().setFromObject(obj);
-        const size = new THREE.Vector3();
-        bbox.getSize(size);
-        const box = new CANNON.Box(
-          new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2)
-        );
-        compoundBody.addShape(box);
-        compoundBody.position.set(
-          obj.position.x,
-          obj.position.y,
-          obj.position.z
-        );
-        this.world.addBody(compoundBody);
-        this.bodies.push(compoundBody);
       });
+
+      this.group.add(obj);
+      this.models.push(obj);
+
+      // --- Physics setup ---
+      if (!this.world) return;
+      if (modelData.type === "door") return; // skip physics for doors if needed
+
+      const compoundBody = new CANNON.Body({ mass: 0 });
+
+      // Create one box per model
+      const bbox = new THREE.Box3().setFromObject(obj);
+      const size = new THREE.Vector3();
+      bbox.getSize(size);
+      const center = new THREE.Vector3();
+      bbox.getCenter(center);
+
+      const offset = new CANNON.Vec3(center.x - obj.position.x, center.y - obj.position.y, center.z - obj.position.z);
+      const box = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2));
+      compoundBody.addShape(box, offset);
+
+      compoundBody.position.copy(obj.position);
+      this.world.addBody(compoundBody);
+      this.bodies.push(compoundBody);
     });
-  }
+  });
+}
+
 
   _setupLights() {
     const layout = PlaygroundLayouts.SignIn;
