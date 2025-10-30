@@ -360,15 +360,25 @@ _loadModels() {
       }
 
       // Mark child meshes as interactable
-      obj.traverse((child) => {
-        if (child.isMesh) {
-          child.userData.isInteractableModel = true;
-          child.userData.modelPath = obj.userData.modelPath;
-          child.userData.correctSound = obj.userData.correctSound;
-          child.userData.incorrectSound = obj.userData.incorrectSound;
-          if (this.modelInteractionManager) this.modelInteractionManager.addInteractableModel(child);
-        }
-      });
+        obj.traverse((child) => {
+            if (child.isMesh) {
+                child.userData.isInteractableModel = true;
+                child.userData.modelPath = modelData.type || modelData.path;
+                if (modelData.code !== undefined) child.userData.code = modelData.code;
+                child.userData.correctSound = modelData.correctSound || "/audio/sfx/child_laugh.mp3";
+                child.userData.incorrectSound = modelData.incorrectSound || "audio/sfx/see_saw.mp3";
+                // Pre-attach positional audio for both sounds
+                this.modelInteractionManager.attachPositionalAudioToModel(
+                    obj,
+                    obj.userData.correctSound
+                );
+                this.modelInteractionManager.attachPositionalAudioToModel(
+                    obj,
+                    obj.userData.incorrectSound
+                );
+
+            }
+        });
 
       this.group.add(obj);
       this.models.push(obj);
