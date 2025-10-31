@@ -10,6 +10,7 @@ export class BackroomsRoom extends BaseRoom {
         super(scene, world, width, height, depth, position);
     }
 
+
     /**
      * Overrides the base method to create materials with backrooms textures.
      */
