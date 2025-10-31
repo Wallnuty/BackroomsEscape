@@ -213,4 +213,37 @@ export class BaseRoom {
             }
         });
     }
+
+    // inside BaseRoom class
+unload() {
+    // Remove all meshes/groups from scene
+    if (this.group) {
+        this.scene.remove(this.group);
+        this.group.traverse(obj => {
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                    obj.material.forEach(mat => mat.dispose());
+                } else {
+                    obj.material.dispose();
+                }
+            }
+        });
+    }
+
+    // Remove all physics bodies
+    if (this.world && this.bodies.length > 0) {
+        this.bodies.forEach(body => {
+            this.world.removeBody(body);
+        });
+        this.bodies = [];
+    }
+
+    // Clear rendering zones
+    this.renderingZones.forEach(zone => {
+        if (zone.debugMesh) this.scene.remove(zone.debugMesh);
+    });
+    this.renderingZones = [];
+}
+
 }

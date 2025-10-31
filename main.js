@@ -64,12 +64,39 @@ class BackroomsGame {
     });
   }
 
+  loadPlayground() {
+    console.log("Loading playground...");
+
+    // 1. Reset the current world/scene
+    this.clearScene();
+
+    // 2. Destroy old RoomManager and create a new one
+    this.destroyRoomManager();
+    this.setupRoomManager();
+
+    // 3. Load connected rooms including the Playground
+    if (this.roomManager) {
+      this.roomManager.loadConnectedRooms();
+    }
+
+    // 4. Reset player position to Playground spawn
+    const playgroundRoom = this.roomManager?.currentRoom;
+    if (playgroundRoom) {
+      const spawnPos = new THREE.Vector3(-10, 2.8, 0); // <-- use your custom spawn
+      this.playerBody.position.copy(spawnPos);
+      this.playerBody.velocity.set(0, 0, 0);
+      this.syncCamera();
+    }
+
+    console.log("Playground loaded successfully.");
+  }
+
   startGame() {
     this.setupThreeJS();
     this.setupPhysics();
     this.setupAudio();
-    this.setupRoomManager();
     this.setupControls();
+    this.setupRoomManager();
     this.requestPointerLock();
     this.setupEventListeners();
 
@@ -143,6 +170,7 @@ class BackroomsGame {
   setupAudio() {
     const listener = new THREE.AudioListener();
     this.camera.add(listener);
+    this.audioListener = listener;
 
     // Existing footstep audio
     this.footstepBuffer = null;
@@ -172,7 +200,7 @@ class BackroomsGame {
       console.log("Not A Human music started - fading in...");
 
       // Fade in over 3 seconds
-      this.fadeInMusic(audio, 0.2, 3000); // Target volume 0.2, over 3 seconds
+      this.fadeInMusic(audio, 0.01, 3000); // Target volume 0.2, over 3 seconds
     });
   }
 
@@ -240,10 +268,41 @@ class BackroomsGame {
   }
 
   setupRoomManager() {
-    this.roomManager = new RoomManager(this.scene, this.world, this.camera);
+    this.roomManager = new RoomManager(this.scene, this.world, this.camera, {
+      body: this.playerBody,
+      syncCamera: this.syncCamera,
+    });
 
     // Connect the game instance to model interaction manager for reset functionality
     this.roomManager.modelInteractionManager.setGameInstance(this);
+    if (this.audioListener) {
+      this.roomManager.modelInteractionManager.setAudioListener(
+        this.audioListener
+      );
+
+      // Optionally preload sounds for interactables right away (you can also call this later)
+      // await this.roomManager.modelInteractionManager.preloadModelSounds(); // if made async context
+      // or call without await:
+      this.roomManager.modelInteractionManager.preloadModelSounds();
+    }
+    if (this.controls) {
+      this.roomManager.modelInteractionManager.setPointerLockControls(
+        this.controls.controls
+      );
+      this.roomManager.modelInteractionManager.setControlsWrapper(
+        this.controls
+      ); // NEW LINE
+      if (this.roomManager.modelInteractionManager.numberDisplayUI) {
+        console.log("entered");
+        this.roomManager.modelInteractionManager.numberDisplayUI.pointerLockControls =
+          this.controls.controls;
+        this.roomManager.modelInteractionManager.numberDisplayUI.controlsWrapper =
+          this.controls;
+      }
+      console.log(
+        "✅ Pointer lock controls connected to ModelInteractionManager"
+      );
+    }
   }
 
   setupControls() {
@@ -252,13 +311,34 @@ class BackroomsGame {
       this.camera,
       this.renderer.domElement
     );
+    // CRITICAL FIX: Pass the actual PointerLockControls instance (not the wrapper)
+    // Pass both the PointerLockControls AND the wrapper
+    if (this.roomManager?.modelInteractionManager) {
+      this.roomManager.modelInteractionManager.setPointerLockControls(
+        this.controls.controls
+      );
+      this.roomManager.modelInteractionManager.setControlsWrapper(
+        this.controls
+      ); // NEW LINE
+      if (this.roomManager.modelInteractionManager.numberDisplayUI) {
+        this.roomManager.modelInteractionManager.numberDisplayUI.pointerLockControls =
+          this.controls.controls;
+        this.roomManager.modelInteractionManager.numberDisplayUI.controlsWrapper =
+          this.controls;
+      }
+      console.log(
+        "✅ Pointer lock controls connected to ModelInteractionManager"
+      );
+    }
   }
 
   setupEventListeners() {
     window.addEventListener("pointerdown", (event) => {
       if (!this.isPaused && this.mouseMovedSinceResume) {
         // Use only the model interaction manager (which now handles both models and lights)
-        this.roomManager.modelInteractionManager.handlePointerInteraction(event);
+        this.roomManager.modelInteractionManager.handlePointerInteraction(
+          event
+        );
       }
     });
     const cameraToggleBtn = document.getElementById("cameraToggleBtn");
@@ -410,7 +490,8 @@ class BackroomsGame {
 
   resetPlayerPosition() {
     // Reset physics body position
-    this.playerBody.position.set(-15, -2.1, 3); // Original spawn position
+    //this.playerBody.position.set(-15, -2.1, 3); // Original spawn position
+    this.playerBody.position.set(-16, 0, 16);
     this.playerBody.velocity.set(0, 0, 0);
     this.playerBody.angularVelocity.set(0, 0, 0);
 
@@ -470,7 +551,7 @@ class BackroomsGame {
       // Dispose materials
       if (object.material) {
         if (Array.isArray(object.material)) {
-          object.material.forEach(mat => mat.dispose());
+          object.material.forEach((mat) => mat.dispose());
         } else {
           object.material.dispose();
         }
@@ -483,8 +564,10 @@ class BackroomsGame {
     });
 
     // Clear all physics bodies except player
-    const bodiesToRemove = this.world.bodies.filter(body => body !== this.playerBody);
-    bodiesToRemove.forEach(body => {
+    const bodiesToRemove = this.world.bodies.filter(
+      (body) => body !== this.playerBody
+    );
+    bodiesToRemove.forEach((body) => {
       this.world.removeBody(body);
     });
 
@@ -524,7 +607,7 @@ class BackroomsGame {
         const playerPos = this.playerBody.position;
         const targetPos = new THREE.Vector3(
           playerPos.x,
-          playerPos.y + 20,
+          playerPos.y + 100,
           playerPos.z
         );
         this.camera.position.lerp(targetPos, 0.1);
@@ -537,7 +620,8 @@ class BackroomsGame {
         // First-person: show crosshair normally
         if (this.mouseMovedSinceResume) {
           // Use the unified hover check
-          const isHovering = this.roomManager?.modelInteractionManager?.checkInteractableHover();
+          const isHovering =
+            this.roomManager?.modelInteractionManager?.checkInteractableHover();
 
           if (isHovering) {
             crosshair.classList.add("hovering");
