@@ -230,161 +230,176 @@ export class RoomManager {
     return room;
   }
 
-createHallwayBetweenRooms(
-  roomA,
-  roomB,
-  width = 8,
-  height = 12,
-  doorWidth = 4,
-  doorHeight = 5
-) {
-  const direction = new THREE.Vector3().subVectors(roomB.position, roomA.position).normalize();
+  createHallwayBetweenRooms(
+    roomA,
+    roomB,
+    width = 8,
+    height = 12,
+    doorWidth = 4,
+    doorHeight = 5
+  ) {
+    const direction = new THREE.Vector3()
+      .subVectors(roomB.position, roomA.position)
+      .normalize();
 
-  // Get half-extents of each room along the hallway axis
-  const halfA = (roomA.width || 40) / 2;
-  const halfB = (roomB.width || 40) / 2;
+    // Get half-extents of each room along the hallway axis
+    const halfA = (roomA.width || 40) / 2;
+    const halfB = (roomB.width || 40) / 2;
 
-  // Compute offset points that align with each room's outer wall
-  const start = roomA.position.clone().add(direction.clone().multiplyScalar(halfA));
-  const end = roomB.position.clone().add(direction.clone().multiplyScalar(-halfB));
-  const midpoint = start.clone().add(end).multiplyScalar(0.5);
-  const distance = start.distanceTo(end);
-  const angleY = Math.atan2(direction.z, direction.x);
+    // Compute offset points that align with each room's outer wall
+    const start = roomA.position
+      .clone()
+      .add(direction.clone().multiplyScalar(halfA));
+    const end = roomB.position
+      .clone()
+      .add(direction.clone().multiplyScalar(-halfB));
+    const midpoint = start.clone().add(end).multiplyScalar(0.5);
+    const distance = start.distanceTo(end);
+    const angleY = Math.atan2(direction.z, direction.x);
 
-  // --- Floor ---
-  const floorGeo = new THREE.BoxGeometry(distance, 0.2, width);
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
-  const floorMesh = new THREE.Mesh(floorGeo, floorMat);
-  floorMesh.position.set(
-    midpoint.x,
-    midpoint.y - height / 2 + 0.1,
-    midpoint.z
-  );
-  floorMesh.rotation.y = -angleY;
-  this.scene.add(floorMesh);
-
-  // --- Ceiling (NEW) ---
-  const ceilingGeo = new THREE.BoxGeometry(distance, 0.2, width);
-  const ceilingMesh = new THREE.Mesh(ceilingGeo, floorMat);
-  ceilingMesh.position.set(
-    midpoint.x,
-    midpoint.y + height / 2 - 0.1,
-    midpoint.z
-  );
-  ceilingMesh.rotation.y = -angleY;
-  this.scene.add(ceilingMesh);
-
-  // --- Walls ---
-  const wallGeo = new THREE.BoxGeometry(distance, height, 0.2); // thin wall along Z
-  const leftWall = new THREE.Mesh(wallGeo, floorMat);
-  const rightWall = new THREE.Mesh(wallGeo, floorMat);
-  leftWall.position.set(midpoint.x, midpoint.y, midpoint.z - width / 2 + 0.1);
-  rightWall.position.set(
-    midpoint.x,
-    midpoint.y,
-    midpoint.z + width / 2 - 0.1
-  );
-  leftWall.rotation.y = -angleY;
-  rightWall.rotation.y = -angleY;
-  this.scene.add(leftWall, rightWall);
-
-  // --- Physics bodies ---
-  const shapes = [
-    { mesh: floorMesh, size: [distance / 2, 0.1, width / 2] },
-    { mesh: leftWall, size: [distance / 2, height / 2, 0.1] },
-    { mesh: rightWall, size: [distance / 2, height / 2, 0.1] },
-    // ceiling physics (NEW)
-    { mesh: ceilingMesh, size: [distance / 2, 0.1, width / 2] },
-  ];
-
-  // Keep references so we can remove them later
-  const hallwayRecord = {
-    meshes: [floorMesh, ceilingMesh, leftWall, rightWall],
-    bodies: [],
-  };
-
-  shapes.forEach((s) => {
-    const body = new CANNON.Body({ mass: 0 });
-    const shape = new CANNON.Box(new CANNON.Vec3(...s.size));
-    body.addShape(shape);
-    body.position.copy(s.mesh.position);
-    body.quaternion.copy(s.mesh.quaternion); // align with mesh rotation
-    this.world.addBody(body);
-    hallwayRecord.bodies.push(body);
-  });
-
-  // --- Cut doors in connected room walls ---
-  const cutDoor = (room, wallMesh, doorWidth, doorHeight) => {
-    if (!wallMesh || !room) return;
-
-    // Make a simple rectangular hole
-    const holeGeo = new THREE.BoxGeometry(
-      doorWidth,
-      doorHeight,
-      (wallMesh.geometry.parameters?.depth || 1) + 0.1
+    // --- Floor ---
+    const floorGeo = new THREE.BoxGeometry(distance, 0.2, width);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+    const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+    floorMesh.position.set(
+      midpoint.x,
+      midpoint.y - height / 2 + 0.1,
+      midpoint.z
     );
-    const holeMesh = new THREE.Mesh(holeGeo);
-    holeMesh.position.set(0, -room.height / 2 + doorHeight / 2, 0);
+    floorMesh.rotation.y = -angleY;
+    this.scene.add(floorMesh);
 
-    const wallWithHole = CSG.subtract(wallMesh, holeMesh);
-    wallWithHole.position.copy(wallMesh.position);
-    wallWithHole.rotation.copy(wallMesh.rotation);
+    // --- Ceiling (NEW) ---
+    const ceilingGeo = new THREE.BoxGeometry(distance, 0.2, width);
+    const ceilingMesh = new THREE.Mesh(ceilingGeo, floorMat);
+    ceilingMesh.position.set(
+      midpoint.x,
+      midpoint.y + height / 2 - 0.1,
+      midpoint.z
+    );
+    ceilingMesh.rotation.y = -angleY;
+    this.scene.add(ceilingMesh);
 
-    // Replace old mesh in scene
-    this.scene.remove(wallMesh);
-    this.scene.add(wallWithHole);
+    // --- Walls ---
+    const wallGeo = new THREE.BoxGeometry(distance, height, 0.2); // thin wall along Z
+    const leftWall = new THREE.Mesh(wallGeo, floorMat);
+    const rightWall = new THREE.Mesh(wallGeo, floorMat);
+    leftWall.position.set(midpoint.x, midpoint.y, midpoint.z - width / 2 + 0.1);
+    rightWall.position.set(
+      midpoint.x,
+      midpoint.y,
+      midpoint.z + width / 2 - 0.1
+    );
+    leftWall.rotation.y = -angleY;
+    rightWall.rotation.y = -angleY;
+    this.scene.add(leftWall, rightWall);
 
-    // --- Remove old physics bodies for this wall ---
-    const side = wallMesh.userData?.wallSide;
-    if (side) {
-      const toRemove = (room.bodies || []).filter(
-        (b) => b.userData?.wallSide === side
+    // --- Physics bodies ---
+    const shapes = [
+      { mesh: floorMesh, size: [distance / 2, 0.1, width / 2] },
+      { mesh: leftWall, size: [distance / 2, height / 2, 0.1] },
+      { mesh: rightWall, size: [distance / 2, height / 2, 0.1] },
+      // ceiling physics (NEW)
+      { mesh: ceilingMesh, size: [distance / 2, 0.1, width / 2] },
+    ];
+
+    // Keep references so we can remove them later
+    const hallwayRecord = {
+      meshes: [floorMesh, ceilingMesh, leftWall, rightWall],
+      bodies: [],
+    };
+
+    shapes.forEach((s) => {
+      const body = new CANNON.Body({ mass: 0 });
+      const shape = new CANNON.Box(new CANNON.Vec3(...s.size));
+      body.addShape(shape);
+      body.position.copy(s.mesh.position);
+      body.quaternion.copy(s.mesh.quaternion); // align with mesh rotation
+      this.world.addBody(body);
+      hallwayRecord.bodies.push(body);
+    });
+
+    // --- Cut doors in connected room walls ---
+    const cutDoor = (room, wallMesh, doorWidth, doorHeight) => {
+      if (!wallMesh || !room) return;
+
+      // Make a simple rectangular hole
+      const holeGeo = new THREE.BoxGeometry(
+        doorWidth,
+        doorHeight,
+        (wallMesh.geometry.parameters?.depth || 1) + 0.1
       );
-      toRemove.forEach((b) => {
-        this.world.removeBody(b);
-        const idx = room.bodies.indexOf(b);
-        if (idx !== -1) room.bodies.splice(idx, 1);
-      });
-    }
+      const holeMesh = new THREE.Mesh(holeGeo);
+      holeMesh.position.set(0, -room.height / 2 + doorHeight / 2, 0);
 
-    // --- Create new simple physics body matching the wall hole ---
-    const bbox = new THREE.Box3().setFromObject(wallWithHole);
-    const size = new THREE.Vector3();
-    bbox.getSize(size);
-    const center = new THREE.Vector3();
-    bbox.getCenter(center);
+      const wallWithHole = CSG.subtract(wallMesh, holeMesh);
+      wallWithHole.position.copy(wallMesh.position);
+      wallWithHole.rotation.copy(wallMesh.rotation);
 
-    const newBody = new CANNON.Body({ mass: 0 });
-    const boxShape = new CANNON.Box(
-      new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2)
-    );
-    newBody.addShape(boxShape);
-    newBody.position.set(center.x, center.y, center.z);
+      // Replace old mesh in scene
+      this.scene.remove(wallMesh);
+      this.scene.add(wallWithHole);
 
-    const quat = new THREE.Quaternion();
-    wallWithHole.getWorldQuaternion(quat);
-    newBody.quaternion.copy(
-      new CANNON.Quaternion(quat.x, quat.y, quat.z, quat.w)
-    );
+      // --- Remove old physics bodies for this wall ---
+      const side = wallMesh.userData?.wallSide;
+      if (side) {
+        const toRemove = (room.bodies || []).filter(
+          (b) => b.userData?.wallSide === side
+        );
+        toRemove.forEach((b) => {
+          this.world.removeBody(b);
+          const idx = room.bodies.indexOf(b);
+          if (idx !== -1) room.bodies.splice(idx, 1);
+        });
+      }
 
-    newBody.userData = { wallSide: side };
-    this.world.addBody(newBody);
-    if (!room.bodies) room.bodies = [];
-    room.bodies.push(newBody);
+      // --- Create new simple physics body matching the wall hole ---
+      const bbox = new THREE.Box3().setFromObject(wallWithHole);
+      const size = new THREE.Vector3();
+      bbox.getSize(size);
+      const center = new THREE.Vector3();
+      bbox.getCenter(center);
 
-    return wallWithHole;
-  };
+      const newBody = new CANNON.Body({ mass: 0 });
+      const boxShape = new CANNON.Box(
+        new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2)
+      );
+      newBody.addShape(boxShape);
+      newBody.position.set(center.x, center.y, center.z);
 
-  // NOTE: cutDoor expects (room, wallMesh, doorWidth, doorHeight)
-  if (roomA.connectingWall)
-    roomA.connectingWall = cutDoor(roomA, roomA.connectingWall, doorWidth, doorHeight);
-  if (roomB.connectingWall)
-    roomB.connectingWall = cutDoor(roomB, roomB.connectingWall, doorWidth, doorHeight);
+      const quat = new THREE.Quaternion();
+      wallWithHole.getWorldQuaternion(quat);
+      newBody.quaternion.copy(
+        new CANNON.Quaternion(quat.x, quat.y, quat.z, quat.w)
+      );
 
-  // store hallway so it can be cleaned up later
-  this.hallways.push(hallwayRecord);
-}
+      newBody.userData = { wallSide: side };
+      this.world.addBody(newBody);
+      if (!room.bodies) room.bodies = [];
+      room.bodies.push(newBody);
 
+      return wallWithHole;
+    };
+
+    // NOTE: cutDoor expects (room, wallMesh, doorWidth, doorHeight)
+    if (roomA.connectingWall)
+      roomA.connectingWall = cutDoor(
+        roomA,
+        roomA.connectingWall,
+        doorWidth,
+        doorHeight
+      );
+    if (roomB.connectingWall)
+      roomB.connectingWall = cutDoor(
+        roomB,
+        roomB.connectingWall,
+        doorWidth,
+        doorHeight
+      );
+
+    // store hallway so it can be cleaned up later
+    this.hallways.push(hallwayRecord);
+  }
 
   /**
    * Loads the linear Playground -> SignIn -> Extra system (along +Z axis)
@@ -486,11 +501,7 @@ createHallwayBetweenRooms(
     if (playgroundRoom && this.player?.body) {
       const floorY =
         -(playgroundRoom.height || PlaygroundLayouts.Playground.height) / 2;
-      this.player.body.position.set(
-        -12,
-        floorY + 1,
-        0
-      );
+      this.player.body.position.set(-12, floorY + 1, 0);
       this.player.body.velocity.set(0, 0, 0);
       this.player.syncCamera?.();
     }

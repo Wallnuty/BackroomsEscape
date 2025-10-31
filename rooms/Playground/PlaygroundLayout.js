@@ -177,6 +177,8 @@ function createModels() {
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/merry_go_round.mp3",
     },
+    ,
+    /*
     {
       path: "/models/kid_cycle.glb",
       position: new THREE.Vector3(-20, -6, -10),
@@ -187,6 +189,8 @@ function createModels() {
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/trike.mp3",
     },
+    */
+    /*
     {
       path: "/models/kid_cycle.glb",
       position: new THREE.Vector3(8, -6, 20),
@@ -197,16 +201,20 @@ function createModels() {
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/trike.mp3",
     },
+    */
+    /*
     {
       path: "/models/see_saw.glb",
       position: new THREE.Vector3(-10, -6, 20),
       scale: new THREE.Vector3(5, 5, 5),
-      rotation: new THREE.Vector3(0, Math.PI/2, 0),
+      rotation: new THREE.Vector3(0, Math.PI / 2, 0),
       type: "see-saw",
       code: 5,
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/see_saw.mp3",
-    },
+    } */
+    /*
+    
     {
       path: "/models/toy_giraffe.glb",
       position: new THREE.Vector3(-20, -6, 10),
@@ -217,7 +225,7 @@ function createModels() {
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/wooden_blocks.mp3",
     },
-    {
+    */ {
       path: "/models/ball_pit.glb",
       position: new THREE.Vector3(20, -5, 8),
       scale: new THREE.Vector3(0.3, 0.14, 0.3),
@@ -237,6 +245,7 @@ function createModels() {
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/wooden_playground.mp3",
     },
+    /*
     {
       path: "/models/trampoline.glb",
       position: new THREE.Vector3(21, -5.8, -13),
@@ -247,8 +256,7 @@ function createModels() {
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/trampoline.mp3",
     },
-
-
+    */
   ];
 
   PlaygroundLayouts.SignIn.models = [
@@ -277,22 +285,25 @@ function createModels() {
       path: "/models/damage_door.glb",
       position: new THREE.Vector3(0, -6, 20),
       scale: new THREE.Vector3(0.04, 0.04, 0.04),
-      rotation: new THREE.Vector3(0, Math.PI + Math.PI/2, 0),
+      rotation: new THREE.Vector3(0, Math.PI + Math.PI / 2, 0),
       type: "door",
       code: null,
       correctSound: "/audio/sfx/door_opening.mp3",
       incorrectSound: "/audio/sfx/locked_door.mp3",
     },
+    /*
     {
       path: "/models/filling_cabinets.glb",
       position: new THREE.Vector3(-17, -6, -19.7),
       scale: new THREE.Vector3(3.5, 3.5, 3.5),
-      rotation: new THREE.Vector3(0, Math.PI+ Math.PI/2, 0),
+      rotation: new THREE.Vector3(0, Math.PI + Math.PI / 2, 0),
       type: "default",
     },
+    */
   ];
 
   PlaygroundLayouts.Extra.models = [
+    /*
     {
       path: "/models/victorian_bookshelf.glb",
       position: new THREE.Vector3(
@@ -305,6 +316,7 @@ function createModels() {
       type: "numberDisplay", // Change from "default" to "numberDisplay"
       displayNumber: 9, // Add the number you want to display
     },
+    */
     {
       path: "/models/keypad.glb",
       position: new THREE.Vector3(19.9, -1, 7),
@@ -315,12 +327,13 @@ function createModels() {
     },
     {
       path: "/models/creepy_doll_character.glb",
-      position: new THREE.Vector3(-10, -3, 10),
+      position: new THREE.Vector3(-10, -5, 10),
       scale: new THREE.Vector3(1, 1, 1),
       rotation: new THREE.Vector3(0, Math.PI / 6, 0),
       type: "numberDisplay", // tag it so we know it opens popup
       displayNumber: 4, // store code here for popup
     },
+    /*
     {
       path: "/models/vintage_wall_clock.glb",
       position: new THREE.Vector3(10, -2, -20),
@@ -329,9 +342,10 @@ function createModels() {
       type: "numberDisplay", // tag it so we know it opens popup
       displayNumber: 3, // store code here for popup
     },
+    */
     {
       path: "/models/painting_of_a_clown.glb",
-      position: new THREE.Vector3(-10, 0, -20),
+      position: new THREE.Vector3(0, 0, -20),
       scale: new THREE.Vector3(5, 5, 5),
       rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
       type: "numberDisplay", // tag it so we know it opens popup
@@ -339,7 +353,7 @@ function createModels() {
     },
     {
       path: "/models/student_desk.glb",
-      position: new THREE.Vector3(6, -2.5, -10),
+      position: new THREE.Vector3(6, -4.5, -10),
       scale: new THREE.Vector3(2, 2, 2),
       rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
       type: "numberDisplay", // tag it so we know it opens popup
@@ -347,7 +361,7 @@ function createModels() {
     },
     {
       path: "/models/student_desk.glb",
-      position: new THREE.Vector3(-8, -2.5, -10),
+      position: new THREE.Vector3(-8, -4.5, -10),
       scale: new THREE.Vector3(2, 2, 2),
       rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
       type: "numberDisplay", // tag it so we know it opens popup
@@ -355,7 +369,7 @@ function createModels() {
     },
     {
       path: "/models/student_desk.glb",
-      position: new THREE.Vector3(6, -2.5, 5),
+      position: new THREE.Vector3(6, -4.5, 5),
       scale: new THREE.Vector3(2, 2, 2),
       rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
       type: "numberDisplay", // tag it so we know it opens popup
@@ -363,7 +377,7 @@ function createModels() {
     },
     {
       path: "/models/student_desk.glb",
-      position: new THREE.Vector3(-8, -2.5, 5),
+      position: new THREE.Vector3(-8, -4.5, 5),
       scale: new THREE.Vector3(2, 2, 2),
       rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
       type: "numberDisplay", // tag it so we know it opens popup

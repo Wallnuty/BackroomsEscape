@@ -26,6 +26,13 @@ export class ModelInteractionManager {
     this.controlsPaused = false; // new flag
 
     this.keypadUI = new KeypadUI();
+    this.keypadUI.onSuccess = () => {
+      console.log("✅ Keypad solved! Updating puzzle image.");
+      this.puzzle2Completed = true;
+      if (this.puzzleImages.puzzle2) {
+        this.puzzleImages.puzzle2.setImage("textures/walls/HappyFace.png");
+      }
+    };
     this.numberDisplayUI = new NumberDisplayUI(); // Add this line
     // Interaction distance settings - temporarily increased for debugging
     this.maxInteractionDistance = 8.0; // Increased from 4.0
@@ -338,7 +345,9 @@ export class ModelInteractionManager {
     if (modelGroup.userData.type === "door") {
       // If either puzzle is incomplete, force incorrect sound
       if (!this.puzzle1Completed || !this.checkAnotherPuzzleComplete()) {
-        console.log("🔒 Door clicked but puzzles not complete → playing incorrect sound");
+        console.log(
+          "🔒 Door clicked but puzzles not complete → playing incorrect sound"
+        );
         this.playIncorrectSound(modelGroup);
         return; // skip any door-opening logic
       }
@@ -348,7 +357,6 @@ export class ModelInteractionManager {
       // … your existing door logic …
       return;
     }
-
 
     // You could also have other slide-specific behavior here
   }
@@ -375,7 +383,9 @@ export class ModelInteractionManager {
     const modelCode = Number(model.userData.code);
 
     if (this.puzzle1Completed) {
-        console.log(`Puzzle solved → forced incorrect sound for model ${modelCode}`);
+      console.log(
+        `Puzzle solved → forced incorrect sound for model ${modelCode}`
+      );
       this.playIncorrectSound(model);
       return;
     }
@@ -384,7 +394,7 @@ export class ModelInteractionManager {
     console.log(typeof modelCode, typeof passwordArray[emptyIndex]);
 
     playerCodeArray[emptyIndex] = modelCode;
-    
+
     if (modelCode === passwordArray[emptyIndex]) {
       correctCodesArray.push(modelCode);
       this.playCorrectSound(model);
