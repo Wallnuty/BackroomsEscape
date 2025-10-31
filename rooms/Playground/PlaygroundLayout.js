@@ -151,7 +151,7 @@ function createModels() {
       position: new THREE.Vector3(20, -6, 20),
       scale: new THREE.Vector3(1.5, 1.3, 1.5),
       rotation: new THREE.Vector3(0, 0, 0),
-      type: "slide",
+      type: "ramp",
       code: 1,
       isTeleportSlide: false,
       correctSound: "/audio/sfx/child_laugh.mp3",

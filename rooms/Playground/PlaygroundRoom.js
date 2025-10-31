@@ -394,7 +394,7 @@ _loadModels() {
       bbox.getCenter(center);
 
       // Create a custom physics body for specific models
-      if (modelData.type === "slide") {
+      if (modelData.type === "ramp") {
         const compoundBody = new CANNON.Body({ mass: 0 });
         const mainBox = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 4, size.z / 4));
         compoundBody.addShape(mainBox, new CANNON.Vec3(0, size.y / 4, 0), new CANNON.Quaternion().setFromEuler(-Math.PI/6,0,0));
