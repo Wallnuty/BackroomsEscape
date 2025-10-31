@@ -3,7 +3,7 @@ import { KeypadUI } from "../props/keypadUI.js";
 import { NumberDisplayUI } from "../props/numberDisplayUI.js";
 
 // Example password array (fixed)
-export const passwordArray = [1, 5, 3, 2];
+export const passwordArray = [1, 8, 3, 2];
 
 // Player’s current input array (starts empty)
 export let playerCodeArray = [null, null, null, null];
@@ -333,18 +333,11 @@ export class ModelInteractionManager {
           this.puzzleImages.puzzle1.setImage("textures/walls/HappyFace.png");
         }
       }
-
-      if (this.checkAnotherPuzzleComplete()) {
-        console.log("Puzzle 2 complete!");
-        if (this.puzzleImages.puzzle2) {
-          this.puzzleImages.puzzle2.setImage("textures/puzzle2_solved.png");
-        }
-      }
     }
 
     if (modelGroup.userData.type === "door") {
       // If either puzzle is incomplete, force incorrect sound
-      if (!this.puzzle1Completed || !this.checkAnotherPuzzleComplete()) {
+      if (!this.puzzle1Completed || !this.puzzle2Completed) {
         console.log(
           "🔒 Door clicked but puzzles not complete → playing incorrect sound"
         );
@@ -354,7 +347,7 @@ export class ModelInteractionManager {
 
       // Otherwise, handle door normally (e.g., open it)
       console.log("Door clicked and puzzles complete → normal behavior here");
-      // … your existing door logic …
+      this.playCorrectSound(modelGroup);
       return;
     }
 

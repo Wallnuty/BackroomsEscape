@@ -107,7 +107,7 @@ export class PlaygroundRoom {
     const kidDrawings = [
       loader.load("textures/walls/PuzzleHintMerry-go-round.png"),
       loader.load("textures/walls/PuzzleHintSlide.png"),
-      loader.load("textures/walls/PuzzleHintSeeSaw.png"),
+      loader.load("textures/walls/PuzzleHintTrampoline.png"),
       loader.load("textures/walls/PuzzleHintSwing.png")
     ];
 

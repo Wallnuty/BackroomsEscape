@@ -159,7 +159,7 @@ function createModels() {
     },
     {
       path: "/models/swing_set.glb",
-      position: new THREE.Vector3(0, -6, -20),
+      position: new THREE.Vector3(10, -6, -20),
       scale: new THREE.Vector3(0.008, 0.008, 0.012),
       rotation: new THREE.Vector3(0, 0, 0),
       type: "swing",
@@ -245,10 +245,10 @@ function createModels() {
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/wooden_playground.mp3",
     },
-    /*
+    
     {
       path: "/models/trampoline.glb",
-      position: new THREE.Vector3(21, -5.8, -13),
+      position: new THREE.Vector3(-10, -5.8, 20),
       scale: new THREE.Vector3(0.05, 0.05, 0.05),
       rotation: new THREE.Vector3(0, 0, 0),
       type: "default",
@@ -256,7 +256,7 @@ function createModels() {
       correctSound: "/audio/sfx/child_laugh.mp3",
       incorrectSound: "/audio/sfx/trampoline.mp3",
     },
-    */
+    
   ];
 
   PlaygroundLayouts.SignIn.models = [
