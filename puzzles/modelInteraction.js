@@ -509,6 +509,7 @@ export class ModelInteractionManager {
 
       console.log("Door clicked and puzzles complete → correct sound");
       this.playCorrectSound(modelGroup);
+      this.gameInstance.teleportToPoolrooms();
       return;
     }
   }
