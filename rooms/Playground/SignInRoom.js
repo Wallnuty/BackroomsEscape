@@ -103,9 +103,9 @@ export class SignInRoom {
 
     // Floor
     const floorMat = new THREE.MeshStandardMaterial({
-      map: loader.load("textures/floor/floor_basecolor.jpg"),
-      normalMap: loader.load("textures/floor/floor_normalgl.png"),
-      roughnessMap: loader.load("textures/floor/floor_roughness.png"),
+      map: loader.load("./textures/floor/floor_basecolor.jpg"),
+      normalMap: loader.load("./textures/floor/floor_normalgl.png"),
+      roughnessMap: loader.load("./textures/floor/floor_roughness.png"),
     });
     const floorGeo = new THREE.BoxGeometry(this.width, t, this.depth);
     const floor = new THREE.Mesh(floorGeo, floorMat);
@@ -114,9 +114,9 @@ export class SignInRoom {
 
     // Ceiling
     const ceilingMaterial = new THREE.MeshStandardMaterial({
-      map: loader.load("textures/ceiling/ceiling_basecolor.png"),
-      normalMap: loader.load("textures/ceiling/ceiling_normalgl.png"),
-      roughnessMap: loader.load("textures/ceiling/ceiling_roughness.png"),
+      map: loader.load("./textures/ceiling/ceiling_basecolor.png"),
+      normalMap: loader.load("./textures/ceiling/ceiling_normalgl.png"),
+      roughnessMap: loader.load("./textures/ceiling/ceiling_roughness.png"),
     });
     const ceilingGeo = new THREE.PlaneGeometry(this.width, this.depth);
     const ceiling = new THREE.Mesh(ceilingGeo, ceilingMaterial);
@@ -128,24 +128,24 @@ export class SignInRoom {
     const wallNames = ["back", "right", "front", "left"];
     const wallTextures = [
       {
-        base: "textures/walls/SignInWall_basecolor.png",
-        normal: "textures/walls/SignInWall_normalGL.png",
-        rough: "textures/walls/SignInWall_roughness.png",
+        base: "./textures/walls/SignInWall_basecolor.png",
+        normal: "./textures/walls/SignInWall_normalGL.png",
+        rough: "./textures/walls/SignInWall_roughness.png",
       },
       {
-        base: "textures/walls/SignInWall_basecolor.png",
-        normal: "textures/walls/SignInWall_normalGL.png",
-        rough: "textures/walls/SignInWall_roughness.png",
+        base: "./textures/walls/SignInWall_basecolor.png",
+        normal: "./textures/walls/SignInWall_normalGL.png",
+        rough: "./textures/walls/SignInWall_roughness.png",
       },
       {
-        base: "textures/walls/SignInWall_basecolor.png",
-        normal: "textures/walls/SignInWall_normalGL.png",
-        rough: "textures/walls/SignInWall_roughness.png",
+        base: "./textures/walls/SignInWall_basecolor.png",
+        normal: "./textures/walls/SignInWall_normalGL.png",
+        rough: "./textures/walls/SignInWall_roughness.png",
       },
       {
-        base: "textures/walls/SignInWall_basecolor.png",
-        normal: "textures/walls/SignInWall_normalGL.png",
-        rough: "textures/walls/SignInWall_roughness.png",
+        base: "./textures/walls/SignInWall_basecolor.png",
+        normal: "./textures/walls/SignInWall_normalGL.png",
+        rough: "./textures/walls/SignInWall_roughness.png",
       },
     ];
 
@@ -246,8 +246,8 @@ export class SignInRoom {
         }
       }
     });
-    
-    const overlayTex = loader.load("textures/walls/Daycare_sign3.png");
+
+    const overlayTex = loader.load("./textures/walls/Daycare_sign3.png");
     const overlayMat = new THREE.MeshStandardMaterial({ map: overlayTex, transparent: true });
 
     this.wallMeshes.forEach(mesh => {

@@ -31,7 +31,7 @@ export class ModelInteractionManager {
       console.log("✅ Keypad solved! Updating puzzle image.");
       this.puzzle2Completed = true;
       if (this.puzzleImages.puzzle2) {
-        this.puzzleImages.puzzle2.setImage("textures/walls/HappyFace.png");
+        this.puzzleImages.puzzle2.setImage("./textures/walls/HappyFace.png");
       }
     };
     this.numberDisplayUI = new NumberDisplayUI(); // Add this line
@@ -387,7 +387,7 @@ export class ModelInteractionManager {
 
     // Play sound if text is "67" and hasn't played yet
     if (this.whiteboardText === "67" && !this.played67Sound) {
-      const audio = new Audio("/audio/sfx/67.mp3");
+      const audio = new Audio("./audio/sfx/67.mp3");
       audio.play();
       this.played67Sound = true;
     }
@@ -408,7 +408,7 @@ export class ModelInteractionManager {
       }
 
       // --- Play powerCut.mp3 sound effect ---
-      const audio = new Audio("/audio/sfx/powerCut.mp3");
+      const audio = new Audio("./audio/sfx/powerCut.mp3");
       audio.volume = 0.6;
       audio.play();
 
@@ -492,7 +492,7 @@ export class ModelInteractionManager {
         console.log("Password complete! Trigger next event...");
         this.puzzle1Completed = true;
         if (this.puzzleImages.puzzle1) {
-          this.puzzleImages.puzzle1.setImage("textures/walls/HappyFace.png");
+          this.puzzleImages.puzzle1.setImage("./textures/walls/HappyFace.png");
         }
       }
     }

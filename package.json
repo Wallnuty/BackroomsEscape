@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "vite build && cp -r public/* dist/ || xcopy public\\* dist\\ /E /I"
   }
 }

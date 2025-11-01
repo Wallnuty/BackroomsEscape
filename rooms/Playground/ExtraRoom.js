@@ -89,7 +89,7 @@ export class ExtraRoom {
 
     // Floor
     const floorMat = new THREE.MeshStandardMaterial({
-      map: loader.load("textures/floor/grey_floor.jpg"),
+      map: loader.load("./textures/floor/grey_floor.jpg"),
       //normalMap: loader.load("textures/floor/floor_normalgl.png"),
       //roughnessMap: loader.load("textures/floor/floor_roughness.png"),
     });
@@ -103,9 +103,9 @@ export class ExtraRoom {
 
     // Ceiling
     const ceilMat = new THREE.MeshStandardMaterial({
-      map: loader.load("textures/ceiling/ceiling_basecolor.png"),
-      normalMap: loader.load("textures/ceiling/ceiling_normalgl.png"),
-      roughnessMap: loader.load("textures/ceiling/ceiling_roughness.png"),
+      map: loader.load("./textures/ceiling/ceiling_basecolor.png"),
+      normalMap: loader.load("./textures/ceiling/ceiling_normalgl.png"),
+      roughnessMap: loader.load("./textures/ceiling/ceiling_roughness.png"),
     });
     addWallSegment(
       new THREE.PlaneGeometry(this.width, t, this.depth),
@@ -119,24 +119,24 @@ export class ExtraRoom {
     const wallNames = ["back", "right", "front", "left"];
     const wallTextures = [
       {
-        base: "textures/walls/eerie_wall.jpg",
+        base: "./textures/walls/eerie_wall.jpg",
         //normal: "textures/walls/wall1_normalgl.png",
         //rough: "textures/walls/wall1_roughness.png",
       },
       {
-        base: "textures/walls/eerie_wall.jpg",
-        normal: "textures/walls/wall2_normalgl.png",
-        rough: "textures/walls/wall2_roughness.png",
+        base: "./textures/walls/eerie_wall.jpg",
+        normal: "./textures/walls/wall2_normalgl.png",
+        rough: "./textures/walls/wall2_roughness.png",
       },
       {
-        base: "textures/walls/eerie_wall.jpg",
-        normal: "textures/walls/wall3_normalgl.png",
-        rough: "textures/walls/wall3_roughness.png",
+        base: "./textures/walls/eerie_wall.jpg",
+        normal: "./textures/walls/wall3_normalgl.png",
+        rough: "./textures/walls/wall3_roughness.png",
       },
       {
-        base: "textures/walls/eerie_wall.jpg",
-        normal: "textures/walls/wall4_normalgl.png",
-        rough: "textures/walls/wall4_roughness.png",
+        base: "./textures/walls/eerie_wall.jpg",
+        normal: "./textures/walls/wall4_normalgl.png",
+        rough: "./textures/walls/wall4_roughness.png",
       },
     ];
 

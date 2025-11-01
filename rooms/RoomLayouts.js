@@ -56,28 +56,28 @@ export const RoomLayouts = {
     ],
     models: [
       {
-        path: "/models/whiteboard.glb",
+        path: "./models/whiteboard.glb",
         position: new THREE.Vector3(3, -0.7, 14),
         scale: new THREE.Vector3(1, 1, 1),
         rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
         interactionDistance: 4,
       },
       {
-        path: "/models/note.glb",
+        path: "./models/note.glb",
         position: new THREE.Vector3(9.65, -0.2, 12),
         scale: new THREE.Vector3(10, 10, 10),
         rotation: new THREE.Vector3(Math.PI / 2, 0, Math.PI / 2),
         interactable: false,
       },
       {
-        path: "/models/note2.glb",
+        path: "./models/note2.glb",
         position: new THREE.Vector3(9.65, -0.6, 14),
         scale: new THREE.Vector3(10, 10, 10),
         rotation: new THREE.Vector3(Math.PI / 2, 0, Math.PI / 2),
         interactable: false,
       },
       {
-        path: "/models/marks.glb",
+        path: "./models/marks.glb",
         position: new THREE.Vector3(4, -0.6, 14.75),
         scale: new THREE.Vector3(0.7, 0.7, 0.7),
         rotation: new THREE.Vector3(0, Math.PI / 2, 0),
@@ -138,7 +138,7 @@ export const RoomLayouts = {
       //     interactable: false
       // },
       {
-        path: "/models/marker.glb",
+        path: "./models/marker.glb",
         position: new THREE.Vector3(-1, -2.45, 5.2),
         scale: new THREE.Vector3(0.6, 0.6, 0.6),
         rotation: new THREE.Vector3(0, 0, 0),
@@ -236,7 +236,7 @@ export const RoomLayouts = {
     // Add ballpit configuration
     models: [
       {
-        path: "/models/redSlide.glb",
+        path: "./models/redSlide.glb",
         position: new THREE.Vector3(1, 0, 3),
         scale: new THREE.Vector3(1.5, 1.5, 1.5),
         rotation: new THREE.Vector3(0, 0, 0),

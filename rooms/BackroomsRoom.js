@@ -18,13 +18,13 @@ export class BackroomsRoom extends BaseRoom {
 
         const textureLoader = new THREE.TextureLoader();
 
-        const wallTexture = textureLoader.load('/textures/walls/backroomsTexture.png');
+        const wallTexture = textureLoader.load('./textures/walls/backroomsTexture.png');
         wallTexture.encoding = THREE.sRGBEncoding;
         wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
         // We'll set repeat per-wall to handle different sizes
         // wallTexture.repeat.set(this.width / 4, this.height / 6);
 
-        const ceilingTexture = textureLoader.load('/textures/ceiling/backroomsTiles.jpg');
+        const ceilingTexture = textureLoader.load('./textures/ceiling/backroomsTiles.jpg');
         ceilingTexture.wrapS = ceilingTexture.wrapT = THREE.RepeatWrapping;
         ceilingTexture.repeat.set(this.width / 2, this.depth / 2);
 

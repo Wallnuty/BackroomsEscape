@@ -56,9 +56,9 @@ export class PlaygroundRoom {
 
     // FLOOR
     const floorMaterial = new THREE.MeshStandardMaterial({
-      map: loader.load("textures/floor/floor_basecolor.jpg"),
-      normalMap: loader.load("textures/floor/floor_normalgl.png"),
-      roughnessMap: loader.load("textures/floor/floor_roughness.png"),
+      map: loader.load("./textures/floor/floor_basecolor.jpg"),
+      normalMap: loader.load("./textures/floor/floor_normalgl.png"),
+      roughnessMap: loader.load("./textures/floor/floor_roughness.png"),
     });
     const floorGeo = new THREE.PlaneGeometry(this.width, this.depth);
     const floor = new THREE.Mesh(floorGeo, floorMaterial);
@@ -68,9 +68,9 @@ export class PlaygroundRoom {
 
     // CEILING
     const ceilingMaterial = new THREE.MeshStandardMaterial({
-      map: loader.load("textures/ceiling/ceiling_basecolor.png"),
-      normalMap: loader.load("textures/ceiling/ceiling_normalgl.png"),
-      roughnessMap: loader.load("textures/ceiling/ceiling_roughness.png"),
+      map: loader.load("./textures/ceiling/ceiling_basecolor.png"),
+      normalMap: loader.load("./textures/ceiling/ceiling_normalgl.png"),
+      roughnessMap: loader.load("./textures/ceiling/ceiling_roughness.png"),
     });
     const ceilingGeo = new THREE.PlaneGeometry(this.width, this.depth);
     const ceiling = new THREE.Mesh(ceilingGeo, ceilingMaterial);
@@ -81,34 +81,34 @@ export class PlaygroundRoom {
     // WALLS
     const wallPaths = [
       {
-        base: "textures/walls/wall1_basecolor.png",
-        normal: "textures/walls/wall1_normalgl.png",
-        rough: "textures/walls/wall1_roughness.png",
+        base: "./textures/walls/wall1_basecolor.png",
+        normal: "./textures/walls/wall1_normalgl.png",
+        rough: "./textures/walls/wall1_roughness.png",
       },
       {
-        base: "textures/walls/wall2_basecolor.png",
-        normal: "textures/walls/wall2_normalgl.png",
-        rough: "textures/walls/wall2_roughness.png",
+        base: "./textures/walls/wall2_basecolor.png",
+        normal: "./textures/walls/wall2_normalgl.png",
+        rough: "./textures/walls/wall2_roughness.png",
       },
       {
-        base: "textures/walls/wall3_basecolor.png",
-        normal: "textures/walls/wall3_normalgl.png",
-        rough: "textures/walls/wall3_roughness.png",
+        base: "./textures/walls/wall3_basecolor.png",
+        normal: "./textures/walls/wall3_normalgl.png",
+        rough: "./textures/walls/wall3_roughness.png",
       },
       {
-        base: "textures/walls/wall4_basecolor.png",
-        normal: "textures/walls/wall4_normalgl.png",
-        rough: "textures/walls/wall4_roughness.png",
+        base: "./textures/walls/wall4_basecolor.png",
+        normal: "./textures/walls/wall4_normalgl.png",
+        rough: "./textures/walls/wall4_roughness.png",
       },
     ];
 
     const wallNames = ["back", "right", "front", "left"];
 
     const kidDrawings = [
-      loader.load("textures/walls/PuzzleHintMerry-go-round.png"),
-      loader.load("textures/walls/PuzzleHintSlide.png"),
-      loader.load("textures/walls/PuzzleHintTrampoline.png"),
-      loader.load("textures/walls/PuzzleHintSwing.png")
+      loader.load("./textures/walls/PuzzleHintMerry-go-round.png"),
+      loader.load("./textures/walls/PuzzleHintSlide.png"),
+      loader.load("./textures/walls/PuzzleHintTrampoline.png"),
+      loader.load("./textures/walls/PuzzleHintSwing.png")
     ];
 
     // Keep track of all wall meshes to overlay drawings after creation
@@ -350,8 +350,8 @@ _loadModels() {
       // --- Interaction setup ---
       obj.userData.isInteractableModel = true;
       obj.userData.modelPath = modelData.type || modelData.path;
-      obj.userData.correctSound = modelData.correctSound || "/audio/sfx/child_laugh.mp3";
-      obj.userData.incorrectSound = modelData.incorrectSound || "/audio/sfx/see_saw.mp3";
+      obj.userData.correctSound = modelData.correctSound || "./audio/sfx/child_laugh.mp3";
+      obj.userData.incorrectSound = modelData.incorrectSound || "./audio/sfx/see_saw.mp3";
 
       if (this.modelInteractionManager) {
         this.modelInteractionManager.attachPositionalAudioToModel(obj, obj.userData.correctSound);
@@ -365,8 +365,8 @@ _loadModels() {
                 child.userData.isInteractableModel = true;
                 child.userData.modelPath = modelData.type || modelData.path;
                 if (modelData.code !== undefined) child.userData.code = modelData.code;
-                child.userData.correctSound = modelData.correctSound || "/audio/sfx/child_laugh.mp3";
-                child.userData.incorrectSound = modelData.incorrectSound || "audio/sfx/see_saw.mp3";
+                child.userData.correctSound = modelData.correctSound || "./audio/sfx/child_laugh.mp3";
+                child.userData.incorrectSound = modelData.incorrectSound || "./audio/sfx/see_saw.mp3";
                 // Pre-attach positional audio for both sounds
                 this.modelInteractionManager.attachPositionalAudioToModel(
                     obj,
