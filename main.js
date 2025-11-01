@@ -1,8 +1,12 @@
 import * as THREE from "three";
+import * as CANNON from "cannon-es";
+import { RoomManager } from "./rooms/RoomManager.js";
 import { createPhysicsWorld } from "./physics/world.js";
 import { createPlayer } from "./physics/player.js";
 import { createFirstPersonControls } from "./controls.js";
+import { PickupLightsManager } from "./puzzles/lights.js";
 import { requestPointerLock } from "./controls.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 class BackroomsGame {
   constructor() {
@@ -299,7 +303,6 @@ class BackroomsGame {
         "✅ Pointer lock controls connected to ModelInteractionManager"
       );
     }
-
   }
 
   setupControls() {
@@ -371,6 +374,9 @@ class BackroomsGame {
           0x00ffff,
           0.8
         );
+          if (event.code === "F2") {
+    this.teleportToPoolrooms();
+  }
     });
 
     document
@@ -495,8 +501,10 @@ class BackroomsGame {
     // Sync camera
     this.syncCamera();
 
-      this.syncCamera();
-      this.camera.rotation.set(0, 0, 0);
+    // Reset camera rotation to face forward
+    this.camera.rotation.set(0, 0, 0);
+
+    console.log("Player position reset to origin");
   }
 
   resetGameState() {
@@ -569,19 +577,19 @@ class BackroomsGame {
     console.log(`Cleared ${objectsToRemove.length} objects from scene`);
   }
 
-    animate() {
-      if (!this.isGameRunning) return;
+  animate() {
+    if (!this.isGameRunning) return;
 
-      const delta = this.clock.getDelta();
+    const delta = this.clock.getDelta();
 
-      if (!this.isPaused) {
-          this.world.step(1 / 60, delta, 3);
+    if (!this.isPaused) {
+      this.world.step(1 / 60, delta, 3);
 
-          // Only update FP controls if active camera is FP
-          if (this.activeCameraIndex === 0) {
-              this.controls?.update(delta);
-              this.syncCamera?.();
-          }
+      // Only update FP controls if active camera is FP
+      if (this.activeCameraIndex === 0) {
+        this.controls?.update(delta);
+        this.syncCamera?.();
+      }
 
       if (this.roomManager?.lightsManager) {
         this.roomManager.lightsManager.updateHeldLight();
@@ -609,10 +617,7 @@ class BackroomsGame {
         this.camera.lookAt(playerPos.x, playerPos.y + 1, playerPos.z);
       }
 
-          // Make sure puzzle system is updating
-          if (this.roomManager?.colorPuzzleManager) {
-              this.roomManager.colorPuzzleManager.update();
-          }
+      const crosshair = document.getElementById("crosshair");
 
       if (this.activeCameraIndex === 0) {
         // First-person: show crosshair normally
@@ -621,44 +626,156 @@ class BackroomsGame {
           const isHovering =
             this.roomManager?.modelInteractionManager?.checkInteractableHover();
 
-          // ... rest of your animate method
-      }
-
-      this.renderer.render(this.scene, this.camera);
-      requestAnimationFrame(() => this.animate());
-  }
-}
-    }
-
-    handleResize()  {
-      if (!this.camera || !this.renderer) return;
-
-      this.camera.aspect = window.innerWidth / window.innerHeight;
-      this.camera.updateProjectionMatrix();
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    cleanup() {
-      this.blinkTimeouts.forEach((id) => clearTimeout(id));
-      this.blinkTimeouts = [];
-      this.isGameRunning = false;
-
-      if (this.footstepInterval) clearInterval(this.footstepInterval);
-      this.renderer?.dispose();
-
-      this.scene?.traverse((object) => {
-        if (object.geometry) object.geometry.dispose();
-        if (object.material) {
-          if (Array.isArray(object.material)) {
-            object.material.forEach((mat) => mat.dispose());
+          if (isHovering) {
+            crosshair.classList.add("hovering");
           } else {
-            object.material.dispose();
+            crosshair.classList.remove("hovering");
           }
+        } else {
+          crosshair.classList.remove("hovering");
         }
+        crosshair.style.display = "block";
+      } else {
+        crosshair.style.display = "none";
+      }
+      if (this.playerMarker) {
+        this.playerMarker.position.copy(this.playerBody.position);
+        this.playerMarker.position.y += 0.5;
+        this.playerMarker.visible = this.activeCameraIndex !== 0;
+      }
+    }
+
+    this.renderer.render(this.scene, this.camera);
+    requestAnimationFrame(() => this.animate());
+  }
+
+  handleResize() {
+    if (!this.camera || !this.renderer) return;
+
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  cleanup() {
+    this.blinkTimeouts.forEach((id) => clearTimeout(id));
+    this.blinkTimeouts = [];
+    this.isGameRunning = false;
+
+    if (this.footstepInterval) clearInterval(this.footstepInterval);
+    this.renderer?.dispose();
+
+    this.scene?.traverse((object) => {
+      if (object.geometry) object.geometry.dispose();
+      if (object.material) {
+        if (Array.isArray(object.material)) {
+          object.material.forEach((mat) => mat.dispose());
+        } else {
+          object.material.dispose();
+        }
+      }
+    });
+  }
+
+  teleportToPoolrooms() {
+    console.log("Teleporting to Poolrooms...");
+
+    // Fade to black effect for transition
+    this.createResetEffect();
+
+    // Teleport after fade effect
+    setTimeout(() => {
+      this.performPoolroomsTeleport();
+    }, 1500);
+  }
+
+  performPoolroomsTeleport() {
+    console.log("Performing Poolrooms teleport...");
+
+    // 1. Clear the current scene
+    this.clearScene();
+
+    // 2. Reset player position to Poolrooms spawn
+    this.playerBody.position.set(-10, 2.8, 0); // Adjust spawn position as needed
+    this.playerBody.velocity.set(0, 0, 0);
+    this.playerBody.angularVelocity.set(0, 0, 0);
+
+    // 3. Sync camera
+    this.syncCamera();
+    this.camera.rotation.set(0, 0, 0);
+
+    // 4. Destroy old RoomManager and create a new one
+    this.destroyRoomManager();
+    this.setupRoomManager();
+
+    // 5. Load Poolrooms specifically
+    if (this.roomManager) {
+      // Force load the Poolrooms
+      this.forceLoadPoolrooms();
+    }
+
+    // 6. Reset game state
+    this.resetGameState();
+
+    console.log("Poolrooms teleport complete!");
+  }
+
+  forceLoadPoolrooms() {
+    // Import the PoolRoomManager dynamically
+    import('./rooms/poolRoom/PoolRoomManager.js')
+      .then((module) => {
+        const PoolRoomManager = module.PoolRoomManager || module.default;
+        
+        // Clear the current scene first
+        this.clearScene();
+
+        // Create a PoolRoomManager instance
+        const poolRoomManager = new PoolRoomManager(this.scene, this.world, this.camera, {
+          body: this.playerBody,
+          syncCamera: this.syncCamera
+        });
+
+        // Replace the current room manager with the pool room manager
+        this.roomManager = poolRoomManager;
+
+        // Load the pool room
+        poolRoomManager.loadRoom();
+
+        // Reset player position for poolrooms
+        this.playerBody.position.set(-1, -1, 0);
+        this.playerBody.velocity.set(0, 0, 0);
+        this.syncCamera();
+
+        console.log("PoolRoomManager loaded successfully");
+
+        // Disable the Backrooms-specific systems that conflict
+        this.disableBackroomsSystems();
+      })
+      .catch((error) => {
+        console.error("Failed to load PoolRoomManager:", error);
       });
+  }
+
+  disableBackroomsSystems() {
+    // Disable any systems that might conflict with Poolrooms
+    if (this.roomManager?.lightsManager) {
+      this.roomManager.lightsManager.enabled = false;
+    }
+    
+    // Disable model interactions if they conflict
+    if (this.roomManager?.modelInteractionManager) {
+      this.roomManager.modelInteractionManager.enabled = false;
+    }
+    
+    // Clear any pending room updates from the old system
+    if (this.roomManager?.pendingRoomUpdate) {
+      clearTimeout(this.roomManager.pendingRoomUpdate);
+      this.roomManager.pendingRoomUpdate = null;
     }
   }
+
+
+}
 
 const game = new BackroomsGame();
 window.BackroomsGame = game;
-export { BackroomsGame };
