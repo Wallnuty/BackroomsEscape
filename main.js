@@ -1,12 +1,8 @@
 import * as THREE from "three";
-import * as CANNON from "cannon-es";
-import { PoolRoomManager } from "./rooms/poolRoom/PoolRoomManager.js";
 import { createPhysicsWorld } from "./physics/world.js";
 import { createPlayer } from "./physics/player.js";
 import { createFirstPersonControls } from "./controls.js";
-import { PickupLightsManager } from "./puzzles/lights.js";
 import { requestPointerLock } from "./controls.js";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 class BackroomsGame {
   constructor() {
@@ -631,8 +627,10 @@ class BackroomsGame {
       this.renderer.render(this.scene, this.camera);
       requestAnimationFrame(() => this.animate());
   }
+}
+    }
 
-    handleResize() {
+    handleResize()  {
       if (!this.camera || !this.renderer) return;
 
       this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -663,3 +661,4 @@ class BackroomsGame {
 
 const game = new BackroomsGame();
 window.BackroomsGame = game;
+export { BackroomsGame };
