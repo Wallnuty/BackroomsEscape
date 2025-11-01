@@ -134,17 +134,17 @@ export class SignInRoom {
       },
       {
         base: "textures/walls/SignInWall_basecolor.png",
-        normal: "textures/walls/SignInWall_normalgl.png",
+        normal: "textures/walls/SignInWall_normalGL.png",
         rough: "textures/walls/SignInWall_roughness.png",
       },
       {
         base: "textures/walls/SignInWall_basecolor.png",
-        normal: "textures/walls/SignInWall_normalgl.png",
+        normal: "textures/walls/SignInWall_normalGL.png",
         rough: "textures/walls/SignInWall_roughness.png",
       },
       {
         base: "textures/walls/SignInWall_basecolor.png",
-        normal: "textures/walls/SignInWall_normalgl.png",
+        normal: "textures/walls/SignInWall_normalGL.png",
         rough: "textures/walls/SignInWall_roughness.png",
       },
     ];
