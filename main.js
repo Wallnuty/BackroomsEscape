@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import * as CANNON from "cannon-es";
-import { RoomManager } from "./rooms/RoomManager.js";
+import { PoolRoomManager } from "./rooms/poolRoom/PoolRoomManager.js";
 import { createPhysicsWorld } from "./physics/world.js";
 import { createPlayer } from "./physics/player.js";
 import { createFirstPersonControls } from "./controls.js";
@@ -303,6 +303,7 @@ class BackroomsGame {
         "✅ Pointer lock controls connected to ModelInteractionManager"
       );
     }
+
   }
 
   setupControls() {
@@ -498,10 +499,8 @@ class BackroomsGame {
     // Sync camera
     this.syncCamera();
 
-    // Reset camera rotation to face forward
-    this.camera.rotation.set(0, 0, 0);
-
-    console.log("Player position reset to origin");
+      this.syncCamera();
+      this.camera.rotation.set(0, 0, 0);
   }
 
   resetGameState() {
@@ -574,19 +573,19 @@ class BackroomsGame {
     console.log(`Cleared ${objectsToRemove.length} objects from scene`);
   }
 
-  animate() {
-    if (!this.isGameRunning) return;
+    animate() {
+      if (!this.isGameRunning) return;
 
-    const delta = this.clock.getDelta();
+      const delta = this.clock.getDelta();
 
-    if (!this.isPaused) {
-      this.world.step(1 / 60, delta, 3);
+      if (!this.isPaused) {
+          this.world.step(1 / 60, delta, 3);
 
-      // Only update FP controls if active camera is FP
-      if (this.activeCameraIndex === 0) {
-        this.controls?.update(delta);
-        this.syncCamera?.();
-      }
+          // Only update FP controls if active camera is FP
+          if (this.activeCameraIndex === 0) {
+              this.controls?.update(delta);
+              this.syncCamera?.();
+          }
 
       if (this.roomManager?.lightsManager) {
         this.roomManager.lightsManager.updateHeldLight();
@@ -614,7 +613,10 @@ class BackroomsGame {
         this.camera.lookAt(playerPos.x, playerPos.y + 1, playerPos.z);
       }
 
-      const crosshair = document.getElementById("crosshair");
+          // Make sure puzzle system is updating
+          if (this.roomManager?.colorPuzzleManager) {
+              this.roomManager.colorPuzzleManager.update();
+          }
 
       if (this.activeCameraIndex === 0) {
         // First-person: show crosshair normally
@@ -623,57 +625,41 @@ class BackroomsGame {
           const isHovering =
             this.roomManager?.modelInteractionManager?.checkInteractableHover();
 
-          if (isHovering) {
-            crosshair.classList.add("hovering");
-          } else {
-            crosshair.classList.remove("hovering");
-          }
-        } else {
-          crosshair.classList.remove("hovering");
-        }
-        crosshair.style.display = "block";
-      } else {
-        crosshair.style.display = "none";
+          // ... rest of your animate method
       }
-      if (this.playerMarker) {
-        this.playerMarker.position.copy(this.playerBody.position);
-        this.playerMarker.position.y += 0.5;
-        this.playerMarker.visible = this.activeCameraIndex !== 0;
-      }
+
+      this.renderer.render(this.scene, this.camera);
+      requestAnimationFrame(() => this.animate());
+  }
+
+    handleResize() {
+      if (!this.camera || !this.renderer) return;
+
+      this.camera.aspect = window.innerWidth / window.innerHeight;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    this.renderer.render(this.scene, this.camera);
-    requestAnimationFrame(() => this.animate());
-  }
+    cleanup() {
+      this.blinkTimeouts.forEach((id) => clearTimeout(id));
+      this.blinkTimeouts = [];
+      this.isGameRunning = false;
 
-  handleResize() {
-    if (!this.camera || !this.renderer) return;
+      if (this.footstepInterval) clearInterval(this.footstepInterval);
+      this.renderer?.dispose();
 
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-  }
-
-  cleanup() {
-    this.blinkTimeouts.forEach((id) => clearTimeout(id));
-    this.blinkTimeouts = [];
-    this.isGameRunning = false;
-
-    if (this.footstepInterval) clearInterval(this.footstepInterval);
-    this.renderer?.dispose();
-
-    this.scene?.traverse((object) => {
-      if (object.geometry) object.geometry.dispose();
-      if (object.material) {
-        if (Array.isArray(object.material)) {
-          object.material.forEach((mat) => mat.dispose());
-        } else {
-          object.material.dispose();
+      this.scene?.traverse((object) => {
+        if (object.geometry) object.geometry.dispose();
+        if (object.material) {
+          if (Array.isArray(object.material)) {
+            object.material.forEach((mat) => mat.dispose());
+          } else {
+            object.material.dispose();
+          }
         }
-      }
-    });
+      });
+    }
   }
-}
 
 const game = new BackroomsGame();
 window.BackroomsGame = game;

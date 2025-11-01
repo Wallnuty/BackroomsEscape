@@ -127,21 +127,7 @@ export class PickupLightsManager {
             }
         ];
 
-        // Create visual indicators for puzzle targets
-        // **purple orbs**
-        // this.puzzleTargets.forEach((target, index) => {
-        //     const geometry = new THREE.SphereGeometry(0.3, 16, 16);
-        //     const material = new THREE.MeshBasicMaterial({
-        //         color: 0x333333,
-        //         transparent: true,
-        //         opacity: 0.8
-        //     });
-        //     const indicator = new THREE.Mesh(geometry, material);
-        //     indicator.position.copy(target.position);
-        //     this.scene.add(indicator);
 
-        //     target.indicator = indicator;
-        // });
     }
 
     checkPuzzles() {
