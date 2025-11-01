@@ -108,7 +108,7 @@ export class ExtraRoom {
       roughnessMap: loader.load("textures/ceiling/ceiling_roughness.png"),
     });
     addWallSegment(
-      new THREE.BoxGeometry(this.width, t, this.depth),
+      new THREE.PlaneGeometry(this.width, t, this.depth),
       0,
       halfH + t / 2,
       0,

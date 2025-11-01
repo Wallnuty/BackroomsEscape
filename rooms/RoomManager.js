@@ -108,7 +108,6 @@ export class RoomManager {
         connections,
         corridorWidth
       );
-      this.ambient.intensity = 0.2;
     } else if (layoutName === "extra") {
       const connections = { right: "Playground" }; // tell the room to leave the right wall open
       const corridorWidth = 8; // match your hallway width
@@ -132,7 +131,6 @@ export class RoomManager {
         connections,
         corridorWidth
       );
-      this.ambient.intensity = 0.1;
       room.modelInteractionManager = this.modelInteractionManager;
     } else {
       // Default to BackroomsRoom for generic layouts (main, secondary, etc.)
@@ -255,13 +253,10 @@ export class RoomManager {
     this.scene.add(floorMesh);
 
     // --- Ceiling (NEW) ---
-    const ceilingGeo = new THREE.BoxGeometry(distance, 0.2, width);
+    const ceilingGeo = new THREE.PlaneGeometry(distance, width);
     const ceilingMesh = new THREE.Mesh(ceilingGeo, floorMat);
-    ceilingMesh.position.set(
-      midpoint.x,
-      midpoint.y + height / 2 - 0.1,
-      midpoint.z
-    );
+    ceilingMesh.position.set(midpoint.x, midpoint.y + height / 2, midpoint.z);
+    ceilingMesh.rotation.x = -Math.PI / 2;  // face downward
     ceilingMesh.rotation.y = -angleY;
     this.scene.add(ceilingMesh);
 
