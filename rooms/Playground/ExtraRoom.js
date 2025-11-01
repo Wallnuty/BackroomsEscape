@@ -120,8 +120,8 @@ export class ExtraRoom {
     const wallTextures = [
       {
         base: "./textures/walls/eerie_wall.jpg",
-        //normal: "textures/walls/wall1_normalgl.png",
-        //rough: "textures/walls/wall1_roughness.png",
+        normal: "./textures/walls/wall1_normalgl.png",
+        rough: "./textures/walls/wall1_roughness.png",
       },
       {
         base: "./textures/walls/eerie_wall.jpg",
