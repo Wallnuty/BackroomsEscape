@@ -175,7 +175,7 @@ class BackroomsGame {
     // Existing footstep audio
     this.footstepBuffer = null;
     const audioLoader = new THREE.AudioLoader();
-    audioLoader.load("/audio/sfx/carpetCreak.mp3", (buffer) => {
+    audioLoader.load("./audio/sfx/carpetCreak.mp3", (buffer) => {
       this.footstepBuffer = buffer;
     });
 
@@ -189,7 +189,7 @@ class BackroomsGame {
     const audio = new THREE.Audio(listener);
     const audioLoader = new THREE.AudioLoader();
 
-    audioLoader.load("/audio/music/NotAHuman.mp3", (buffer) => {
+    audioLoader.load("./audio/music/NotAHuman.mp3", (buffer) => {
       audio.setBuffer(buffer);
       audio.setLoop(true);
       audio.setVolume(0); // Start at volume 0 for fade in

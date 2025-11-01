@@ -28,7 +28,7 @@ export class BackroomsRoom extends BaseRoom {
         ceilingTexture.wrapS = ceilingTexture.wrapT = THREE.RepeatWrapping;
         ceilingTexture.repeat.set(this.width / 2, this.depth / 2);
 
-        const floorTexture = textureLoader.load('/textures/floor/carpet.jpg');
+        const floorTexture = textureLoader.load('./textures/floor/carpet.jpg');
         floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
         floorTexture.repeat.set(this.width / 4, this.depth / 4);
 
