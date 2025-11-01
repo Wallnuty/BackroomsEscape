@@ -113,14 +113,15 @@ export class SignInRoom {
     this.group.add(floor);
 
     // Ceiling
-    const ceilMat = new THREE.MeshStandardMaterial({
+    const ceilingMaterial = new THREE.MeshStandardMaterial({
       map: loader.load("textures/ceiling/ceiling_basecolor.png"),
       normalMap: loader.load("textures/ceiling/ceiling_normalgl.png"),
       roughnessMap: loader.load("textures/ceiling/ceiling_roughness.png"),
     });
-    const ceilGeo = new THREE.BoxGeometry(this.width, t, this.depth);
-    const ceiling = new THREE.Mesh(ceilGeo, ceilMat);
-    ceiling.position.set(0, halfH + t / 2, 0);
+    const ceilingGeo = new THREE.PlaneGeometry(this.width, this.depth);
+    const ceiling = new THREE.Mesh(ceilingGeo, ceilingMaterial);
+    ceiling.rotation.x = Math.PI / 2;
+    ceiling.position.y = halfH;
     this.group.add(ceiling);
 
     // Walls helper
@@ -128,7 +129,7 @@ export class SignInRoom {
     const wallTextures = [
       {
         base: "textures/walls/SignInWall_basecolor.png",
-        normal: "textures/walls/SignInWall_normalgl.png",
+        normal: "textures/walls/SignInWall_normalGL.png",
         rough: "textures/walls/SignInWall_roughness.png",
       },
       {
