@@ -163,13 +163,7 @@ export class ColorSensor {
             console.log(`   📏 Distance: ${distance.toFixed(1)}m (radius: ${this.detectionRadius}m)`);
             if (lightObject) {
                 const isPointing = this.isInSpotlightCone(lightObject, lightPosition);
-                console.log(`   🎯 In spotlight cone: ${isPointing}`);
             }
-            console.log(`   🎨 Color Distance: ${colorDistance.toFixed(3)}`);
-            console.log(`   🎯 Target: R=${this.targetColor.r.toFixed(3)}, G=${this.targetColor.g.toFixed(3)}, B=${this.targetColor.b.toFixed(3)}`);
-            console.log(`   💡 Received: R=${lightColor.r.toFixed(3)}, G=${lightColor.g.toFixed(3)}, B=${lightColor.b.toFixed(3)}`);
-            console.log(`   ✅ Correct: ${isCorrect}`);
-            console.log(`---`);
         }
         
         return isCorrect;

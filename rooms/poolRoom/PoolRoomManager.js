@@ -6,7 +6,6 @@ import { PoolRoomLayouts } from './PoolRoomLayouts.js';
 import { PickupLightsManager } from '../../puzzles/lights.js';
 import { ModelInteractionManager } from '../../puzzles/modelInteraction.js';
 import { ColorPuzzleManager } from './ColorPuzzleManager.js';
-import { PuzzleDebugHelper } from './PuzzleDebugHelper.js';
 
 export class PoolRoomManager {
     constructor(scene, world, camera) {
@@ -33,7 +32,7 @@ export class PoolRoomManager {
         this.colorPuzzleManager = new ColorPuzzleManager(this.scene, this.lightsManager, this.world);
 
         // DEBUG: Add debug helper
-        this.debugHelper = new PuzzleDebugHelper(this.scene);
+
 
         this.lastZone = null;
         this.pendingRoomUpdate = null;
@@ -41,7 +40,6 @@ export class PoolRoomManager {
         this.renderZonesDisabled = false;
 
         // Setup puzzle-specific lights
-        this.setupPuzzleLights();
 
         console.log("PoolRoomManager initialized with puzzle system");
     }

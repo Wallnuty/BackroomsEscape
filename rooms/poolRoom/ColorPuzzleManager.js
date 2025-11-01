@@ -29,12 +29,11 @@ export class ColorPuzzleManager {
     initPuzzle() {
         this.createPuzzleDoors();
         this.createColorSensors();
-        this.setupInitialLights();
 
     
-        this.spawnLightInRoom('red', new THREE.Vector3(18, 0, -8));
-        this.spawnLightInRoom('blue', new THREE.Vector3(-55, 0, -8));
-        this.spawnLightInRoom('green', new THREE.Vector3(15, 0, -16));
+        this.spawnLightInRoom('red', new THREE.Vector3(18, 0, -8), new THREE.Vector3(-100, 1.5, -15));
+        this.spawnLightInRoom('blue', new THREE.Vector3(-55, 0, -8), new THREE.Vector3(-58, 0, 0.2));
+        this.spawnLightInRoom('green', new THREE.Vector3(15, 0, -16), new THREE.Vector3(-18, 0, -19.8));
 
     }
 
@@ -116,32 +115,7 @@ export class ColorPuzzleManager {
         console.log("🔦 Color sensors created with directional detection");
     }
 
-    setupInitialLights() {
-        // Create initial red light
-        const redLightConfig = {
-            position: new THREE.Vector3(2, 1, -12),
-            color: 0xff0000
-        };
 
-        const light = createPickupLight(redLightConfig.color, {
-            type: 'spot',
-            intensity: 12,
-            distance: 100
-        });
-
-        light.group.position.copy(redLightConfig.position);
-        light.group.name = 'red_light_main';
-
-        this.scene.add(light.group);
-        this.lightsManager.pickableRoots.push(light.group);
-        this.lightsManager.colorMixingManager.addLight(light.group);
-
-        // Point the red light toward the demo sensor
-        const demoSensorPos = new THREE.Vector3(0, 1.5, -15);
-        light.group.lookAt(demoSensorPos);
-
-        console.log("💡 Initial red light created and pointed at demo sensor");
-    }
 
     checkSensors() {
         this.frameCount++;
@@ -327,8 +301,7 @@ export class ColorPuzzleManager {
         
         console.log(`🎉 SENSOR ${sensor.id} SOLUTION COMPLETE\n`);
     }
-
-    spawnLightInRoom(color, position) {
+    spawnLightInRoom(color, position, targetPosition = null) {
         const colorConfigs = {
             'blue': { 
                 color: 0x0000ff, 
@@ -353,6 +326,26 @@ export class ColorPuzzleManager {
             light.group.position.copy(position);
             light.group.name = config.name;
 
+            // ✅ FIXED ROTATION FOR RED LIGHT
+            if (color === 'red') {
+                console.log(`🧭 Adjusting red light rotation to face purple sensor`);
+                
+                // Try different rotation values to find the correct one:
+                
+                // Option 1: Face positive Z direction (opposite of before)
+                light.group.rotation.y = 0; // Reset to 0 degrees
+                
+                // Option 2: If that doesn't work, try 90 degrees
+                // light.group.rotation.y = Math.PI / 2;
+                
+                // Option 3: Or -90 degrees  
+                // light.group.rotation.y = -Math.PI / 2;
+                
+                console.log(`   Light position:`, position);
+                console.log(`   Purple sensor position: (18, 0, -11.8)`);
+                console.log(`   Set rotation.y to: ${light.group.rotation.y} radians`);
+            }
+
             this.scene.add(light.group);
             this.lightsManager.pickableRoots.push(light.group);
             this.lightsManager.colorMixingManager.addLight(light.group);
@@ -365,7 +358,6 @@ export class ColorPuzzleManager {
         
         return null;
     }
-
     createLightSpawnEffect(position, color) {
         const geometry = new THREE.SphereGeometry(0.8, 16, 16);
         const material = new THREE.MeshBasicMaterial({
