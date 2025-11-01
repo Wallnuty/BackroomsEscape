@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Credits - A Familiar Place</title>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #f5e6d3;
+            font-family: "VT323", monospace;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .credits-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            background: #000;
+        }
+
+        .credits {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            font-size: 2rem;
+            line-height: 2.5rem;
+            letter-spacing: 0.04em;
+            color: #f5e6d3;
+            text-shadow: 0 2px 8px #000a;
+            animation: scrollCredits 40s linear forwards;
+            /* Adjust duration as needed */
+        }
+
+        @keyframes scrollCredits {
+            0% {
+                transform: translateY(100vh);
+            }
+
+            100% {
+                transform: translateY(-100%);
+            }
+        }
+
+        .back-btn {
+            position: fixed;
+            left: 24px;
+            bottom: 24px;
+            z-index: 10;
+            padding: 12px 28px;
+            font-family: "VT323", monospace;
+            font-size: 1.3rem;
+            background: #f5e6d3;
+            color: #2c1810;
+            border: 3px solid #f5e6d3;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
+            transition: background 0.2s, color 0.2s, transform 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #ff0e6a;
+            color: #f5e6d3;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Add audio element for Spectre music -->
+    <audio id="creditsMusic" loop>
+        <source src="/audio/music/Spectre.mp3" type="audio/mpeg" />
+        Your browser does not support the audio element.
+    </audio>
+    <script>
+        // Reusable fade function (like in main.js)
+        function fadeAudioVolume(audio, targetVolume, duration, onComplete) {
+            if (!audio) return;
+            const stepTime = 50;
+            const steps = Math.ceil(duration / stepTime);
+            const startVolume = audio.volume;
+            const volumeStep = (targetVolume - startVolume) / steps;
+            let currentStep = 0;
+
+            if (audio._fadeInterval) clearInterval(audio._fadeInterval);
+
+            audio._fadeInterval = setInterval(() => {
+                currentStep++;
+                let newVolume = audio.volume + volumeStep;
+                // Clamp between 0 and 1
+                newVolume = Math.max(0, Math.min(1, newVolume));
+                audio.volume = newVolume;
+
+                if ((volumeStep > 0 && newVolume >= targetVolume) ||
+                    (volumeStep < 0 && newVolume <= targetVolume) ||
+                    currentStep >= steps) {
+                    audio.volume = targetVolume;
+                    clearInterval(audio._fadeInterval);
+                    audio._fadeInterval = null;
+                    if (onComplete) onComplete();
+                }
+            }, stepTime);
+        }
+
+        function fadeOutPreviousMusic() {
+            try {
+                if (window.opener && window.opener.backgroundMusic) {
+                    const prev = window.opener.backgroundMusic;
+                    prev.muted = false;
+                    fadeAudioVolume(prev, 0, 1000, () => {
+                        prev.pause();
+                        prev.currentTime = 0;
+                    });
+                } else if (window.opener && window.opener.stopStartScreenMusic) {
+                    window.opener.stopStartScreenMusic();
+                }
+            } catch (e) { }
+        }
+
+        function fadeInCreditsMusic() {
+            const creditsMusic = document.getElementById("creditsMusic");
+            if (!creditsMusic) return;
+            creditsMusic.muted = false;
+            creditsMusic.volume = 0;
+            creditsMusic.play().catch(() => { });
+            fadeAudioVolume(creditsMusic, 0.15, 1200);
+        }
+
+        let creditsMusicStarted = false;
+        function startCreditsMusic() {
+            if (creditsMusicStarted) return;
+            creditsMusicStarted = true;
+            fadeOutPreviousMusic();
+            fadeInCreditsMusic();
+            document.removeEventListener("click", startCreditsMusic);
+            document.removeEventListener("keydown", startCreditsMusic);
+        }
+
+        document.addEventListener("click", startCreditsMusic);
+        document.addEventListener("keydown", startCreditsMusic);
+
+        window.addEventListener("load", () => {
+            setTimeout(() => {
+                startCreditsMusic();
+            }, 500);
+        });
+    </script>
+    <div class="credits-container">
+        <div class="credits">
+            <h1>A Familiar Place</h1>
+            <p>Created by<br><b>Sam Sn</b></p>
+            <br>
+            <p>Programming<br><b>Sam Sn</b></p>
+            <br>
+            <p>Level Design<br><b>Sam Sn</b></p>
+            <br>
+            <p>Sound & Music<br>
+                <b>Not A Human</b><br>
+                <b>lastBeginning</b><br>
+                <b>carpetCreak</b>
+            </p>
+            <br>
+            <p>Special Thanks<br>
+                <b>Three.js Community</b><br>
+                <b>Open Source Contributors</b>
+            </p>
+            <br>
+            <p>Inspired by<br>
+                <b>The Backrooms</b>
+            </p>
+            <br>
+            <p>GitHub<br>
+                <a href="https://github.com/Wallnuty/BackroomsEscape" target="_blank"
+                    style="color:#ff0e6a;text-decoration:none;">github.com/Wallnuty/BackroomsEscape</a>
+            </p>
+            <br><br>
+            <p style="font-size:1.2rem;opacity:0.7;">Thank you for playing!</p>
+        </div>
+    </div>
+    <button class="back-btn" onclick="window.location.href='index.html'">&larr; Back</button>
+</body>
+
+</html>
