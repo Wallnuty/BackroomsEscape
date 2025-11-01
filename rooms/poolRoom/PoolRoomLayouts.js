@@ -5,9 +5,9 @@ export const PoolRoomLayouts = {
     //player location is -15, 0, 3
     poolroom: {
         position: new THREE.Vector3(0, 0, 0),
-        width: 150,
+        width: 0,
         height: 10,
-        depth: 150,
+        depth: 0,
         walls: [
             // Outer boundary walls - make sure they form a proper room
             [new THREE.Vector3(-10, 0, 7), new THREE.Vector3(-10, 0, -2), 0.4],  //spawn wall left
@@ -52,15 +52,6 @@ export const PoolRoomLayouts = {
             [0, -6],
             [15, -6],
             [15, -16],           
-        ],
-        zones: [
-            // Main area zones
-            [
-                new THREE.Vector3(-5, 0, -20),
-                new THREE.Vector3(5, 10, -21),
-                'south',
-                new THREE.Vector3(0, 5, -20.5)
-            ]
         ],
         models: []
     }
