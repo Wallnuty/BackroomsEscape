@@ -10,6 +10,7 @@ export class BackroomsRoom extends BaseRoom {
         super(scene, world, width, height, depth, position);
     }
 
+
     /**
      * Overrides the base method to create materials with backrooms textures.
      */
@@ -57,11 +58,17 @@ export class BackroomsRoom extends BaseRoom {
      * Adds a light panel at the specified position
      * @param {number} x - X coordinate relative to room center
      * @param {number} z - Z coordinate relative to room center
+     * @param {boolean} [flicker=false] - Optional flag to request a flickering panel
      */
-    addLightPanel(x, z) {
-        const lightPanel = new LightPanel();
+    addLightPanel(x, z, flicker = false) {
+        const lightPanel = new LightPanel({ flicker });
         lightPanel.setPosition(x, this.height / 2, z);
         this.group.add(lightPanel.group);
+
+        // track panels so they can be cleaned up later
+        this.lightPanels = this.lightPanels || [];
+        this.lightPanels.push(lightPanel);
+
         return lightPanel;
     }
 }
