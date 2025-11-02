@@ -422,7 +422,7 @@ export class ColorPuzzleManager {
         setTimeout(() => {
             this.showCompletionMessage();
         }, 2000);
-
+        
         setTimeout(() => {
             console.log("➡️ Ready for next level...");
         }, 5000);
@@ -445,7 +445,7 @@ export class ColorPuzzleManager {
             text-align: center;
             border: 2px solid gold;
         `;
-        message.innerHTML = '🎉 POOL ROOM PUZZLE COMPLETE! 🎉<br><small>All color mysteries solved!</small>';
+        message.innerHTML = 'You have escaped<br><small>For now</small>';
         document.body.appendChild(message);
         
         setTimeout(() => {
@@ -453,6 +453,11 @@ export class ColorPuzzleManager {
                 document.body.removeChild(message);
             }
         }, 5000);
+
+        setTimeout(() => {
+            location.reload();
+    },   5000);
+        
     }
 
     createCompletionEffect() {

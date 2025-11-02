@@ -53,6 +53,12 @@ export const PoolRoomLayouts = {
             [15, -6],
             [15, -16],           
         ],
-        models: []
+        models: [
+            {
+                path: "./models/damage_door.glb",
+                position: new THREE.Vector3(-15, -5, 6.8),
+                scale: new THREE.Vector3(0.035, 0.035, 0.035),
+                rotation: new THREE.Vector3(0, Math.PI + Math.PI / 2, 0),
+            }]
     }
 };
