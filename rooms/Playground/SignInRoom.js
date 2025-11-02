@@ -129,22 +129,22 @@ export class SignInRoom {
     const wallTextures = [
       {
         base: "./textures/walls/SignInWall_basecolor.png",
-        normal: "./textures/walls/SignInWall_normalGL.png",
+        normal: "./textures/walls/SignInWall_normalgl.png",
         rough: "./textures/walls/SignInWall_roughness.png",
       },
       {
         base: "./textures/walls/SignInWall_basecolor.png",
-        normal: "./textures/walls/SignInWall_normalGL.png",
+        normal: "./textures/walls/SignInWall_normalgl.png",
         rough: "./textures/walls/SignInWall_roughness.png",
       },
       {
         base: "./textures/walls/SignInWall_basecolor.png",
-        normal: "./textures/walls/SignInWall_normalGL.png",
+        normal: "./textures/walls/SignInWall_normalgl.png",
         rough: "./textures/walls/SignInWall_roughness.png",
       },
       {
         base: "./textures/walls/SignInWall_basecolor.png",
-        normal: "./textures/walls/SignInWall_normalGL.png",
+        normal: "./textures/walls/SignInWall_normalgl.png",
         rough: "./textures/walls/SignInWall_roughness.png",
       },
     ];
