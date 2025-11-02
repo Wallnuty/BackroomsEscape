@@ -579,7 +579,6 @@
       transform: scale(1.05);
     }
 
-    /* Remove the old .credits-btn positioning and sizing rules if present */
     /* Fullscreen overlay */
     #pauseMenu {
       position: fixed;
@@ -841,6 +840,73 @@
       color: #f5e6d3;
       transform: scale(1.05);
     }
+
+    /* Credits Overlay */
+    #creditsOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 10002;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .credits {
+      width: 100%;
+      max-width: 600px;
+      text-align: center;
+      font-size: 1.2rem;
+      line-height: 1.7rem;
+      letter-spacing: 0.04em;
+      color: #f5e6d3;
+      text-shadow: 0 2px 8px #000a;
+      animation: scrollCredits 40s linear forwards;
+      margin-top: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2.5rem;
+      color: #ff0e6a;
+      text-shadow: 2px 2px 0 rgba(255, 0, 0, 0.2);
+    }
+
+    /* Add keyframes for scrolling credits */
+    @keyframes scrollCredits {
+      0% {
+        transform: translateY(100vh);
+      }
+
+      100% {
+        transform: translateY(-100%);
+      }
+    }
+
+    #backFromCreditsBtn {
+      position: fixed;
+      left: 24px;
+      bottom: 24px;
+      z-index: 10;
+      padding: 12px 28px;
+      font-family: "VT323", monospace;
+      font-size: 1.3rem;
+      background: #f5e6d3;
+      color: #2c1810;
+      border: 3px solid #f5e6d3;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(245, 230, 211, 0.3);
+      transition: background 0.2s, color 0.2s, transform 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    #backFromCreditsBtn:hover {
+      background: #ff0e6a;
+      color: #f5e6d3;
+      transform: scale(1.05);
+    }
   </style>
 </head>
 
@@ -913,6 +979,211 @@
       </ul>
       <button id="closeControlsBtn">Close</button>
     </div>
+  </div>
+
+  <!-- Credits Overlay -->
+  <div id="creditsOverlay"
+    style="display:none; position:fixed; inset:0; background:#000; z-index:10002; justify-content:center; align-items:flex-start;">
+    <div class="credits">
+      <h1>A Familiar Place</h1>
+      <br>
+      <p>
+        <b>Level 1</b><br>
+        <b>Sam Snyman</b>
+      </p>
+      <br>
+      <p>
+        <b>Level 2</b><br>
+        <b>Nathan Le Roux</b><br>
+        <b>Justin Perumal</b>
+      </p>
+      <br>
+      <p>
+        <b>Level 3</b><br>
+        <b>Joshua Weppelman</b><br>
+        <b>Dewald Smal</b>
+      </p>
+      <br>
+      <p>
+        <b>Trailer and Homescreen</b><br>
+        <b>Josh Snyman</b>
+      </p>
+      <br>
+      <p>
+        <b></b><br>
+        Screaming mask<br>
+        <a href="https://skfb.ly/oIUBG" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>skfb.ly/oIUBG</b></a><br>
+        Clown painting<br>
+        <a href="https://skfb.ly/oSzZr" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>skfb.ly/oSzZr</b></a><br>
+        Desk and chair<br>
+        <a href="https://skfb.ly/6WNEp" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>skfb.ly/6WNEp</b></a><br>
+        Creepy doll<br>
+        <a href="https://skfb.ly/p8Ks7" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>skfb.ly/p8Ks7</b></a><br>
+        Keypad<br>
+        <a href="https://skfb.ly/p7PWG" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>skfb.ly/p7PWG</b></a><br>
+        Wall texture for extra room<br>
+        <a href="https://www.freepik.com/free-photo/painted-cementwall_932599.htm#fromView=search&page=1&position=3&uuid=13935f0a-2fc4-4bb0bd19-7ec7f6af7928&query=grey+wall+texture"
+          target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freepik.com/painted-cementwall_932599</b></a><br>
+        <a href="https://www.freepik.com/free-photo/photo-wall-texturepattern_230307042.htm#fromView=search&page=2&position=32&uuid=dd5cbe1dc8a3-4ad3-8cc0-9d19fbf0f6fd&query=creepy+wall"
+          target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freepik.com/photo-wall-texturepattern_230307042</b></a><br>
+        Playground slide<br>
+        <a href="https://www.fab.com/listings/f8b35f17-6bad-4164-b6dcac85216e43fa" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>fab.com/f8b35f17-6bad-4164-b6dcac85216e43fa</b></a><br>
+        Playground swing<br>
+        <a href="https://www.fab.com/listings/1327d9a0-2ea9-471e-bdd92bc899e345af" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>fab.com/1327d9a0-2ea9-471e-bdd92bc899e345af</b></a><br>
+        Playground roundabout<br>
+        <a href="https://www.fab.com/listings/c36776d1-4173-4c61-9c41509555661c6d" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>fab.com/c36776d1-4173-4c61-9c41509555661c6d</b></a><br>
+        Playground trike<br>
+        <a href="https://www.fab.com/listings/ed3ff664-d5eb-4f9b-b16f763b783738da" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>fab.com/ed3ff664-d5eb-4f9b-b16f763b783738da</b></a><br>
+        Playground Giraffe<br>
+        <a href="https://www.fab.com/listings/a0e9c16f-d6b4-4467-8b416c4267657bc9" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>fab.com/a0e9c16f-d6b4-4467-8b416c4267657bc9</b></a><br>
+        Playground see-saw<br>
+        <a href="https://sketchfab.com/3d-models/see-sawfdbf47d9dcb94aa2aa90baea0cf41009" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>sketchfab.com/see-sawfdbf47d9dcb94aa2aa90baea0cf41009</b></a><br>
+        Playground desk<br>
+        <a href="https://www.fab.com/listings/bf87e0cb-763e-43a6-b64f11c04adcc20c" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>fab.com/bf87e0cb-763e-43a6-b64f11c04adcc20c</b></a><br>
+        Playground chair<br>
+        <a href="https://www.fab.com/listings/55e6bb4e-0697-4424-add623a54e9c0776" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>fab.com/55e6bb4e-0697-4424-add623a54e9c0776</b></a><br>
+        Playground walls<br>
+        <a href="https://ambientcg.com/view?id=PaintedPlaster013" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>ambientcg.com/PaintedPlaster013</b></a><br>
+        <a href="https://ambientcg.com/view?id=PaintedPlaster014" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>ambientcg.com/PaintedPlaster014</b></a><br>
+        <a href="https://ambientcg.com/view?id=PaintedPlaster008" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>ambientcg.com/PaintedPlaster008</b></a><br>
+        <a href="https://ambientcg.com/view?id=PaintedPlaster007" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>ambientcg.com/PaintedPlaster007</b></a><br>
+        <a href="https://www.shareicon.net/amusement-park-kids-park-childhoodstick-man-714298" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>shareicon.net/amusement-park-kids-park-childhoodstick-man-714298</b></a><br>
+        <a href="https://www.istockphoto.com/vector/merry-go-round-sketch-icongm837003544-136353317" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>istockphoto.com/merry-go-round-sketch-icon</b></a><br>
+        <a href="https://www.vecteezy.com/vector-art/56613133-stick-figure-poses-simple-human-silhouettes-actions-gestures"
+          target="_blank" style="color:#ff0e6a;text-decoration:none;"><b>vecteezy.com/stick-figure-poses</b></a><br>
+        <a href="https://www.istockphoto.com/vector/active-rest-gm53767283557924498" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>istockphoto.com/active-rest</b></a><br>
+        <a href="https://www.vecteezy.com/video/70467092-stick-figure-jumpingon-trampoline-animation" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>vecteezy.com/stick-figure-jumpingon-trampoline-animation</b></a><br>
+        <a href="https://www.shutterstock.com/image-vector/man-rejoices-stickfigure-human-silhouette-2062895159"
+          target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>shutterstock.com/man-rejoices-stickfigure-human-silhouette</b></a><br>
+        Playground ceiling<br>
+        <a href="https://ambientcg.com/view?id=AcousticFoam003" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>ambientcg.com/AcousticFoam003</b></a><br>
+        Playground Floor<br>
+        <a href="https://polyhaven.com/a/rubberized_track" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>polyhaven.com/rubberized_track</b></a><br>
+        Playground swing sound<br>
+        <a href="https://freesound.org/people/zane_potgieter09/sounds/765280/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freesound.org/765280</b></a><br>
+        Playground merry-go-round sound<br>
+        <a href="https://freesound.org/people/Luftrum/sounds/52748/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freesound.org/52748</b></a><br>
+        Playground see-saw sound<br>
+        <a href="https://freesound.org/people/HumanSolarian/sounds/457174/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freesound.org/457174</b></a><br>
+        Playground trike sound<br>
+        <a href="https://freesound.org/people/tim.kahn/sounds/15342/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freesound.org/15342</b></a><br>
+        Playground slide sound<br>
+        <a href="https://freesound.org/people/alexkandrell/sounds/326816/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freesound.org/326816</b></a><br>
+        Playground giraffe sound<br>
+        <a href="https://freesound.org/people/sophiehall3535/sounds/245922/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freesound.org/245922</b></a><br>
+        Playground childs laugh<br>
+        <a href="https://freesound.org/people/medyk3D/sounds/616087/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freesound.org/616087</b></a><br>
+        Playground Room Sign In door<br>
+        <a href="https://www.fab.com/listings/af6536b7-beb0-40a7-83903efdbf56b76b" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>fab.com/af6536b7-beb0-40a7-83903efdbf56b76b</b></a><br>
+        Playground Room Sign In chalkboard smiley + unhappy faces<br>
+        <a href="https://www.everypixel.com/image-2089191402677952899" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>everypixel.com/image-2089191402677952899</b></a><br>
+        Playground Room SignIn locked door sound<br>
+        <a href="https://freesound.org/people/Leady/sounds/12740/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freesound.org/12740</b></a><br>
+        Playground Room SignIn door opening sound<br>
+        <a href="https://freesound.org/people/pagancow/sounds/15419/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freesound.org/15419</b></a><br>
+        Playground ballpit<br>
+        <a href="https://sketchfab.com/3d-models/pit-obj932f6d69160d488dbbaf2d4facaba112" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>sketchfab.com/pit-obj932f6d69160d488dbbaf2d4facaba112</b></a><br>
+        Playground wooden playset<br>
+        <a href="https://sketchfab.com/3d-models/lowpoly-playground7a952a86351f4137a77cf675d34ccb03" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>sketchfab.com/lowpoly-playground7a952a86351f4137a77cf675d34ccb03</b></a><br>
+        Playground wooden Playset sound<br>
+        <a href="https://freesound.org/people/SoundDesignForYou/sounds/646693/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freesound.org/646693</b></a><br>
+        Playground Trampoline<br>
+        <a href="https://sketchfab.com/3d-models/trampoline052aaef6c5c34c5bac94607bcc12d2f9" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>sketchfab.com/trampoline052aaef6c5c34c5bac94607bcc12d2f9</b></a><br>
+        Playground Trampoline sound<br>
+        <a href="https://freesound.org/people/Bricklover/sounds/532881/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freesound.org/532881</b></a><br>
+        Playground clipboard<br>
+        <a href="https://sketchfab.com/3d-models/clipboarda37158f20ccf436483029e8295629738" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>sketchfab.com/clipboarda37158f20ccf436483029e8295629738</b></a><br>
+        SignIn wall texture<br>
+        <a href="https://ambientcg.com/view?id=PaintedPlaster015" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>ambientcg.com/PaintedPlaster015</b></a><br>
+        Playground SignIn cabinets<br>
+        <a href="https://www.fab.com/listings/22047265-871f-43ff-befb119eea67e174" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>fab.com/22047265-871f-43ff-befb119eea67e174</b></a>
+        Carpet creak sound<br>
+        <a href="https://freesound.org/people/hassan24/sounds/677377/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>freesound.org/677377</b></a><br>
+        Level 1 roof tiles<br>
+        <a href="https://ambientcg.com/a/Tiles133A" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>ambientcg.com/Tiles133A</b></a><br>
+        Level 1 carpet<br>
+        <a href="https://ambientcg.com/a/Carpet011" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>ambientcg.com/Carpet011</b></a><br>
+        Whiteboard<br>
+        <a href="https://skfb.ly/orOsB" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>skfb.ly/orOsB</b></a><br>
+        Notes<br>
+        <a href="https://skfb.ly/oFrKV" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>skfb.ly/oFrKV</b></a><br>
+        Marker<br>
+        <a href="https://skfb.ly/oK6Ix" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>skfb.ly/oK6Ix</b></a><br>
+        Game music<br>
+        <a href="https://www.youtube.com/watch?v=flGJj6d1Q9M" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>youtube.com/watch?v=flGJj6d1Q9M</b></a><br>
+        Menu music<br>
+        <a href="https://www.youtube.com/watch?v=ieiUE7DW1ms&list=RDieiUE7DW1ms&start_radio=1" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>youtube.com/watch?v=ieiUE7DW1ms</b></a><br>
+        Power cut sfx<br>
+        <a href="https://pixabay.com/sound-effects/power-cut-101047/" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>pixabay.com/power-cut-101047</b></a><br>
+        67 sfx<br>
+        <a href="https://www.youtube.com/watch?v=diTHypa6b0w&t=2s" target="_blank"
+          style="color:#ff0e6a;text-decoration:none;"><b>youtube.com/watch?v=diTHypa6b0w</b></a>
+      </p>
+      <br>
+      <p>
+        Inspired by<br>
+        <b>The Backrooms</b>
+      </p>
+      <br><br>
+      <p style="font-size:1.2rem;opacity:0.7;">Thank you for playing!</p>
+    </div>
+    <button id="backFromCreditsBtn" class="back-btn">
+      &larr; Back
+    </button>
   </div>
   <script type="module" src="/main.js"></script>
   <script>
@@ -1036,12 +1307,24 @@
       });
     }
 
+    // --- Add event listener for Home/Credits button ---
     const homeCreditsBtn = document.getElementById("homeCreditsBtn");
-    if (homeCreditsBtn) {
+    const creditsOverlay = document.getElementById("creditsOverlay");
+    const backFromCreditsBtn = document.getElementById("backFromCreditsBtn");
+
+    if (homeCreditsBtn && creditsOverlay) {
       homeCreditsBtn.addEventListener("click", () => {
-        window.location.href = "/credits.html";
+        creditsOverlay.style.display = "flex";
+        document.getElementById("startScreen").style.display = "none";
       });
     }
+    if (backFromCreditsBtn && creditsOverlay) {
+      backFromCreditsBtn.addEventListener("click", () => {
+        creditsOverlay.style.display = "none";
+        document.getElementById("startScreen").style.display = "grid";
+      });
+    }
+
   </script>
 </body>
 
