@@ -374,9 +374,6 @@ class BackroomsGame {
           0x00ffff,
           0.8
         );
-      if (event.code === "F2") {
-        this.teleportToPoolrooms();
-      }
     });
 
     document
