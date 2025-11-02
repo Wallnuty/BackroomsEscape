@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { BackroomsRoom } from '../BackroomsRoom.js';
+import { PoolRoom } from './PoolRoom.js';
 import { PoolRoomLayouts } from './PoolRoomLayouts.js';
 import { PickupLightsManager } from '../../puzzles/lights.js';
 import { ModelInteractionManager } from '../../puzzles/modelInteraction.js';
@@ -63,10 +63,100 @@ export class PoolRoomManager {
         directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
         this.scene.add(directionalLight);
-
-        // Add fog for atmosphere
-        this.scene.fog = new THREE.Fog(0x1a5c7a, 20, 50);
     }
+
+_createRoomFloor(room, walls) {
+    if (!walls || walls.length === 0) return;
+
+    // Use materials from the room
+    const { floor } = room._createMaterials(); 
+
+    // Compute bounds from wall positions
+    let minX = Infinity, maxX = -Infinity;
+    let minZ = Infinity, maxZ = -Infinity;
+
+    walls.forEach(([from, to]) => {
+        minX = Math.min(minX, from.x, to.x);
+        maxX = Math.max(maxX, from.x, to.x);
+        minZ = Math.min(minZ, from.z, to.z);
+        maxZ = Math.max(maxZ, from.z, to.z);
+    });
+
+    const width = maxX - minX;
+    const depth = maxZ - minZ;
+
+    // Floor mesh
+    const geometry = new THREE.BoxGeometry(width, 0.1, depth);
+    const mesh = new THREE.Mesh(geometry, floor);
+    mesh.position.set((minX + maxX)/2, -5, (minZ + maxZ)/2);
+    room.group.add(mesh);
+
+    // Physics floor
+    const body = new CANNON.Body({
+        mass: 0,
+        shape: new CANNON.Box(new CANNON.Vec3(width/2, 0.05, depth/2))
+    });
+    body.position.set((minX + maxX)/2, -5, (minZ + maxZ)/2);
+    this.world.addBody(body);
+
+    if (!room.bodies) room.bodies = [];
+    room.bodies.push(body);
+}
+
+
+// Ceiling
+_createRoomCeiling(room, walls) {
+    if (!walls || walls.length === 0) return;
+
+    const { ceiling } = room._createMaterials(); 
+    
+    // Create transparent material
+    const transparentMaterial = new THREE.MeshLambertMaterial({
+        color: ceiling.color,
+        transparent: true,
+        opacity: 0.3
+    });
+
+    let minX = Infinity, maxX = -Infinity;
+    let minZ = Infinity, maxZ = -Infinity;
+
+    walls.forEach(([from, to]) => {
+        minX = Math.min(minX, from.x, to.x);
+        maxX = Math.max(maxX, from.x, to.x);
+        minZ = Math.min(minZ, from.z, to.z);
+        maxZ = Math.max(maxZ, from.z, to.z);
+    });
+
+    const width = maxX - minX;
+    const depth = maxZ - minZ;
+
+    const geometry = new THREE.BoxGeometry(width, 0.1, depth);
+    
+    // Assign materials to specific faces
+    const materials = [
+        transparentMaterial, // right - won't be visible
+        ceiling,            // left - won't be visible  
+        transparentMaterial, // top - TRANSPARENT
+        ceiling,            // bottom - OPAQUE
+        transparentMaterial, // front - won't be visible
+        transparentMaterial  // back - won't be visible
+    ];
+    
+    const mesh = new THREE.Mesh(geometry, materials);
+    mesh.position.set((minX + maxX)/2, 5.1, (minZ + maxZ)/2);
+    room.group.add(mesh);
+
+    // Physics ceiling (optional)
+    const body = new CANNON.Body({
+        mass: 0,
+        shape: new CANNON.Box(new CANNON.Vec3(width/2, 0.05, depth/2))
+    });
+    body.position.set((minX + maxX)/2, 5.1, (minZ + maxZ)/2);
+    this.world.addBody(body);
+
+    room.bodies.push(body);
+}
+
 
     _createGlobalFloorAndCeiling() {
         // Pool room floor
@@ -94,14 +184,16 @@ export class PoolRoomManager {
             models = []
         } = layout;
 
-        const room = new BackroomsRoom(this.scene, this.world, width, height, depth, position);
+        const room = new PoolRoom(this.scene, this.world, width, height, depth, position);
 
         // Override wall materials for pool room look
-        this._applyPoolRoomMaterials(room);
 
         walls.forEach(([from, to, thickness]) => {
             room.addWall(from, to, thickness);
         });
+        
+        this._createRoomFloor(room, walls);
+        this._createRoomCeiling(room, walls);
 
         lights.forEach(([x, z]) => {
             room.addLightPanel(x, z);

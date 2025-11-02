@@ -696,7 +696,7 @@ class BackroomsGame {
     this.clearScene();
 
     // 2. Reset player position to Poolrooms spawn
-    this.playerBody.position.set(-10, 2.8, 0); // Adjust spawn position as needed
+    this.playerBody.position.set(-15, 0, 3); // Adjust spawn position as needed
     this.playerBody.velocity.set(0, 0, 0);
     this.playerBody.angularVelocity.set(0, 0, 0);
 
