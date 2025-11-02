@@ -200,7 +200,7 @@ class BackroomsGame {
       console.log("Not A Human music started - fading in...");
 
       // Fade in over 3 seconds
-      this.fadeInMusic(audio, 0.01, 3000); // Target volume 0.2, over 3 seconds
+      this.fadeInMusic(audio, 0.024, 3000); // Target volume 0.2, over 3 seconds
     });
   }
 
@@ -374,9 +374,9 @@ class BackroomsGame {
           0x00ffff,
           0.8
         );
-          if (event.code === "F2") {
-    this.teleportToPoolrooms();
-  }
+      if (event.code === "F2") {
+        this.teleportToPoolrooms();
+      }
     });
 
     document
@@ -725,7 +725,7 @@ class BackroomsGame {
     import('./rooms/poolRoom/PoolRoomManager.js')
       .then((module) => {
         const PoolRoomManager = module.PoolRoomManager || module.default;
-        
+
         // Clear the current scene first
         this.clearScene();
 
@@ -761,12 +761,12 @@ class BackroomsGame {
     if (this.roomManager?.lightsManager) {
       this.roomManager.lightsManager.enabled = false;
     }
-    
+
     // Disable model interactions if they conflict
     if (this.roomManager?.modelInteractionManager) {
       this.roomManager.modelInteractionManager.enabled = false;
     }
-    
+
     // Clear any pending room updates from the old system
     if (this.roomManager?.pendingRoomUpdate) {
       clearTimeout(this.roomManager.pendingRoomUpdate);

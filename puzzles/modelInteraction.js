@@ -409,7 +409,7 @@ export class ModelInteractionManager {
 
       // --- Play powerCut.mp3 sound effect ---
       const audio = new Audio("./audio/sfx/powerCut.mp3");
-      audio.volume = 0.6;
+      audio.volume = 0.3;
       audio.play();
 
       // --- Remove held marker ---
@@ -650,7 +650,7 @@ export class ModelInteractionManager {
     if (existing) {
       try {
         existing.stop && existing.stop();
-      } catch (e) {}
+      } catch (e) { }
       existing.setVolume(
         typeof opts.volume === "number"
           ? opts.volume
@@ -683,7 +683,7 @@ export class ModelInteractionManager {
     tmp.onEnded = () => {
       try {
         modelGroup.remove(tmp);
-      } catch (e) {}
+      } catch (e) { }
       if (tmp.disconnect) tmp.disconnect();
     };
   }
